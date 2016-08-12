@@ -11,6 +11,9 @@ from _shgo import *
 from _tgo import *
 # from scipy.optimize import _tgo
 # from scipy.optimize._tgo import tgo
+import logging
+import sys
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class TestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
@@ -352,53 +355,52 @@ def run_test(test, args=(), g_args=()):
     #    res = a(test.f, test.bounds, g_cons=test.g, n=10)
 
     if True:
-        print("=" * 100)
-        print("=" * 100)
-        print("Topographical Global Optimization: ")
-        print("-" * 34)
-        print('nlfev = {}'.format(res.nlfev))
-        print('len(res.xl)= {}'.format(len(res.xl)))
+        logging.info("=" * 100)
+        logging.info("=" * 100)
+        logging.info("Topographical Global Optimization: ")
+        logging.info("-" * 34)
+        logging.info('nlfev = {}'.format(res.nlfev))
+        logging.info('len(res.xl)= {}'.format(len(res.xl)))
         tol = 5
         res.funl = numpy.around(res.funl, tol)
         Uniq = numpy.unique(res.funl)
         #Uniq = numpy.unique(res.xl)
-        print('Number of unique local minima = {}'.format(len(Uniq)))
-        print('res.x= {}'.format(res.x))
-        print('res.xl= {}'.format(res.xl))
+        logging.info('Number of unique local minima = {}'.format(len(Uniq)))
+        logging.info('res.x= {}'.format(res.x))
+        logging.info('res.xl= {}'.format(res.xl))
 
-
-        print("=" * 100)
+        logging.info("=" * 100)
         #print("Axial TGO: ")
-        print("Delaunay TGO: ")
-        print("-" * 44)
-        print('nlfev = {}'.format(ares.nlfev))
-        print('len(res.xl)= {}'.format(len(ares.xl)))
+        logging.info("Delaunay TGO: ")
+        logging.info("-" * 44)
+        logging.info('nlfev = {}'.format(ares.nlfev))
+        logging.info('len(res.xl)= {}'.format(len(ares.xl)))
         ares.funl = numpy.around(ares.funl, tol)
         Uniq = numpy.unique(ares.funl)
         #Uniq = numpy.unique(ares.xl)
-        print('Number of unique local minima = {}'.format(len(Uniq)))
-        print('res.x= {}'.format(ares.x))
-        print('res.xl= {}'.format(ares.xl))
-        print('res.funl= {}'.format(ares.funl))
+        logging.info('Number of unique local minima = {}'.format(len(Uniq)))
+        logging.info('res.x= {}'.format(ares.x))
+        logging.info('res.xl= {}'.format(ares.xl))
+        logging.info('res.funl= {}'.format(ares.funl))
         #print('ares= {}'.format(ares))
 
         if ThirdDev:
-            print("=" * 100)
+            logging.info("=" * 100)
             #print("Axial TGO: ")
-            print("Delaunay TGO w {}: ".format(minimizer_kwargs2['method']))
-            print("-" * 44)
-            print('nlfev = {}'.format(ares2.nlfev))
-            print('len(res.xl)= {}'.format(len(ares2.xl)))
+            logging.info("Delaunay TGO w {}: ".format(minimizer_kwargs2['method']))
+            logging.info("-" * 44)
+            logging.info('nlfev = {}'.format(ares2.nlfev))
+            logging.info('len(res.xl)= {}'.format(len(ares2.xl)))
             ares.funl = numpy.around(ares2.funl, tol)
             Uniq = numpy.unique(ares2.funl)
             #Uniq = numpy.unique(ares.xl)
-            print('Number of unique local minima = {}'.format(len(Uniq)))
-            print('res.x= {}'.format(ares2.x))
-            print('res.xl= {}'.format(ares2.xl))
-            print('res.funl= {}'.format(ares2.funl))
+            logging.info('Number of unique local minima = {}'.format(len(Uniq)))
+            logging.info('res.x= {}'.format(ares2.x))
+            logging.info('res.xl= {}'.format(ares2.xl))
+            logging.info('res.funl= {}'.format(ares2.funl))
 
-        print("=" * 100)
-        print("=" * 100)
+        logging.info("=" * 100)
+        logging.info("=" * 100)
 
 
     # from scipy.optimize import differential_evolution, basinhopping

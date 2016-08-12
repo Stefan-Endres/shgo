@@ -311,9 +311,6 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
 
         # Find minimiser pool
         # DIMENSIONS self.dim
-        print('TEST' * 1000)
-        print(SHc.dim)
-        print('TEST' * 1000)
         if SHc.dim < 2:  # Scalar objective functions
             if SHc.disp:
                 print('Constructing 1D minimizer pool')
