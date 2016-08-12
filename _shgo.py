@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.spatial
 import scipy.optimize
+import logging
 #from . import __file__
 
 try:
@@ -303,21 +304,37 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
 
         # Find objective function references
         SHc.fun_ref()
-        SHc.surface_topo_ref()
 
         # initiate global storage containers for all minima
         SHc.x_min_glob = []
         SHc.fun_min_glob = []
 
         # Find minimiser pool
-        if 0:
+        # DIMENSIONS self.dim
+        print('TEST' * 1000)
+        print(SHc.dim)
+        print('TEST' * 1000)
+        if SHc.dim < 2:  # Scalar objective functions
+            if SHc.disp:
+                print('Constructing 1D minimizer pool')
+
+            SHc.ax_subspace()
+            SHc.surface_topo_ref()
             SHc.X_min = SHc.minimizers()
-        if 1:
-            SHc.delaunay_triangulation()
-            SHc.X_min = SHc.delaunay_minimizers()
 
-        print("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
+        else:  # Multivariate functions.
+            if SHc.disp:
+                print('Constructing Gabrial graph and minimizer pool')
+            if 0:
+                SHc.X_min = SHc.minimizers()
+            if 1:
+                SHc.delaunay_triangulation()
+                SHc.X_min = SHc.delaunay_minimizers()
 
+        logging.info("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
+
+        #TODO: Keep sampling until n feasible points in non-linear constraints
+        # self.fn < self.n ---> self.n - self.fn
         if len(SHc.minimizer_pool) == 0:
             if SHc.disp:
                 print('No minimizers found. Increasing sampling space.')
@@ -431,7 +448,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
 
         plt.show()
 
-    if True:  # dev
+    if False:  # dev
         from mpl_toolkits.mplot3d import axes3d
         import matplotlib.pyplot as plt
         from matplotlib import cm
@@ -474,7 +491,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
         cs = plt.contour(xg, yg, Z, cmap='binary_r')
         plt.clabel(cs)
 
-    if True:
+    if False:
         def find_neighbors(pindex, triang):
             return triang.vertex_neighbor_vertices[1][
                    triang.vertex_neighbor_vertices[0][pindex]:
@@ -569,21 +586,24 @@ class SHGO(object):
 
         # set bounds
         abound = numpy.array(bounds, float)
+        self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
         # Check if bounds are correctly specified
-        if abound.ndim > 1:
+        if self.dim > 1:
             bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
             # Set none finite values to large floats
             infind = ~numpy.isfinite(abound)
             abound[infind[:, 0], 0] = -1e50  # e308
             abound[infind[:, 1], 1] = 1e50  # e308
         else:
-            bnderr = numpy.where(abound[0] > abound[1])[0]
+            #bnderr = numpy.where(abound[0] > abound[1])[0]
+            bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
             # Set none finite values to large floats
             infind = ~numpy.isfinite(abound)
             infind = numpy.asarray(infind, dtype=int)
-
-            abound[infind[0]] = -1e50  # e308
-            abound[infind[1]] = 1e50  # e308
+            #abound[infind[0]] = -1e50  # e308
+            #abound[infind[1]] = 1e50  # e308
+            abound[infind[:, 0], 0] = -1e50  # e308
+            abound[infind[:, 1], 1] = 1e50  # e308
 
         if bnderr.any():
             raise ValueError('Error: lb > ub in bounds %s.' %
@@ -873,14 +893,6 @@ class SHGO(object):
             self.Xi_ind_topo = False
 
         return self.Xi_ind_topo
-
-    def minimizer(self):
-        """
-        Returns the index of the global minimum value in the current
-        sample set.
-        """
-        self.ind_g = numpy.argmin(self.F)
-        return self.ind_g
 
     def minimizers(self):
         """
