@@ -322,11 +322,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
         else:  # Multivariate functions.
             if SHc.disp:
                 print('Constructing Gabrial graph and minimizer pool')
-            if 0:
-                SHc.X_min = SHc.minimizers()
-            if 1:
-                SHc.delaunay_triangulation()
-                SHc.X_min = SHc.delaunay_minimizers()
+
+            SHc.delaunay_triangulation()
+            SHc.X_min = SHc.delaunay_minimizers()
 
         logging.info("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
 
@@ -368,22 +366,27 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
         # build the topograph first before minimizing
         lres_f_min = SHc.minimize(SHc.X_min[[0]])
 
-
         # Trim minimised point from current minimiser set
         SHc.trim_min_pool(0)
 
         # Minimise the global
         while not SHc.stopiter:
             if SHc.iter is not None:  # Note first iteration is outside loop
-                print('SHGO.iter = {}'.format(SHc.iter))
+                logging.info('SHGO.iter = {}'.format(SHc.iter))
                 SHc.iter -= 1
-                if SHc.iter == 0:
-                    SHc.stopiter = True
-                    break
+                if __name__ == '__main__':
+                    if SHc.iter == 0:
+                        SHc.stopiter = True
+                        break
+                    #TODO: Test usage of iterative features
 
             if numpy.shape(SHc.X_min)[0] == 0:
                 SHc.stopiter = True
                 break
+
+            # NOTE: This routine processes the furthest minimizers and is only
+            # useful for runs with a maximum amount of function evaluations to
+            # find the best minimimizers. #TODO: Note useful for SHGO?
 
             # Construct topograph from current minimiser set
             SHc.g_topograph(lres_f_min.x, SHc.X_min)
@@ -656,13 +659,10 @@ class SHGO(object):
                 if 'disp' in options:
                     self.minimizer_kwargs['options']['disp'] = options['disp']
 
+        # Algorithm controls
         self.stopiter = False
-
         self.break_routine = False
-
         self.multiproc = multiproc
-
-
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
@@ -760,6 +760,8 @@ class SHGO(object):
                 self.res.message = ('No sampling point found within the '
                                     + 'feasible set. Increasing sampling '
                                     + 'size.')
+                #TODO: Write a unittest to see if algorithm is increasing
+                # sampling correctly for both 1D and >1D cases
                 if self.disp:
                     print(self.res.message)
 
@@ -818,7 +820,6 @@ class SHGO(object):
         self.F[numpy.isnan(self.F)] = numpy.inf
         # inf, -inf  --> floats
         self.F = numpy.nan_to_num(self.F)
-
 
         self.Ft = self.F[self.I]
         self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
@@ -999,7 +1000,6 @@ class SHGO(object):
             self.Xi_ind_topo = False
 
         return self.Xi_ind_topo
-
 
     def delaunay_minimizers(self):
         """
