@@ -571,7 +571,6 @@ class SHGO(object):
         self.fn = n  # Number of feasible samples remaining
         self.iter = iter
 
-
         self.callback = callback
         self.maxfev = None
         self.disp = False
@@ -585,23 +584,11 @@ class SHGO(object):
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
         # Check if bounds are correctly specified
-        if self.dim > 1:
-            bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
-            # Set none finite values to large floats
-            infind = ~numpy.isfinite(abound)
-            abound[infind[:, 0], 0] = -1e50  # e308
-            abound[infind[:, 1], 1] = 1e50  # e308
-        else:
-            #bnderr = numpy.where(abound[0] > abound[1])[0]
-            bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
-            # Set none finite values to large floats
-            infind = ~numpy.isfinite(abound)
-            infind = numpy.asarray(infind, dtype=int)
-            #abound[infind[0]] = -1e50  # e308
-            #abound[infind[1]] = 1e50  # e308
-            abound[infind[:, 0], 0] = -1e50  # e308
-            abound[infind[:, 1], 1] = 1e50  # e308
-
+        bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
+        # Set none finite values to large floats
+        infind = ~numpy.isfinite(abound)
+        abound[infind[:, 0], 0] = -1e50  # e308
+        abound[infind[:, 1], 1] = 1e50  # e308
         if bnderr.any():
             raise ValueError('Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
