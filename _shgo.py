@@ -670,6 +670,9 @@ class SHGO(object):
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
+    def construct_complex(self):
+        pass
+
     def sobol_points(self, N, D):
         """
         sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
