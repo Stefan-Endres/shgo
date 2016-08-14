@@ -15,7 +15,7 @@ try:
 except ImportError:
     from multiprocessing import Pool
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
          multiproc=False):  #TODO: Update documentation
     """
@@ -165,9 +165,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     First consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`
 
-    >>> from scipy.optimize import rosen, tgo
+    >>> from scipy.optimize import rosen, shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = tgo(rosen, bounds)
+    >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
     (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
 
@@ -177,7 +177,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     converted to large float numbers.
 
     >>> bounds = [(None, None), (None, None), (None, None), (None, None)]
-    >>> result = tgo(rosen, bounds)
+    >>> result = shgo(rosen, bounds)
     >>> result.x
     array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 
@@ -185,8 +185,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     minima and one global minimum.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from scipy.optimize import tgo
-    >>> from _tgo import tgo
+    >>> from scipy.optimize import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -195,7 +194,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     ...             )
     ...
     >>> bounds = [(-512, 512), (-512, 512)]
-    >>> result = tgo(eggholder, bounds)
+    >>> result = shgo(eggholder, bounds)
     >>> result.x, result.fun
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
@@ -220,15 +219,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     Now suppose we want to find a larger amount of local minima, this can be
     accomplished for example by increasing the amount of sampling points...
 
-    >>> result_2 = tgo(eggholder, bounds, n=1000)
+    >>> result_2 = shgo(eggholder, bounds, n=1000)
     >>> len(result.xl), len(result_2.xl)
     (10, 60)
-
-    ...or by lowering the k_t value:
-
-    >>> result_3 = tgo(eggholder, bounds, k_t=1)
-    >>> len(result.xl), len(result_2.xl), len(result_3.xl)
-    (10, 60, 48)
 
     To demonstrate solving problems with non-linear constraints consider the
     following example from [5] (Hock and Schittkowski problem 18):
@@ -243,7 +236,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     Approx. Answer:
         f([(250)**0.5 , (2.5)**0.5]) = 5.0
 
-    >>> from scipy.optimize import tgo
+    >>> from scipy.optimize import shgo
     >>> def f(x):
     ...     return 0.01 * (x[0])**2 + (x[1])**2
     ...
@@ -255,7 +248,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     ...
     >>> g = (g1, g2)
     >>> bounds = [(2, 50), (0, 50)]
-    >>> result = tgo(f, bounds, g_cons=g)
+    >>> result = shgo(f, bounds, g_cons=g)
     >>> result.x, result.fun
     (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
 
@@ -425,127 +418,6 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
 
     # Add local func evals to sampling func evals
     SHc.res.nfev += SHc.res.nlfev
-
-    #if True:  # dev
-    if False:  # dev
-        #if False:  # dev
-        import numpy as np
-        from mpl_toolkits.mplot3d import Axes3D
-        import matplotlib.pyplot as plt
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-
-        xs = SHc.C[:, 0]
-        ys = SHc.C[:, 1]
-        zs = SHc.F
-        ax.scatter(xs, ys, zs)
-
-        ax.set_xlabel('x1')
-        ax.set_ylabel('x2')
-        ax.set_zlabel('f')
-        #ax.set_zlim3d(0.49, 0.51)
-
-        plt.show()
-
-    if False:  # dev
-        from mpl_toolkits.mplot3d import axes3d
-        import matplotlib.pyplot as plt
-        from matplotlib import cm
-
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-
-        X = SHc.C[:, 0]
-        #X = numpy.sort(SHGO.C[:, 0])
-        X = numpy.linspace(SHc.bounds[0][0], SHc.bounds[0][1])
-        Y = SHc.C[:, 1]
-        #Y = numpy.sort(SHGO.C[:, 1])
-        Y = numpy.linspace(SHc.bounds[1][0], SHc.bounds[1][1])
-        xg, yg = numpy.meshgrid(X, Y)
-        Z = numpy.zeros((xg.shape[0],
-                         yg.shape[0]))
-
-        for i in range(xg.shape[0]):
-            for j in range(yg.shape[0]):
-                #Z[i, j] = SHGO.F[i]
-                Z[i, j] = SHc.func([xg[i, j], yg[i, j]])
-
-        #=Z = SHGO.F
-
-        if True:
-            ax.plot_surface(xg, yg, Z, rstride=1, cstride=1,
-                                   cmap=cm.coolwarm, linewidth=0,
-                                   antialiased=True, alpha=1.0, shade=True)
-            if False:
-                cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
-                cset = ax.contour(X, Y, Z, zdir='x', offset=-40, cmap=cm.coolwarm)
-                cset = ax.contour(X, Y, Z, zdir='y', offset=40, cmap=cm.coolwarm)
-
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('F')
-        #plt.show()
-
-        plt.figure()
-        cs = plt.contour(xg, yg, Z, cmap='binary_r')
-        plt.clabel(cs)
-
-    if False:
-        def find_neighbors(pindex, triang):
-            return triang.vertex_neighbor_vertices[1][
-                   triang.vertex_neighbor_vertices[0][pindex]:
-                   triang.vertex_neighbor_vertices[0][pindex + 1]]
-
-        from scipy.spatial import Delaunay
-        points = SHc.C
-        tri = Delaunay(points)
-        if True:
-            import matplotlib.pyplot as plt
-            plt.triplot(points[:, 0], points[:, 1], tri.simplices.copy())
-            plt.plot(points[:, 0], points[:, 1], 'o')
-
-
-        if True:
-            print('SHGO.C = {}'.format(SHc.C))
-            print('tri.points = {}'.format(tri.points))
-
-            print('tri.simplices = {}'.format(tri.simplices))
-
-            #print('numpy.sort(tri.simplices, axis=0)'
-            #      ' = {}'.format(numpy.sort(tri.simplices, axis=0)))
-            # print('points[tri.simplices] = {}'.format(points[tri.simplices]))
-            # print('tri.neighbors[1] = {}'.format(tri.neighbors[1]))
-            # print('tri.vertex_neighbor_vertices '
-            #       '= {}'.format(tri.vertex_neighbor_vertices))
-            # print('tri.vertex_neighbor_vertices[0] '
-            #       '= {}'.format(tri.vertex_neighbor_vertices[0]))
-            # print('Tuple of two ndarrays of int: (indices, indptr).'
-            #       ' The indices of neighboring vertices of vertex k are '
-            #       'indptr[indices[k]:indices[k+1]].')
-            #
-            # print('tri.vertex_to_simplex[0] '
-            #       '= {}'.format(tri.vertex_to_simplex[0]))
-
-            print('tri.find_simplex(SHGO.C[0])'
-                  ' = {}'.format(tri.find_simplex(SHc.C[0])))
-
-            print('tri.simplices[tri.find_simplex(SHGO.C[1])]'
-                  ' = {}'.format(tri.simplices[tri.find_simplex(SHc.C[1])]))
-
-            print('='*10)
-
-            #neighbor_indices = find_neighbors(0, tri)
-            neighbor_indices = find_neighbors(0, tri)
-            print('neighbor_indices = find_neighbors(0, tri)'
-                  ' = {}'.format(neighbor_indices))
-            print('points[neighbor_indices] = '
-                  '{}'.format(points[neighbor_indices]))
-            print('SHGO.C [neighbor_indices] '
-                  '= {}'.format(SHc.C[neighbor_indices]))
-
-        if False:
-            plt.show()
 
     return SHc.res
 
@@ -1027,4 +899,5 @@ class SHGO(object):
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    #doctest.testmod()
+    exec(open('./shgo_tests.py').read())

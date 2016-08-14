@@ -9,7 +9,8 @@ import scipy.optimize
 #from . import __file__
 
 try:
-    from multiprocessing_on_dill import Pool
+    pass
+    #from multiprocessing_on_dill import Pool
 except ImportError:
     from multiprocessing import Pool
 
@@ -792,7 +793,7 @@ class TGO(object):
         return x_global_min
 
 
-    
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
