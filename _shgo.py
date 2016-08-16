@@ -284,44 +284,12 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 
     SHc.construct_complex_sobol()
 
-
     if not SHc.break_routine:
         if SHc.disp:
             print("Succesfully completed construction of complex.")
 
-        # Find first local minimum
-        # NOTE: Since we always minimize this value regardless it is a waste to
-        # build the topograph first before minimizing
-        lres_f_min = SHc.minimize(SHc.X_min[[0]])
-
-        # Trim minimised point from current minimiser set
-        SHc.trim_min_pool(0)
-
-        # Minimise the global
-        while not SHc.stopiter:
-            if SHc.iter is not None:  # Note first iteration is outside loop
-                logging.info('SHGO.iter = {}'.format(SHc.iter))
-                SHc.iter -= 1
-                if __name__ == '__main__':
-                    if SHc.iter == 0:
-                        SHc.stopiter = True
-                        break
-                    #TODO: Test usage of iterative features
-
-            if numpy.shape(SHc.X_min)[0] == 0:
-                SHc.stopiter = True
-                break
-
-            # Construct topograph from current minimiser set
-            SHc.g_topograph(lres_f_min.x, SHc.X_min)
-
-            # Find local minimum at the miniser with the greatest euclidean
-            # distance from the current solution
-            ind_xmin_l = SHc.Z[:, -1]
-            lres_f_min = SHc.minimize(SHc.Ss[:, -1])
-
-            # Trim minimised point from current minimiser set
-            SHc.trim_min_pool(ind_xmin_l)
+        # Minimise the pool of minisers with local minimisation methods
+        SHc.minimise_pool()
 
     # Sort results and build the global return object
     SHc.sort_result()
@@ -593,7 +561,7 @@ class SHGO(object):
 
             return points
 
-    def sampling(self):
+    def sampling(self, method='Sobol'):
         """
         Generates uniform sampling points in a hypercube and scales the points
         to the bound limits.
@@ -603,7 +571,8 @@ class SHGO(object):
         self.m = len(self.bounds)  # Dimensions
 
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        self.C = self.sobol_points(self.n, self.m)
+        if method == 'Sobol':
+            self.C = self.sobol_points(self.n, self.m)
 
         # Distribute over bounds
         # TODO: Find a better way to do this
@@ -772,6 +741,62 @@ class SHGO(object):
     def trim_min_pool(self, trim_ind):
         self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
         self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
+        return
+
+
+    # Minimiser pool processing
+    def minimise_pool(self, force_iter=False):
+        """
+        This processing method can optionally minimise only the best candidate
+        solutions in the minimiser pool
+
+        Parameters
+        ----------
+
+        force_iter : int
+                     Number of starting minimisers to process (can be sepcified
+                     globally or locally)
+
+        """
+
+        # Find first local minimum
+        # NOTE: Since we always minimize this value regardless it is a waste to
+        # build the topograph first before minimizing
+        lres_f_min = self.minimize(self.X_min[[0]])
+
+        # Trim minimised point from current minimiser set
+        self.trim_min_pool(0)
+
+        # Force processing to only
+        if force_iter:
+            self.iter = force_iter
+
+        while not self.stopiter:
+            if self.iter is not None:  # Note first iteration is outside loop
+                logging.info('SHGO.iter = {}'.format(self.iter))
+                self.iter -= 1
+                if __name__ == '__main__':
+                    if self.iter == 0:
+                        self.stopiter = True
+                        break
+                    #TODO: Test usage of iterative features
+
+            if numpy.shape(self.X_min)[0] == 0:
+                self.stopiter = True
+                break
+
+            # Construct topograph from current minimiser set
+            # (NOTE: This is a very small topograph using only the miniser pool
+            #        , it might be worth using some graph theory tools instead.
+            self.g_topograph(lres_f_min.x, self.X_min)
+
+            # Find local minimum at the miniser with the greatest euclidean
+            # distance from the current solution
+            ind_xmin_l = self.Z[:, -1]
+            lres_f_min = self.minimize(self.Ss[:, -1])
+
+            # Trim minimised point from current minimiser set
+            self.trim_min_pool(ind_xmin_l)
         return
 
     def g_topograph(self, x_min, X_min):
