@@ -317,6 +317,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
                 print('Constructing Gabrial graph and minimizer pool')
 
             SHc.delaunay_triangulation()
+            if SHc.disp:
+                print('Triangulation completed, building minimizer pool')
+
             SHc.X_min = SHc.delaunay_minimizers()
 
         logging.info("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
@@ -826,12 +829,14 @@ class SHGO(object):
                   'minimizer starting at {}:'.format(x_min))
 
         if self.disp:
-            print('Starting'
+            print('Starting '
                   'minimization at {}...'.format(x_min))
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
-        print('lres = {}'.format(lres))
+
+        if self.disp:
+            print('lres = {}'.format(lres))
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
         self.x_min_glob.append(lres.x)
@@ -899,5 +904,10 @@ class SHGO(object):
 
 if __name__ == '__main__':
     import doctest
-    #doctest.testmod()
-    exec(open('./shgo_tests.py').read())
+    doctest.testmod()
+    from numpy import *
+    #exec(open('./shgo_tests.py').read())
+
+
+
+
