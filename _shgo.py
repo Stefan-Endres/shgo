@@ -282,6 +282,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     if SHc.disp:
         print('Generating sampling points')
 
+    # Construct directed complex.
     SHc.construct_complex_sobol()
 
     if not SHc.break_routine:
