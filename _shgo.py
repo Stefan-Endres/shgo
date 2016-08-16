@@ -279,79 +279,11 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
               options=options, multiproc=multiproc)
 
     # Generate sampling points
-    sample = True
     if SHc.disp:
         print('Generating sampling points')
 
-    while sample:
-        SHc.sampling()
+    SHc.construct_complex_sobol()
 
-        # Find subspace of feasible points
-        if g_cons is not None:
-            SHc.sampling_subspace()
-        else:
-            SHc.fn = SHc.n
-
-        # Sort remaining samples
-        SHc.sorted_samples()
-
-        # Find objective function references
-        SHc.fun_ref()
-
-        # initiate global storage containers for all minima
-        SHc.x_min_glob = []
-        SHc.fun_min_glob = []
-
-        # Find minimiser pool
-        # DIMENSIONS self.dim
-        if SHc.dim < 2:  # Scalar objective functions
-            if SHc.disp:
-                print('Constructing 1D minimizer pool')
-
-            SHc.ax_subspace()
-            SHc.surface_topo_ref()
-            SHc.X_min = SHc.minimizers()
-
-        else:  # Multivariate functions.
-            if SHc.disp:
-                print('Constructing Gabrial graph and minimizer pool')
-
-            SHc.delaunay_triangulation()
-            if SHc.disp:
-                print('Triangulation completed, building minimizer pool')
-
-            SHc.X_min = SHc.delaunay_minimizers()
-
-        logging.info("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
-
-        #TODO: Keep sampling until n feasible points in non-linear constraints
-        # self.fn < self.n ---> self.n - self.fn
-        if len(SHc.minimizer_pool) == 0:
-            if SHc.disp:
-                print('No minimizers found. Increasing sampling space.')
-            n_add = 100
-            if options is not None:
-                if 'maxiter' in options.keys():
-                    n_add = int((options['maxiter'] - SHc.fn) / 1.618)
-                    if n_add < 1:
-                        SHc.res.message = ("Failed to find a minimizer "
-                                            "within the maximum allowed "
-                                            "function evaluations.")
-
-                        if SHc.disp:
-                            print(SHc.res.message + " Breaking routine...")
-
-                        SHc.break_routine = True
-                        SHc.res.success = False
-                        sample = False
-
-            SHc.n += n_add
-            SHc.res.nfev = SHc.fn
-
-        else:  # If good values are found stop while loop
-            # Include each sampling point as func evaluation:
-            SHc.res.nfev = SHc.fn
-            sample = False
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -380,10 +312,6 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
                 SHc.stopiter = True
                 break
 
-            # NOTE: This routine processes the furthest minimizers and is only
-            # useful for runs with a maximum amount of function evaluations to
-            # find the best minimimizers. #TODO: Note useful for SHGO?
-
             # Construct topograph from current minimiser set
             SHc.g_topograph(lres_f_min.x, SHc.X_min)
 
@@ -395,32 +323,13 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
             # Trim minimised point from current minimiser set
             SHc.trim_min_pool(ind_xmin_l)
 
-
-        # Sort results and save
-        SHc.x_min_glob = numpy.array(SHc.x_min_glob)
-        SHc.fun_min_glob = numpy.array(SHc.fun_min_glob)
-
-        # Sort and save
-        # Sorted indexes in Func_min
-        ind_sorted = numpy.argsort(SHc.fun_min_glob)
-
-        # Save ordered list of minima
-        SHc.res.xl = SHc.x_min_glob[ind_sorted]  # Ordered x vals #TODO: Check
-        SHc.fun_min_glob = numpy.array(SHc.fun_min_glob)
-        SHc.res.funl = SHc.fun_min_glob[ind_sorted]
-        SHc.res.funl = SHc.res.funl.T
-
-        # Find global of all minimisers
-        SHc.res.x = SHc.x_min_glob[ind_sorted[0]]  # Save global minima
-        SHc.res.fun = SHc.fun_min_glob[ind_sorted[0]] # Save global fun value
+    # Sort results and build the global return object
+    SHc.sort_result()
 
     # Confirm the routine ran succesfully
     if not SHc.break_routine:
         SHc.res.message = 'Optimization terminated successfully.'
         SHc.res.success = True
-
-    # Add local func evals to sampling func evals
-    SHc.res.nfev += SHc.res.nlfev
 
     return SHc.res
 
@@ -438,6 +347,7 @@ class SHGO(object):
         self.func = func
         self.bounds = bounds
         self.args = args
+        self.g_cons = g_cons
         if type(g_cons) is not tuple and type(g_cons) is not list:
             self.g_func = (g_cons,)
         else:
@@ -539,13 +449,87 @@ class SHGO(object):
         self.break_routine = False
         self.multiproc = multiproc
 
+        # Initiate storate objects used in alorithm classes
+        self.x_min_glob = []
+        self.fun_min_glob = []
+
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
         self.res.nfev = 0  # Include each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
-    def construct_complex(self):
+
+    def construct_complex_sobol(self):
+        """
+        Construct a complex based on the Sobol sequence
+        """
+        sample = True
+        while sample:
+            self.sampling()
+
+            # Find subspace of feasible points
+            if self.g_cons is not None:
+                self.sampling_subspace()
+            else:
+                self.fn = self.n
+
+            # Sort remaining samples
+            self.sorted_samples()
+
+            # Find objective function references
+            self.fun_ref()
+
+            # Find minimiser pool
+            # DIMENSIONS self.dim
+            if self.dim < 2:  # Scalar objective functions
+                if self.disp:
+                    print('Constructing 1D minimizer pool')
+
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.X_min = self.minimizers()
+
+            else:  # Multivariate functions.
+                if self.disp:
+                    print('Constructing Gabrial graph and minimizer pool')
+
+                self.delaunay_triangulation()
+                if self.disp:
+                    print('Triangulation completed, building minimizer pool')
+
+                self.X_min = self.delaunay_minimizers()
+
+            logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+
+            # TODO: Keep sampling until n feasible points in non-linear constraints
+            # self.fn < self.n ---> self.n - self.fn
+            if len(self.minimizer_pool) == 0:
+                if self.disp:
+                    print('No minimizers found. Increasing sampling space.')
+                n_add = 100
+                if options is not None:
+                    if 'maxiter' in options.keys():
+                        n_add = int((options['maxiter'] - self.fn) / 1.618)
+                        if n_add < 1:
+                            self.res.message = ("Failed to find a minimizer "
+                                               "within the maximum allowed "
+                                               "function evaluations.")
+
+                            if self.disp:
+                                print(self.res.message + " Breaking routine...")
+
+                            self.break_routine = True
+                            self.res.success = False
+                            sample = False
+
+                self.n += n_add
+                self.res.nfev = self.fn
+
+            else:  # If good values are found stop while loop
+                # Include each sampling point as func evaluation:
+                self.res.nfev = self.fn
+                sample = False
         pass
 
     def sobol_points(self, N, D):
@@ -901,6 +885,34 @@ class SHGO(object):
         self.X_min = self.C[self.minimizer_pool]
 
         return self.X_min
+
+    # Post local minimisation processing
+    def sort_result(self):
+        """
+        Sort results and build the global return object
+        """
+        import numpy
+        # Sort results and save
+        self.x_min_glob = numpy.array(self.x_min_glob)
+        self.fun_min_glob = numpy.array(self.fun_min_glob)
+
+        # Sorted indexes in Func_min
+        ind_sorted = numpy.argsort(self.fun_min_glob)
+
+        # Save ordered list of minima
+        self.res.xl = self.x_min_glob[ind_sorted]  # Ordered x vals #TODO: Check
+        self.fun_min_glob = numpy.array(self.fun_min_glob)
+        self.res.funl = self.fun_min_glob[ind_sorted]
+        self.res.funl = self.res.funl.T
+
+        # Find global of all minimisers
+        self.res.x = self.x_min_glob[ind_sorted[0]]  # Save global minima
+        self.res.fun = self.fun_min_glob[ind_sorted[0]] # Save global fun value
+
+        # Add local func evals to sampling func evals
+        self.res.nfev += self.res.nlfev
+        return
+
 
 if __name__ == '__main__':
     import doctest

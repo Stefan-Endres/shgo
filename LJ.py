@@ -107,13 +107,14 @@ class LennardJones(Benchmark):
         return s
 
 
-atoms = 10
+#atoms = 10
+atoms = 2
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
 
 options = {'disp': True}
-res = shgo(LJ.fun, LJ._bounds, options=options, n=32)
+res = shgo(LJ.fun, LJ._bounds, options=options, n=40)
 print('=' * 11)
 print('Global out:')
 print('=' * 11)
