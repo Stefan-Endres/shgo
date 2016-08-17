@@ -317,6 +317,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
                 print('Constructing Gabrial graph and minimizer pool')
 
             SHc.delaunay_triangulation()
+            if SHc.disp:
+                print('Triangulation completed, building minimizer pool')
+
             SHc.X_min = SHc.delaunay_minimizers()
 
         logging.info("Minimiser pool = SHGO.X_min = {}".format(SHc.X_min))
@@ -826,12 +829,14 @@ class SHGO(object):
                   'minimizer starting at {}:'.format(x_min))
 
         if self.disp:
-            print('Starting'
+            print('Starting '
                   'minimization at {}...'.format(x_min))
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
-        print('lres = {}'.format(lres))
+
+        if self.disp:
+            print('lres = {}'.format(lres))
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
         self.x_min_glob.append(lres.x)
@@ -900,4 +905,180 @@ class SHGO(object):
 if __name__ == '__main__':
     import doctest
     #doctest.testmod()
-    exec(open('./shgo_tests.py').read())
+    from numpy import *
+    #exec(open('./shgo_tests.py').read())
+
+    N = 17
+    bounds = [[0.0, 4.0]] + list(zip([-4.0] * (N - 1),
+                                     [4.0] * (N - 1)))
+
+
+    global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791,
+                            -0.8796, 0.204651, -3.28414, 0.851188,
+                            -3.46245, 2.53245, -0.895246, 1.40992,
+                            -3.07367, 1.96257, -2.97872, -0.807849,
+                            -1.68978]]
+    fglob = 11.7464
+
+
+
+
+    def fun(x):
+        d = asarray([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                     [1.27, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                     [1.69, 1.43, 0, 0, 0, 0, 0, 0, 0, 0],
+                     [2.04, 2.35, 2.43, 0, 0, 0, 0, 0, 0, 0],
+                     [3.09, 3.18, 3.26, 2.85, 0, 0, 0, 0, 0, 0],
+                     [3.20, 3.22, 3.27, 2.88, 1.55, 0, 0, 0, 0, 0],
+                     [2.86, 2.56, 2.58, 2.59, 3.12, 3.06, 0, 0, 0, 0],
+                     [3.17, 3.18, 3.18, 3.12, 1.31, 1.64, 3.00, 0, 0, 0],
+                     [3.21, 3.18, 3.18, 3.17, 1.70, 1.36, 2.95, 1.32, 0, 0],
+                     [2.38, 2.31, 2.42, 1.94, 2.85, 2.81, 2.56, 2.91, 2.97,
+                      0.]])
+
+        xi = atleast_2d(asarray([0.0, x[0]] + list(x[1::2])))
+        xj = repeat(xi, size(xi, 1), axis=0)
+        xi = xi.T
+
+        yi = atleast_2d(asarray([0.0, 0.0] + list(x[2::2])))
+        yj = repeat(yi, size(yi, 1), axis=0)
+        yi = yi.T
+
+        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - d) ** 2
+        inner = tril(inner, -1)
+        return sum(sum(inner, axis=1))
+
+    print(fun([3,]*17))
+
+    options = {'disp': True}
+    #shgo(fun, bounds, options=options)
+
+
+
+    class Benchmark(object):
+        def __init__(self, N=6):
+            self.N = N
+            self.nfev = 0
+
+
+    class LennardJones(Benchmark):
+
+        r"""
+        LennardJones objective function.
+
+        This class defines the Lennard-Jones global optimization problem. This
+        is a multimodal minimization problem defined as follows:
+
+        .. math::
+
+            f_{\text{LennardJones}}(\mathbf{x}) = \sum_{i=0}^{n-2}\sum_{j>1}^{n-1}
+            \frac{1}{r_{ij}^{12}} - \frac{1}{r_{ij}^{6}}
+
+
+        Where, in this exercise:
+
+        .. math::
+
+            r_{ij} = \sqrt{(x_{3i}-x_{3j})^2 + (x_{3i+1}-x_{3j+1})^2)
+            + (x_{3i+2}-x_{3j+2})^2}
+
+
+        Valid for any dimension, :math:`n = 3*k, k=2 , 3, 4, ..., 20`. :math:`k`
+        is the number of atoms in 3-D space constraints: unconstrained type:
+        multi-modal with one global minimum; non-separable
+
+        Value-to-reach: :math:`minima[k-2] + 0.0001`. See array of minima below;
+        additional minima available at the Cambridge cluster database:
+
+        http://www-wales.ch.cam.ac.uk/~jon/structures/LJ/tables.150.html
+
+        Here, :math:`n` represents the number of dimensions and
+        :math:`x_i \in [-4, 4]` for :math:`i = 1 ,..., n`.
+
+        *Global optimum*:
+
+        .. math::
+
+            \text{minima} = [-1.,-3.,-6.,-9.103852,-12.712062,-16.505384,\\
+                             -19.821489, -24.113360, -28.422532,-32.765970,\\
+                             -37.967600,-44.326801, -47.845157,-52.322627,\\
+                             -56.815742,-61.317995, -66.530949, -72.659782,\\
+                             -77.1777043]\\
+
+
+        """
+
+        def __init__(self, dimensions=6):
+            # dimensions is in [6:60]
+            # max dimensions is going to be 60.
+            if dimensions not in range(6, 61):
+                raise ValueError("LJ dimensions must be in (6, 60)")
+
+            Benchmark.__init__(self, dimensions)
+
+            self._bounds = list(zip([-4.0] * self.N, [4.0] * self.N))
+            print("len(bounds) = {}".format(len(self._bounds)))
+
+            self.global_optimum = [[]]
+
+            self.minima = [-1.0, -3.0, -6.0, -9.103852, -12.712062,
+                           -16.505384, -19.821489, -24.113360, -28.422532,
+                           -32.765970, -37.967600, -44.326801, -47.845157,
+                           -52.322627, -56.815742, -61.317995, -66.530949,
+                           -72.659782, -77.1777043]
+
+            k = int(dimensions / 3)
+            self.atoms = k
+            print('Number of atoms = {}'.format(self.atoms))
+            self.fglob = self.minima[k - 2]
+            self.change_dimensionality = True
+
+        def change_dimensions(self, ndim):
+            if ndim not in range(6, 61):
+                raise ValueError("LJ dimensions must be in (6, 60)")
+
+            Benchmark.change_dimensions(self, ndim)
+            self.fglob = self.minima[int(self.N / 3) - 2]
+
+        def fun(self, x, *args):
+            self.nfev += 1
+
+            k = int(self.N / 3)
+            s = 0.0
+
+            for i in range(k - 1):
+                for j in range(i + 1, k):
+                    a = 3 * i
+                    b = 3 * j
+                    xd = x[a] - x[b]
+                    yd = x[a + 1] - x[b + 1]
+                    zd = x[a + 2] - x[b + 2]
+                    ed = xd * xd + yd * yd + zd * zd
+                    ud = ed * ed * ed
+                    if ed > 0.0:
+                        s += (1.0 / ud - 2.0) / ud
+
+            return s
+
+    atoms = 10
+    N = atoms*3
+    LJ = LennardJones(N)
+    print(LJ.fun([0.1]*N))
+
+    options = {'disp': True}
+    res = shgo(LJ.fun, LJ._bounds, options=options, n=300)
+    print('=' * 11)
+    print('Global out:')
+    print('='*11)
+    print('LJ cluster of {} atoms with dimensionality '
+          '= {}:'.format(LJ.atoms, len(LJ._bounds)))
+    print(res)
+
+    #if LJ.fglob == res.fun:
+    if abs(LJ.fglob - res.fun) <= 1e-4:
+        print("Correct global minima found")
+        print("LJ.fglob = {}".format(LJ.fglob))
+    else:
+        print("INCORRECT global minima found!")
+        print("res.fun= {}".format(res.fun))
+        print("LJ.fglob = {}".format(LJ.fglob))
