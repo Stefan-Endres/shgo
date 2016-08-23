@@ -477,9 +477,9 @@ class SHGO(object):
                 if self.disp:
                     print('No minimizers found. Increasing sampling space.')
                 n_add = 100
-                if options is not None:
-                    if 'maxiter' in options.keys():
-                        n_add = int((options['maxiter'] - self.fn) / 1.618)
+                if self.options is not None:
+                    if 'maxiter' in self.options.keys():
+                        n_add = int((self.options['maxiter'] - self.fn) / 1.618)
                         if n_add < 1:
                             self.res.message = ("Failed to find a minimizer "
                                                "within the maximum allowed "
@@ -854,7 +854,7 @@ class SHGO(object):
             self.fun_min_glob.append(lres.fun[0])
         except IndexError:
             self.fun_min_glob.append(lres.fun)
-
+n
         return lres
 
     def delaunay_triangulation(self):
@@ -944,8 +944,3 @@ if __name__ == '__main__':
     import doctest
     doctest.testmod()
     from numpy import *
-    #exec(open('./shgo_tests.py').read())
-
-
-
-

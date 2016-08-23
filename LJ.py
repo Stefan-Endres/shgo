@@ -1,4 +1,5 @@
 from _shgo import shgo
+from _tgo import tgo
 import scipy.optimize
 import numpy
 
@@ -109,12 +110,16 @@ class LennardJones(Benchmark):
 
 #atoms = 10
 atoms = 2
+atoms = 3
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
 
 options = {'disp': True}
-res = shgo(LJ.fun, LJ._bounds, options=options, n=40)
+#res = shgo(LJ.fun, LJ._bounds, options=options, n=40)
+#res = shgo(LJ.fun, LJ._bounds, options=options, n=100)
+res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
+res = shgo(LJ.fun, LJ._bounds, options=options, n=200)
 print('=' * 11)
 print('Global out:')
 print('=' * 11)
@@ -138,3 +143,22 @@ print("="*40)
 x0 = numpy.zeros(N)
 res2 = scipy.optimize.basinhopping(LJ.fun, x0)
 print(res2)
+
+print("="*30)
+print("="*30)
+print("Optimizing with TGO...")
+print("="*40)
+res3 = tgo(LJ.fun, LJ._bounds, options=options, n=1000)
+print(res3)
+print("="*40)
+print("="*40)
+print('tgo.res.nfev = {}'.format(res3.nfev))
+print('shgo.res.nfev = {}'.format(res.nfev))
+print('basinhopping.res.nfev = {}'.format(res2.nfev))
+
+print('shgo.res.xl = {}'.format(res.xl))
+print('tgo.res.xl = {}'.format(res3.xl))
+print('shgo.res.fun = {}'.format(res.fun))
+print('tgo.res.fun = {}'.format(res3.fun))
+
+
