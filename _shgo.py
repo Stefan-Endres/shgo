@@ -854,7 +854,7 @@ class SHGO(object):
             self.fun_min_glob.append(lres.fun[0])
         except IndexError:
             self.fun_min_glob.append(lres.fun)
-n
+
         return lres
 
     def delaunay_triangulation(self):
