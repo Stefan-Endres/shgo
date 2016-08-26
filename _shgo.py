@@ -17,7 +17,7 @@ except ImportError:
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
-         multiproc=False):  #TODO: Update documentation
+         multiproc=False, crystal_mode=False):  #TODO: Update documentation
     """
     Finds the global minima of a function using topograhphical global
     optimisation.
@@ -276,14 +276,22 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     # Initiate TGO class
     SHc= SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
               iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-              options=options, multiproc=multiproc)
+              options=options, multiproc=multiproc, crystal_mode=crystal_mode)
 
     # Generate sampling points
     if SHc.disp:
         print('Generating sampling points')
 
     # Construct directed complex.
-    SHc.construct_complex_sobol()
+
+    if SHc.crystal_mode and not SHc.break_routine:
+        logging.info('Attempting to grow crystal complex')
+        SHc.construct_complex_sobol_iter()
+
+    else:
+        logging.info('Attempting to build sobol sampled crystal')
+        SHc.construct_complex_sobol()
+
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -311,8 +319,9 @@ class SHGO(object):
 
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False):
+                 options=None, multiproc=False, crystal_mode=False):
 
+        self.crystal_mode = crystal_mode
         self.func = func
         self.bounds = bounds
         self.args = args
@@ -500,6 +509,156 @@ class SHGO(object):
                 self.res.nfev = self.fn
                 sample = False
         pass
+
+
+    def construct_complex_sobol_iter(self, n_growth_init=50):
+        """
+        Construct a complex based on the Sobol sequence
+        """
+        # Construct initial sampling pool
+        self.n = self.dim + 1 # Minimum vertexes required to build complex
+        self.n = self.dim + 2 # Minimum vertexes required to build complex
+                                # (only 2D test functions at the moment)
+
+        self.n = self.dim**2 + 2
+
+        # ^Run initial contructor for table top avoidance
+    #    logging.info('Run initial contructor for table top avoidance')
+    #    self.sampling()
+    #    logging.info('self.C = {}'.format(self.C))
+    #    self.construct_complex_sobol()
+    #    logging.info('First Sobol iteration grown')
+    #    self.processed_n = self.n
+
+        # Start iterative complex growth
+        self.processed_n = 0
+        self.X_min_all = []
+        self.minimizer_pool_F_all = []
+        grow_complex = True
+        #homology_group_differential = n_growth_init
+        n_pool = n_growth_init
+        n_growth = 0
+        homology_group_prev = 0#len(self.minimizer_pool)
+        homology_group_differential = 0
+    #    self.n = n_growth_init
+
+        while grow_complex:
+            self.sampling()
+        #    self.C = self.C[self.processed_n:, :]
+
+            # Find subspace of feasible points
+            if self.g_cons is not None:
+                #TODO: Adapt sampling_subpace to not process old points
+                self.sampling_subspace()
+            else:
+                self.fn = self.n
+
+            # Sort remaining samples
+            self.sorted_samples()
+
+            # Find objective function references
+            self.fun_ref()
+
+            # Find minimiser pool
+            # DIMENSIONS self.dim
+            if self.dim < 2:  # Scalar objective functions
+                if self.disp:
+                    print('Constructing 1D minimizer pool')
+
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.X_min = self.minimizers()
+
+            else:  # Multivariate functions.
+                if self.disp:
+                    print('Constructing Gabrial graph and minimizer pool')
+
+            #    logging.info('Growing crystal with self.C = {}'.format(self.C))
+                self.delaunay_triangulation(grow=True,
+                                            n_prc=self.processed_n)
+                if self.disp:
+                    print('Triangulation completed, building minimizer pool')
+
+                logging.info('Complex constructed...'
+                             'looking for minimizer pool:')
+
+                self.X_min = self.delaunay_minimizers()
+
+            logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+
+            if not len(self.minimizer_pool) == 0:
+                self.X_min_all.append(self.X_min)
+                self.minimizer_pool_F_all.append(self.minimizer_pool_F)
+                homology_group = len(self.minimizer_pool)
+            else:
+                homology_group = 0
+
+            logging.info('homology_group ='
+                         ' {}'.format(homology_group))
+            logging.info('homology_group_differential ='
+                         ' {}'.format(homology_group_differential))
+            logging.info('n_pool ='
+                         ' {}'.format(n_pool))
+
+            if homology_group > homology_group_prev:
+                #homology_group_differential += homology_group * 10 #hyperparam
+                #homology_group_differential += 10
+                #homology_group - homology_group_prev
+                hgd_new = self.n - n_growth
+                homology_group_differential = max(hgd_new,
+                                                  homology_group_differential)
+                homology_group_prev = homology_group
+
+                if self.fn < n_growth_init:
+                    n_pool += homology_group_differential
+                else:
+                    n_pool = homology_group_differential * self.dim
+                #^^ Should be set equal to this?
+                n_growth = self.n
+            else:
+                n_pool -= 1
+                self.n += 1
+
+            if n_pool== 0:
+                grow_complex = False
+                pass
+            #if homology_group == 0:
+            #    pass
+
+
+            #else:  # If good values are found stop while loop
+                # Include each sampling point as func evaluation:
+            self.res.nfev = self.fn
+
+            self.processed_n = self.fn#self.n
+            #self.n += 1
+
+
+        #for x_min_array in range(len(self.X_min_all)):
+        logging.info('len(self.X_min_all) = {}'.format(len(self.X_min_all)))
+        logging.info('self.X_min_all = {}'.format(self.X_min_all))
+        if len(self.X_min_all) == 1:
+            self.X_min = self.X_min_all[0]
+        for i in range(1, len(self.X_min_all)):
+            self.X_min = numpy.concatenate((self.X_min_all[i-1],
+                                            self.X_min_all[i]), axis=0)
+
+            self.minimizer_pool_F = self.minimizer_pool_F_all
+            # need to process?
+
+        #TODO Eliminate duplicates
+
+
+        # Break if no final minima found
+        logging.info('self.X_min = {}'.format(self.X_min))
+        if len(self.X_min) == 0:
+            self.break_routine = True
+            self.res.message = 'No minimizers found in crystal growth mode'
+            self.res.success = False
+            if self.disp:
+                print("Failed to find non-zero set of minimzers in crystal"
+                      "growrth mode complex construction")
+
 
     def sobol_points(self, N, D):
         """
@@ -857,9 +1016,16 @@ class SHGO(object):
 
         return lres
 
-    def delaunay_triangulation(self):
+    def delaunay_triangulation(self, grow=False, n_prc=0):
         from scipy.spatial import Delaunay
-        self.Tri = Delaunay(self.C)
+        if not grow:
+            self.Tri = Delaunay(self.C)
+        else:
+            try:
+                self.Tri.add_points(self.C[n_prc:, :])
+            except AttributeError:  #TODO: Fix in main algorithm
+                self.Tri = Delaunay(self.C, incremental=True)
+
         return self.Tri
 
     def find_neighbors(self, pindex, triang):
@@ -868,6 +1034,9 @@ class SHGO(object):
         chain subgraph of the Delaunay triangulation.
 
         """
+    #    logging.info('triang.vertices = {}'.format(triang.vertices))
+    #    logging.info('triang.points = {}'.format(triang.points))
+    #    logging.info('pindex = {}'.format(pindex))
         return triang.vertex_neighbor_vertices[1][
                triang.vertex_neighbor_vertices[0][pindex]:
                triang.vertex_neighbor_vertices[0][pindex + 1]]
@@ -880,6 +1049,7 @@ class SHGO(object):
 
         # Find finite deference between each point
         for g_i in G_ind:
+        #    logging.info('self.F[g_i] ={}'.format(self.F[g_i]))
             rel_topo_bool = self.F[ind] < self.F[g_i]
             self.Xi_ind_topo_i.append(rel_topo_bool)
 
@@ -895,10 +1065,14 @@ class SHGO(object):
         """
         Returns the indexes of all minimizers
         """
-        pass
         self.minimizer_pool = []
         # TODO: Can easily be parralized
+    #    logging.info('self.fn = {}'.format(self.fn))
+    #    logging.info('self.n = {}'.format(self.n))
+    #    logging.info('numpy.shape(self.C)'
+    #                 ' = {}'.format(numpy.shape(self.C)))
         for ind in range(self.fn):
+        #    logging.info('ind = {}'.format(ind))
             Min_bool = self.sample_delaunay_topo(ind)
             if Min_bool:
                 self.minimizer_pool.append(ind)
@@ -907,8 +1081,9 @@ class SHGO(object):
 
         # Sort to find minimum func value in min_pool
         self.sort_min_pool()
-
-        self.X_min = self.C[self.minimizer_pool]
+        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        if not len(self.minimizer_pool) == 0:
+            self.X_min = self.C[self.minimizer_pool]
 
         return self.X_min
 

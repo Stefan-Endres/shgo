@@ -112,6 +112,7 @@ class LennardJones(Benchmark):
 atoms = 2
 atoms = 10#38
 atoms = 3
+atoms = 2
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
@@ -121,7 +122,10 @@ options = {'disp': True}
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=100)
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
 
-res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
+res = shgo(LJ.fun, LJ._bounds, options=options, n=50, crystal_mode=True)
+
+#shgo(test.f, test.bounds, args=args, g_cons=test.g,
+#                    g_args=g_args, n=100, iter=None, crystal_mode=True)
 print('=' * 11)
 print('Global out:')
 print('=' * 11)
@@ -163,5 +167,7 @@ print('tgo.res.xl = {}'.format(res3.xl))
 print('basinhopping.res.fun = {}'.format(res2.fun))
 print('shgo.res.fun = {}'.format(res.fun))
 print('tgo.res.fun = {}'.format(res3.fun))
-
+#print('len(basinhopping.res.fun) = {}'.format(len(res2.xl)))
+print('len(shgo.res.xl) = {}'.format(len(res.xl)))
+print('len(tgo.res.fun) = {}'.format(len(res3.xl)))
 

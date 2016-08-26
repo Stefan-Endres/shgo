@@ -324,7 +324,7 @@ def run_test(test, args=(), g_args=()):
                   g_args=g_args, n=100)
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=None)
+                    g_args=g_args, n=100, iter=None, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -343,7 +343,7 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000)
+                    g_args=g_args, n=1000, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -371,9 +371,10 @@ def run_test(test, args=(), g_args=()):
 
         logging.info("=" * 100)
         #print("Axial TGO: ")
-        logging.info("Delaunay TGO: ")
+        logging.info("Simplicial Homology Global Optimization: ")
         logging.info("-" * 44)
         logging.info('nlfev = {}'.format(ares.nlfev))
+        logging.info('nfev = {}'.format(ares.nfev))
         logging.info('len(res.xl)= {}'.format(len(ares.xl)))
         ares.funl = numpy.around(ares.funl, tol)
         Uniq = numpy.unique(ares.funl)
