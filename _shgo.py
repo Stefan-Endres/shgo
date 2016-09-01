@@ -898,19 +898,11 @@ class SHGO(object):
         Returns the indexes of all minimizers
         """
         self.minimizer_pool = []
-        logging.info('self.fn = {}'.format(self.fn))
-        logging.info('self.F = {}'.format(self.F))
-        logging.info('self.Ftp = {}'.format(self.Ftp))
-        logging.info('self.Ftm = {}'.format(self.Ftm))
         #TODO: Can be parralized
         for ind in range(self.fn):
             Min_bool = self.sample_topo(ind)
             if Min_bool:
                 self.minimizer_pool.append(ind)
-
-        logging.info('len(self.minimizer_pool)'
-                     '= {}'.format(len(self.minimizer_pool)))
-
 
         self.minimizer_pool_F = self.F[self.minimizer_pool]
 
@@ -919,10 +911,7 @@ class SHGO(object):
         if not len(self.minimizer_pool) == 0:
             self.X_min = self.C[self.minimizer_pool]
             # If function is called again and pool is found unbreak:
-            self.break_routine = False
         else:
-            self.break_routine = True
-            self.no_min_pool = True
             return []
 
         return self.X_min
