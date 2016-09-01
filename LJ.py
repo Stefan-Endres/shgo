@@ -2,6 +2,10 @@ from _shgo import shgo
 from _tgo import tgo
 import scipy.optimize
 import numpy
+import logging
+import sys
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 
 class Benchmark(object):
     def __init__(self, N=6):
@@ -113,11 +117,13 @@ atoms = 2
 atoms = 10#38
 atoms = 3
 atoms = 2
+atoms = 3
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
 
 options = {'disp': True}
+options = {'disp': False}
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=40)
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=100)
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
@@ -158,12 +164,11 @@ res3 = tgo(LJ.fun, LJ._bounds, options=options, n=100)
 print(res3)
 print("="*40)
 print("="*40)
+print('shgo.res.xl = {}'.format(res.xl))
+print('tgo.res.xl = {}'.format(res3.xl))
 print('tgo.res.nfev = {}'.format(res3.nfev))
 print('shgo.res.nfev = {}'.format(res.nfev))
 print('basinhopping.res.nfev = {}'.format(res2.nfev))
-
-print('shgo.res.xl = {}'.format(res.xl))
-print('tgo.res.xl = {}'.format(res3.xl))
 print('basinhopping.res.fun = {}'.format(res2.fun))
 print('shgo.res.fun = {}'.format(res.fun))
 print('tgo.res.fun = {}'.format(res3.fun))
@@ -171,3 +176,13 @@ print('tgo.res.fun = {}'.format(res3.fun))
 print('len(shgo.res.xl) = {}'.format(len(res.xl)))
 print('len(tgo.res.fun) = {}'.format(len(res3.xl)))
 
+
+tol = 5
+res.funl = numpy.around(res.funl, tol)
+res3.funl = numpy.around(res3.funl, tol)
+
+shgo_uniq = numpy.unique(res.funl)
+tgo_uniq = numpy.unique(res3.funl)
+
+print('Unique local minima SHGO = {}'.format(len(shgo_uniq)))
+print('Unique local minima TGO = {}'.format(len(tgo_uniq)))

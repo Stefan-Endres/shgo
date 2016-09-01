@@ -343,7 +343,7 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000, crystal_mode=True)
+                    g_args=g_args, n=1000)#, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -360,6 +360,7 @@ def run_test(test, args=(), g_args=()):
         logging.info("Topographical Global Optimization: ")
         logging.info("-" * 34)
         logging.info('nlfev = {}'.format(res.nlfev))
+        logging.info('nfev = {}'.format(res.nfev))
         logging.info('len(res.xl)= {}'.format(len(res.xl)))
         tol = 5
         res.funl = numpy.around(res.funl, tol)

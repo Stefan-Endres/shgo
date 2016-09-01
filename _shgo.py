@@ -511,7 +511,7 @@ class SHGO(object):
         pass
 
 
-    def construct_complex_sobol_iter(self, n_growth_init=50):
+    def construct_complex_sobol_iter(self, n_growth_init=30):
         """
         Construct a complex based on the Sobol sequence
         """
@@ -521,7 +521,9 @@ class SHGO(object):
                                 # (only 2D test functions at the moment)
 
         self.n = self.dim**2 + 2
-
+        logging.info("self.dim = {}".format(self.dim))
+        logging.info("Constructing initial complex"
+                     " with self.n = {}".format(self.n ))
         # ^Run initial contructor for table top avoidance
     #    logging.info('Run initial contructor for table top avoidance')
     #    self.sampling()
@@ -543,15 +545,29 @@ class SHGO(object):
     #    self.n = n_growth_init
 
         while grow_complex:
-            self.sampling()
-        #    self.C = self.C[self.processed_n:, :]
+            sample_loop = True
+            # Sample untill enough points in subspace is found
+            self.n_cons = self.n  # Desired sampling points
+            while sample_loop:
+                self.sampling()
+            #    self.C = self.C[self.processed_n:, :]
 
-            # Find subspace of feasible points
-            if self.g_cons is not None:
-                #TODO: Adapt sampling_subpace to not process old points
-                self.sampling_subspace()
-            else:
-                self.fn = self.n
+                # Find subspace of feasible points
+                if self.g_cons is not None:
+                    #TODO: Adapt sampling_subpace to not process old points
+                    self.sampling_subspace()
+                else:
+                    self.fn = self.n
+
+                if numpy.shape(self.C)[0] < self.n_cons:
+                    self.n += 1
+                    logging.info('Subspace search increased to '
+                                 'self.n = {}'.format(self.n ))
+                else:
+                    sample_loop = False
+
+            # Reset to actual sampling points used
+            self.n = self.n_cons
 
             # Sort remaining samples
             self.sorted_samples()
@@ -574,6 +590,9 @@ class SHGO(object):
                     print('Constructing Gabrial graph and minimizer pool')
 
             #    logging.info('Growing crystal with self.C = {}'.format(self.C))
+                logging.info('Adding vertex to complex, current size = '
+                             '{}'.format(self.processed_n))
+
                 self.delaunay_triangulation(grow=True,
                                             n_prc=self.processed_n)
                 if self.disp:
@@ -636,7 +655,7 @@ class SHGO(object):
 
         #for x_min_array in range(len(self.X_min_all)):
         logging.info('len(self.X_min_all) = {}'.format(len(self.X_min_all)))
-        logging.info('self.X_min_all = {}'.format(self.X_min_all))
+        #logging.info('self.X_min_all = {}'.format(self.X_min_all))
         if len(self.X_min_all) == 1:
             self.X_min = self.X_min_all[0]
         for i in range(1, len(self.X_min_all)):
@@ -650,7 +669,7 @@ class SHGO(object):
 
 
         # Break if no final minima found
-        logging.info('self.X_min = {}'.format(self.X_min))
+        #logging.info('self.X_min = {}'.format(self.X_min))
         if len(self.X_min) == 0:
             self.break_routine = True
             self.res.message = 'No minimizers found in crystal growth mode'
@@ -659,6 +678,10 @@ class SHGO(object):
                 print("Failed to find non-zero set of minimzers in crystal"
                       "growrth mode complex construction")
 
+        # After the complex is completed count the function evaluations used:
+        if self.dim > 1:
+            logging.info('self.Tri.points = {}'.format(len(self.Tri.points)))
+            self.res.nfev = len(self.Tri.points)
 
     def sobol_points(self, N, D):
         """
@@ -875,19 +898,32 @@ class SHGO(object):
         Returns the indexes of all minimizers
         """
         self.minimizer_pool = []
+        logging.info('self.fn = {}'.format(self.fn))
+        logging.info('self.F = {}'.format(self.F))
+        logging.info('self.Ftp = {}'.format(self.Ftp))
+        logging.info('self.Ftm = {}'.format(self.Ftm))
         #TODO: Can be parralized
         for ind in range(self.fn):
             Min_bool = self.sample_topo(ind)
             if Min_bool:
                 self.minimizer_pool.append(ind)
 
+        logging.info('len(self.minimizer_pool)'
+                     '= {}'.format(len(self.minimizer_pool)))
+
 
         self.minimizer_pool_F = self.F[self.minimizer_pool]
 
         # Sort to find minimum func value in min_pool
         self.sort_min_pool()
-
-        self.X_min = self.C[self.minimizer_pool]
+        if not len(self.minimizer_pool) == 0:
+            self.X_min = self.C[self.minimizer_pool]
+            # If function is called again and pool is found unbreak:
+            self.break_routine = False
+        else:
+            self.break_routine = True
+            self.no_min_pool = True
+            return []
 
         return self.X_min
 
