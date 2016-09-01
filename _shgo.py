@@ -521,6 +521,8 @@ class SHGO(object):
                                 # (only 2D test functions at the moment)
 
         self.n = self.dim**2 + 2
+        n_growth_init = 2 * self.n #TODO: TESTING THIS
+
         logging.info("self.dim = {}".format(self.dim))
         logging.info("Constructing initial complex"
                      " with self.n = {}".format(self.n ))
@@ -556,13 +558,14 @@ class SHGO(object):
                 if self.g_cons is not None:
                     #TODO: Adapt sampling_subpace to not process old points
                     self.sampling_subspace()
+                    self.fn = numpy.shape(self.C)[0]
                 else:
                     self.fn = self.n
 
                 if numpy.shape(self.C)[0] < self.n_cons:
                     self.n += 1
-                    logging.info('Subspace search increased to '
-                                 'self.n = {}'.format(self.n ))
+                    #logging.info('Subspace search increased to '
+                    #             'self.n = {}'.format(self.n ))
                 else:
                     sample_loop = False
 
@@ -603,10 +606,10 @@ class SHGO(object):
 
                 self.X_min = self.delaunay_minimizers()
 
-            logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+            #logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
 
             if not len(self.minimizer_pool) == 0:
-                self.X_min_all.append(self.X_min)
+                #self.X_min_all.append(self.X_min)
                 self.minimizer_pool_F_all.append(self.minimizer_pool_F)
                 homology_group = len(self.minimizer_pool)
             else:
@@ -646,26 +649,28 @@ class SHGO(object):
 
 
             #else:  # If good values are found stop while loop
-                # Include each sampling point as func evaluation:
-            self.res.nfev = self.fn
-
             self.processed_n = self.fn#self.n
             #self.n += 1
 
 
-        #for x_min_array in range(len(self.X_min_all)):
-        logging.info('len(self.X_min_all) = {}'.format(len(self.X_min_all)))
-        #logging.info('self.X_min_all = {}'.format(self.X_min_all))
-        if len(self.X_min_all) == 1:
-            self.X_min = self.X_min_all[0]
-        for i in range(1, len(self.X_min_all)):
-            self.X_min = numpy.concatenate((self.X_min_all[i-1],
-                                            self.X_min_all[i]), axis=0)
 
-            self.minimizer_pool_F = self.minimizer_pool_F_all
-            # need to process?
+        # This is not needed since old minima found are less likely to be
+        # unique at higher homology groups anyway.
+        if 0:
+            #for x_min_array in range(len(self.X_min_all)):
+            logging.info('len(self.X_min_all) ='
+                         ' {}'.format(len(self.X_min_all)))
+            #logging.info('self.X_min_all = {}'.format(self.X_min_all))
+            if len(self.X_min_all) == 1:
+                self.X_min = self.X_min_all[0]
+            for i in range(1, len(self.X_min_all)):
+                self.X_min = numpy.concatenate((self.X_min_all[i-1],
+                                                self.X_min_all[i]), axis=0)
 
-        #TODO Eliminate duplicates
+                self.minimizer_pool_F = self.minimizer_pool_F_all
+                # need to process?
+
+            #TODO Eliminate duplicates
 
 
         # Break if no final minima found
@@ -682,6 +687,11 @@ class SHGO(object):
         if self.dim > 1:
             logging.info('self.Tri.points = {}'.format(len(self.Tri.points)))
             self.res.nfev = len(self.Tri.points)
+            #logging.info('self.Tri.points '
+            #             '= {}'.format(self.Tri.points))
+        else:
+            # Include each sampling point as func evaluation:
+            self.res.nfev = self.fn
 
     def sobol_points(self, N, D):
         """
