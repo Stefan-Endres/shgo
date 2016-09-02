@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+"""
+Run examples:
+$ python go_bench.py -s shgo
+$ python go_bench.py -s shgo tgo de bh
+$ python go_bench.py -s shgo -debug True
+"""
+
 from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.optimize
