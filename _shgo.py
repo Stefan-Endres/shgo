@@ -346,6 +346,8 @@ class SHGO(object):
             if 'disp' in options:
                 self.disp = options['disp']
 
+            self.options = None
+
         # set bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
@@ -634,7 +636,7 @@ class SHGO(object):
                 if self.fn < n_growth_init:
                     n_pool += homology_group_differential
                 else:
-                    n_pool = homology_group_differential * self.dim
+                    n_pool = homology_group_differential #* self.dim
                 #^^ Should be set equal to this?
                 n_growth = self.n
             else:
@@ -1046,7 +1048,7 @@ class SHGO(object):
         self.x_min_glob.append(lres.x)
         try:  # Needed because of the brain dead 1x1 numpy arrays
             self.fun_min_glob.append(lres.fun[0])
-        except IndexError:
+        except (IndexError, TypeError):
             self.fun_min_glob.append(lres.fun)
 
         return lres
