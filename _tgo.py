@@ -660,7 +660,6 @@ class TGO(object):
             K_i = self.k_t_matrix(self.T, i)
             k_i = len(self.minimizers(K_i))
             i += 1
-            print(i)
 
         ep = i * k_i / (k_1 - k_i)
         k_c = numpy.floor((-(ep - 1) + numpy.sqrt((ep - 1.0)**2 + 80.0 * ep))
