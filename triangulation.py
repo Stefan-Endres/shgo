@@ -116,25 +116,8 @@ class Complex():
                 Si_new_l.append(ind)
 
             # New "upper" simplex
-            if 0:
-                Si_new_u = []
-                Si_new_u.append(Si[1])  # <---- 1
-                # NOTE: ^ I "believe" that this vertex needs to be selected based
-                # on the current generation permutation
-                # (a value between 0 and dim +1)
-                # Since the index > 1 vertices will never be used otherwise
-                Si_new_u.append(i_new)
-                for ind in Si[2:]:
-                    Si_new_u.append(ind)
-
-            ###################################################################
-            # New new new "upper" simplex
             Si_new_u = []
             Si_new_u.append(Si[gci + 1])
-            # NOTE: ^ I "believe" that this vertex needs to be selected based
-            # on the current generation permutation
-            # (a value between 0 and dim +1)
-            # Since the index > 1 vertices will never be used otherwise
 
             for k, ind in enumerate(Si[1:-1]):  # iterate through inner vertices
                 #for easier k / gci tracking
@@ -148,21 +131,6 @@ class Complex():
                     Si_new_u.append(ind)
 
             Si_new_u.append(Si[-1])
-            ###################################################################
-            # New new "upper" simplex
-            if 0:
-                Si_new_u = []
-                Si_new_u.append(Si[-2])  # <---- 1
-                # NOTE: ^ I "believe" that this vertex needs to be selected based
-                # on the current generation permutation
-                # (a value between 0 and dim +1)
-                # Since the index > 1 vertices will never be used otherwise
-                Si_new_u.append(i_new)
-                for ind in Si[1:-2]:
-                    Si_new_u.append(ind)
-
-                Si_new_u.append(Si[-1])
-            ###################################################################
 
             # Append to new complex
             Ci_new.append(Si_new_l)
