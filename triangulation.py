@@ -25,6 +25,42 @@ class Complex():
 
             # Intiate first generation of vertices
 
+    def n_cube(self, dim, printout=False, symmetry=False):
+        """
+        Generate the simplicial triangulation of the n cube
+        containing 2**n vertices
+        """
+        import numpy
+        import itertools
+
+        permgroups = list(itertools.permutations(range(dim)))
+        self.permgroups = permgroups
+        # Build the D set feasible region to use for symmetery groups later:
+        D = [[0, 1], ] * dim  # Domain := hypercube
+        D = numpy.array(D)
+
+        C = []
+        for tau in permgroups:  # n! simplices
+            S = numpy.tile(D[:, 0], (dim + 1, 1))
+
+            for i in range(dim):
+                for j in range(dim):
+                    S[i + 1] = S[i]
+                    # (Needed since looping through i will use these)
+
+                tau[i]
+                S[i + 1][tau[i]] = D[tau[i], 1]
+
+            # TODO: Loop and identify vertices
+            C.append(S)
+
+        if printout:
+            self.print_complex(permgroups, C)
+
+        self.C = C
+
+        return C
+
     def n_cube(self, dim, printout=False):
         """
         Generate the simplicial triangulation of the n cube
@@ -182,14 +218,16 @@ class Complex():
         self.Ci = Ci
         return Ci
 
-    def generate_vertex(self, x):
+    def generate_vertex(self, x, check=True):
         """
         x: vector of cartesian coordinates
+        check_for_unique : Boolean, If true all vertices are looped through
+                                    to ensure that x is not already in self.V
         """
-        import numpy as np
-        for i, v in enumerate(self.V):
-            if (x == v).all():
-                return i  # return if vertex is found without generating
+        if check:
+            for i, v in enumerate(self.V):
+                if (x == v).all():
+                    return i  # return if vertex is found without generating
 
         self.V.append(x)
         self.i_current[0] = next(self.i_gen[0])
