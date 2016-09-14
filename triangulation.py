@@ -31,6 +31,20 @@ class Complex():
         containing 2**n vertices
         """
         import numpy
+
+        # Symmetry simplex:
+        if symmetry:
+            C = []
+            S = numpy.ones([dim + 1, dim])
+            for i in range(dim + 1):
+                S[i, :-i] = 0
+
+            S[0, :] = 0
+            C.append(S)
+            self.C = C
+            return C
+
+        # else:
         import itertools
 
         permgroups = list(itertools.permutations(range(dim)))
@@ -51,7 +65,6 @@ class Complex():
                 tau[i]
                 S[i + 1][tau[i]] = D[tau[i], 1]
 
-            # TODO: Loop and identify vertices
             C.append(S)
 
         if printout:
@@ -61,41 +74,6 @@ class Complex():
 
         return C
 
-    def n_cube(self, dim, printout=False):
-        """
-        Generate the simplicial triangulation of the n cube
-        containing 2**n vertices
-        """
-        import numpy
-        import itertools
-
-        permgroups = list(itertools.permutations(range(dim)))
-        self.permgroups = permgroups
-        # Build the D set feasible region to use for symmetery groups later:
-        D = [[0, 1], ] * dim  # Domain := hypercube
-        D = numpy.array(D)
-
-        C = []
-        for tau in permgroups:  # n! simplices
-            S = numpy.tile(D[:, 0], (dim + 1, 1))
-
-            for i in range(dim):
-                for j in range(dim):
-                    S[i + 1] = S[i]
-                    # (Needed since looping through i will use these)
-
-                tau[i]
-                S[i + 1][tau[i]] = D[tau[i], 1]
-
-            # TODO: Loop and identify vertices
-            C.append(S)
-
-        if printout:
-            self.print_complex(permgroups, C)
-
-        self.C = C
-
-        return C
 
     def split_generation(self, Ci, V, build_complex_array=False):
         """
@@ -358,22 +336,53 @@ class Complex():
         print('Simplices S = {}'.format(self.S))
 
 if __name__ == '__main__':
-    from matplotlib import pyplot
-    # Generate intial simplex
-    dim = 3
-    HC = Complex(dim)
-    print('HC.dim = {}'.format(HC.dim))
-    C = HC.n_cube(dim, printout=False)
-    HC.initial_vertices(C, dim)
-    Ci = HC.index_simplices(C)  # = HC.Ci
+    if 1:
+        from matplotlib import pyplot
+        #for D in range(60):
+        dim = 60
+        HC = Complex(dim)
+        C = HC.n_cube(dim, printout=False, symmetry=True)
+        HC.initial_vertices(C, dim)
+        Ci = HC.index_simplices(C)  # = HC.Ci
 
-    for i in range(10):
-        HC.plot_complex(HC.C)
-        HC.plot_complex([HC.C[0]])
-        print(HC.C[-1])
-        # HC.plot_complex([HC.C[1]])
-        Ci_new, C_new = HC.split_generation(HC.Ci, HC.V,
-                                            build_complex_array=True)
-        print(".generation_cycle = {}".format(HC.generation_cycle))
+        for i in range(20):
+            print(HC.C[-1])
+            # HC.plot_complex([HC.C[1]])
+            Ci_new = HC.split_generation(HC.Ci, HC.V,
+                                                build_complex_array=False)
+            print(Ci_new)
+            print(HC.V)
+            print(".generation_cycle = {}".format(HC.generation_cycle))
 
-    pyplot.show()
+        if 0:
+            for i in range(10):
+                HC.plot_complex(HC.C)
+                HC.plot_complex([HC.C[0]])
+                print(HC.C[-1])
+                # HC.plot_complex([HC.C[1]])
+                Ci_new, C_new = HC.split_generation(HC.Ci, HC.V,
+                                                    build_complex_array=True)
+                print(".generation_cycle = {}".format(HC.generation_cycle))
+
+            pyplot.show()
+
+    if 0:
+        from matplotlib import pyplot
+        # Generate intial simplex
+        dim = 3
+        HC = Complex(dim)
+        #print('HC.dim = {}'.format(HC.dim))
+        C = HC.n_cube(dim, printout=False)
+        HC.initial_vertices(C, dim)
+        Ci = HC.index_simplices(C)  # = HC.Ci
+
+        for i in range(10):
+            HC.plot_complex(HC.C)
+            HC.plot_complex([HC.C[0]])
+            print(HC.C[-1])
+            # HC.plot_complex([HC.C[1]])
+            Ci_new, C_new = HC.split_generation(HC.Ci, HC.V,
+                                                build_complex_array=True)
+            print(".generation_cycle = {}".format(HC.generation_cycle))
+
+        pyplot.show()
