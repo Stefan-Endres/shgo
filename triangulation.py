@@ -284,7 +284,7 @@ class Complex():
 
             pyplot.ylim([-1e-2, 1 + 1e-2])
             pyplot.xlim([-1e-2, 1 + 1e-2])
-            pyplot.show()
+            #pyplot.show()
 
         elif dims == 3:
             from mpl_toolkits.mplot3d import Axes3D
@@ -336,7 +336,7 @@ class Complex():
         print('Simplices S = {}'.format(self.S))
 
 if __name__ == '__main__':
-    if 1:
+    if 0:
         from matplotlib import pyplot
         #for D in range(60):
         dim = 60
@@ -345,13 +345,15 @@ if __name__ == '__main__':
         HC.initial_vertices(C, dim)
         Ci = HC.index_simplices(C)  # = HC.Ci
 
-        for i in range(20):
+        for i in range(22):
             print(HC.C[-1])
             # HC.plot_complex([HC.C[1]])
             Ci_new = HC.split_generation(HC.Ci, HC.V,
                                                 build_complex_array=False)
-            print(Ci_new)
-            print(HC.V)
+            #print(Ci_new)
+            #print(HC.V)
+            print('len(HC.V) = {}'.format(len(HC.V)))
+            print('len(Ci_new) = {}'.format(len(Ci_new)))
             print(".generation_cycle = {}".format(HC.generation_cycle))
 
         if 0:
@@ -366,10 +368,10 @@ if __name__ == '__main__':
 
             pyplot.show()
 
-    if 0:
+    if 1:
         from matplotlib import pyplot
         # Generate intial simplex
-        dim = 3
+        dim = 2
         HC = Complex(dim)
         #print('HC.dim = {}'.format(HC.dim))
         C = HC.n_cube(dim, printout=False)
@@ -385,4 +387,4 @@ if __name__ == '__main__':
                                                 build_complex_array=True)
             print(".generation_cycle = {}".format(HC.generation_cycle))
 
-        pyplot.show()
+    pyplot.show()
