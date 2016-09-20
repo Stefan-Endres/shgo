@@ -25,7 +25,9 @@ class FunctionCache:
         if x in self.cache:
             return self.cache[x]
         else:
-            value = self.f(x)
+            import numpy
+            x_a = numpy.array(x)
+            value = self.f(x_a)
             self.cache[x] = value
             return value
 
@@ -35,13 +37,13 @@ def objective_fun(x):
 
 print("blah")
 
-def f2(blac):
-    a = objective_fun
-    objective_fun = 2
+#def f2(blac):
+#    a = objective_fun
+#    objective_fun = 2
 
 print("after")
 
-f2(2)
+#f2(2)
 
 f_cached = FunctionCache(objective_fun)
 
