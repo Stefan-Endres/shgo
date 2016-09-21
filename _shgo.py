@@ -17,7 +17,10 @@ except ImportError:
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
-         multiproc=False, crystal_mode=False):  #TODO: Update documentation
+         multiproc=False, crystal_mode=False, sampling_method='sobol'):
+    #TODO: Update documentation
+
+    # sampling_method: str, options = 'sobol', 'simplicial'
     """
     Finds the global minima of a function using topograhphical global
     optimisation.
@@ -276,7 +279,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     # Initiate TGO class
     SHc= SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
               iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-              options=options, multiproc=multiproc, crystal_mode=crystal_mode)
+              options=options, multiproc=multiproc, crystal_mode=crystal_mode,
+              sampling_method='sobol')
 
     # Generate sampling points
     if SHc.disp:
@@ -286,12 +290,16 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 
     if SHc.crystal_mode and not SHc.break_routine:
         logging.info('Attempting to grow crystal complex')
-        SHc.construct_complex_sobol_iter()
-
+        if sampling_method == 'sobol':
+            SHc.construct_complex_sobol_iter()
+        elif sampling_method == 'simplicial':
+            SHc.construct_complex_simplicial()
     else:
         logging.info('Attempting to build sobol sampled crystal')
-        SHc.construct_complex_sobol()
-
+        if sampling_method == 'sobol':
+            SHc.construct_complex_sobol()
+        elif sampling_method == 'simplicial':
+            raise IOError('Not implemented yet')
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -319,9 +327,12 @@ class SHGO(object):
 
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False, crystal_mode=False):
+                 options=None, multiproc=False, crystal_mode=False,
+                 sampling_method='sobol'):
 
         self.crystal_mode = crystal_mode
+        #self.sampling = sampling
+        self.sampling_method = sampling_method
         self.func = func
         self.bounds = bounds
         self.args = args
@@ -439,6 +450,103 @@ class SHGO(object):
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
+    def construct_complex_simplicial(self):
+        from triangulation import Complex
+
+        # Initiate complex
+        self.n = self.dim + 1
+        HC = Complex(self.dim)
+        self.HC = HC
+
+        C = self.HC.n_cube(self.dim, printout=False)
+        self.HC.initial_vertices(C, self.dim)
+        Ci = self.HC.index_simplices(C)
+        self.C = self.HC.V[0]
+
+        for i in range(len(self.HC.V) - 1):
+            self.C = numpy.vstack((self.C, self.HC.V[i + 1]))
+
+        # stretch values
+        for i in range(len(self.bounds)):
+            self.C[:, i] = (self.C[:, i] *
+                            (self.bounds[i][1] - self.bounds[i][0])
+                            + self.bounds[i][0])
+
+        # Stretch values in complex class
+        self.HC.V = []
+        for vi in range(numpy.shape(self.C)[0]):
+            self.HC.V.append(self.C[vi, :])
+
+        self.Ci = Ci
+        # Containers
+        self.X_min_all = []
+        self.minimizer_pool_F_all = []
+
+        grow_complex = True
+        homology_group = 0
+        homology_group_prev = 0
+        iter = 2  # Max iterations with no pool growth
+
+        while grow_complex:
+            Ci_new = self.HC.split_generation(self.HC.Ci, self.HC.V,
+                                              build_complex_array=False)
+
+            #print(Ci_new)
+            self.Ci = Ci_new
+            self.HC.connected_vertices(0, Ci_new)
+            #print(HC.V)
+            self.C = HC.V[0]
+
+            # Stack self.C:
+            for i in range(len(HC.V)-1):
+                self.C = numpy.vstack((self.C, HC.V[i + 1]))
+
+            if self.g_cons is not None:
+                self.sampling_subspace()
+                self.fn = numpy.shape(self.C)[0]
+            else:
+                self.fn = numpy.shape(self.C)[0]
+
+            # Sort remaining samples
+            self.sorted_samples()
+
+            # Find objective function references
+            self.fun_ref()
+
+            # Build minimiser pool
+            # DIMENSIONS self.dim
+            if self.dim < 2: #UNTESTED
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.X_min = self.minimizers()
+
+            else:  # Multivariate functions.
+                self.X_min = self.simplex_minimizers()
+
+           # Continue loop if pool is zero to iterate
+            print('self.X_min = {}'.format(self.X_min ))
+            if len(self.minimizer_pool) == 0:
+                homology_group = 0
+                continue
+            else:
+                homology_group = len(self.minimizer_pool)
+                print('homology_group = {}'.format(homology_group))
+                print('homology_group_prev = {}'.format(homology_group_prev))
+                if homology_group > homology_group_prev:
+                    homology_group_prev = homology_group
+                    continue
+
+            print(iter)
+            if iter > 0:
+                iter -= 1
+            else:
+                # Stop growth if no new minimisers found:
+                grow_complex = False
+
+        self.res.nfev = self.fn
+        print('self.res.nfev = {}'.format(self.res.nfev))
+        self.processed_n = self.fn
+        self.n = numpy.shape(self.C)[0]
 
     def construct_complex_sobol(self):
         """
@@ -756,7 +864,7 @@ class SHGO(object):
 
             return points
 
-    def sampling(self, method='Sobol'):
+    def sampling(self, method='sobol'):
         """
         Generates uniform sampling points in a hypercube and scales the points
         to the bound limits.
@@ -766,7 +874,7 @@ class SHGO(object):
         self.m = len(self.bounds)  # Dimensions
 
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        if method == 'Sobol':
+        if method == 'sobol':
             self.C = self.sobol_points(self.n, self.m)
 
         # Distribute over bounds
@@ -1065,7 +1173,7 @@ class SHGO(object):
 
         return self.Tri
 
-    def find_neighbors(self, pindex, triang):
+    def find_neighbors_delaunay(self, pindex, triang):
         """
         Returns the indexes of points connected to ``pindex``  on the Gabriel
         chain subgraph of the Delaunay triangulation.
@@ -1082,7 +1190,7 @@ class SHGO(object):
         self.Xi_ind_topo_i = []
 
         # Find the position of the sample in the component Gabrial chain
-        G_ind = self.find_neighbors(ind, self.Tri)
+        G_ind = self.find_neighbors_delaunay(ind, self.Tri)
 
         # Find finite deference between each point
         for g_i in G_ind:
@@ -1124,6 +1232,53 @@ class SHGO(object):
 
         return self.X_min
 
+    def sample_simplex_topo(self, ind):
+        self.Xi_ind_topo_i = []
+
+        # Find nearest neighbours
+        G_ind = self.HC.connected_vertices(ind, self.Ci)
+        logging.info('ind = {}'.format(ind))
+        logging.info('G_ind = {}'.format(G_ind))
+
+        # Find finite deference between each point
+        for g_i in G_ind:
+            rel_topo_bool = self.F[ind] < self.F[g_i]
+            self.Xi_ind_topo_i.append(rel_topo_bool)
+
+        logging.info('Xi_ind_topo_i = {}'.format(self.Xi_ind_topo_i))
+        # Check if minimizer
+        if numpy.array(self.Xi_ind_topo_i).all():
+            self.Xi_ind_topo = True
+        else:
+            self.Xi_ind_topo = False
+
+        return self.Xi_ind_topo
+
+
+    def simplex_minimizers(self):
+        """
+        Returns the indexes of all minimizers
+        """
+        self.minimizer_pool = []
+        # TODO: Can easily be parralized
+
+        for ind in range(self.fn):
+            Min_bool = self.sample_simplex_topo(ind)
+            if Min_bool:
+                self.minimizer_pool.append(ind)
+
+        self.minimizer_pool_F = self.F[self.minimizer_pool]
+
+        # Sort to find minimum func value in min_pool
+        self.sort_min_pool()
+        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        if not len(self.minimizer_pool) == 0:
+            self.X_min = self.C[self.minimizer_pool]
+        else:
+            self.X_min = []
+
+        return self.X_min
+
     # Post local minimisation processing
     def sort_result(self):
         """
@@ -1154,5 +1309,29 @@ class SHGO(object):
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    #doctest.testmod()
     from numpy import *
+
+    '''
+    Temporary dev work:
+    '''
+    def f(x):  # Alpine2
+        prod = 1
+        for i in range(numpy.shape(x)[0]):
+            prod = prod * numpy.sqrt(x[i]) * numpy.sin(x[i])
+
+        return prod
+
+    bounds = [(0, 10), (0, 10)]
+    bounds = [(0, 10), (0, 10)]
+
+    #SHGOc1 = SHGO(f, bounds)
+    #print(SHGOc1.disp)
+
+    #SHGOc2 = SHGO(f, bounds,
+    #              crystal_mode=True, sampling_method='simplicial')
+    #SHGOc2.construct_complex_simplicial()
+
+    print(shgo(f, bounds,
+               crystal_mode=True,
+               sampling_method='simplicial'))

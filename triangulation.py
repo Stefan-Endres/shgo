@@ -126,7 +126,6 @@ class Complex():
             Si_new_l.append(Si[0])
             Si_new_l.append(i_new)
             for ind in Si[1:-1]:
-                # print(ind)
                 Si_new_l.append(ind)
 
             # New "upper" simplex
@@ -195,6 +194,25 @@ class Complex():
                         Ci[i].append(j)
         self.Ci = Ci
         return Ci
+
+    def connected_vertices(self, ind, Ci):
+        # Find all vertices connected to V[ind]
+        # where V is the set of all vertex vectors
+        # contained in the complex of index simplices Ci
+        import numpy
+        V_connected = []
+        for Si in Ci:
+            if ind in Si:
+                V_connected.append(Si)
+
+        # Return unique elements
+        V_connected = numpy.unique(V_connected)
+
+        # Remove central index
+        V_connected = list(V_connected)
+        V_connected = list(filter(lambda a: a != ind, V_connected))
+
+        return V_connected
 
     def generate_vertex(self, x, check=True):
         """
