@@ -356,8 +356,16 @@ class SHGO(object):
                 self.maxfev = options['maxfev']
             if 'disp' in options:
                 self.disp = options['disp']
+            if 'symmetry' in options:
+                self.symmetry = True
+            if 'crystal_iter' in options:
+                self.crystal_iter = options['crystal_iter']
 
             self.options = None
+
+        else:
+            self.symmetry = False
+            self.crystal_iter = 1
 
         # set bounds
         abound = numpy.array(bounds, float)
@@ -458,7 +466,11 @@ class SHGO(object):
         HC = Complex(self.dim)
         self.HC = HC
 
-        C = self.HC.n_cube(self.dim, printout=False)
+        if self.symmetry:
+            C = self.HC.n_cube(self.dim, symmetry=True)
+        else:
+            C = self.HC.n_cube(self.dim)
+
         self.HC.initial_vertices(C, self.dim)
         Ci = self.HC.index_simplices(C)
         self.C = self.HC.V[0]
@@ -485,8 +497,8 @@ class SHGO(object):
         grow_complex = True
         homology_group = 0
         homology_group_prev = 0
-        iter = 2  # Max iterations with no pool growth
-
+        #iter = 2  # Max iterations with no pool growth
+        iter = self.crystal_iter
         while grow_complex:
             Ci_new = self.HC.split_generation(self.HC.Ci, self.HC.V,
                                               build_complex_array=False)
@@ -1324,6 +1336,7 @@ if __name__ == '__main__':
 
     bounds = [(0, 10), (0, 10)]
     bounds = [(0, 10), (0, 10)]
+    bounds = [(0, 5), (0, 5)]
 
     #SHGOc1 = SHGO(f, bounds)
     #print(SHGOc1.disp)
@@ -1335,3 +1348,7 @@ if __name__ == '__main__':
     print(shgo(f, bounds,
                crystal_mode=True,
                sampling_method='simplicial'))
+    print('='*100)
+    print('Sobol shgo:')
+    print('===========')
+    print(shgo(f, bounds))

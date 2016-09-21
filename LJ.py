@@ -4,7 +4,8 @@ import scipy.optimize
 import numpy
 import logging
 import sys
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+if 0:
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class Benchmark(object):
@@ -128,7 +129,14 @@ options = {'disp': False}
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=100)
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
 
-res = shgo(LJ.fun, LJ._bounds, options=options, n=50, crystal_mode=True)
+#res = shgo(LJ.fun, LJ._bounds, options=options, n=50, crystal_mode=True)
+
+
+# Symmetry shit
+options = {'symmetry': True,
+           'crystal_iter': 1}
+res = shgo(LJ.fun, LJ._bounds, options=options, crystal_mode=True,
+               sampling_method='simplicial')
 
 #shgo(test.f, test.bounds, args=args, g_cons=test.g,
 #                    g_args=g_args, n=100, iter=None, crystal_mode=True)
