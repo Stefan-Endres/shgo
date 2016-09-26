@@ -113,6 +113,29 @@ class LennardJones(Benchmark):
         return s
 
 
+def unique_minima(xl, tol=1e-5):
+    """
+    Returns the number of points in `xl` that are unique to the default
+    tolerance of numpy.allclose
+    """
+    import itertools
+
+    uniql = len(xl)
+    if uniql == 1:
+        uniq = 1
+    else:
+        xll = len(xl)
+        flag = []
+        for i in range(xll):
+            for k in range(i + 1, xll):
+                if numpy.allclose(xl[i], [xl[k]],
+                                  rtol=tol,
+                                  atol=tol):
+                    flag.append(k)
+
+        uniq = uniql - len(numpy.unique(numpy.array(flag)))
+    return uniq
+
 #atoms = 10
 atoms = 2
 atoms = 10#38
@@ -134,7 +157,7 @@ options = {'disp': False}
 
 # Symmetry shit
 options = {'symmetry': True,
-           'crystal_iter': 1}
+           'crystal_iter': 20}
 res = shgo(LJ.fun, LJ._bounds, options=options, crystal_mode=True,
                sampling_method='simplicial')
 
@@ -189,8 +212,12 @@ tol = 5
 res.funl = numpy.around(res.funl, tol)
 res3.funl = numpy.around(res3.funl, tol)
 
-shgo_uniq = numpy.unique(res.funl)
-tgo_uniq = numpy.unique(res3.funl)
+#shgo_uniq = numpy.unique(res.funl)
+shgo_uniq = unique_minima(res.xl, tol=1e-5)
+#tgo_uniq = numpy.unique(res3.funl)
+tgo_uniq = unique_minima(res3.xl)
 
-print('Unique local minima SHGO = {}'.format(len(shgo_uniq)))
-print('Unique local minima TGO = {}'.format(len(tgo_uniq)))
+#print('Unique local minima SHGO = {}'.format(len(shgo_uniq)))
+print('Unique local minima SHGO = {}'.format(shgo_uniq))
+#print('Unique local minima TGO = {}'.format(len(tgo_uniq)))
+print('Unique local minima TGO = {}'.format(tgo_uniq))
