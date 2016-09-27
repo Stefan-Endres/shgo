@@ -26,7 +26,20 @@ class Cell:
         """
         pass
 
+    def homology_group_differential(self):
+        """
+        Returns the difference between the current homology group of the
+        cell and it's parent group
+        """
+        pass
 
+    def sperner_polytope_lemma(self):
+        """
+        Returns the number of stationary points theoretically contained in the
+        cell based information currently known about the cell
+        """
+        pass
+    
 class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None):
         self.dim = dim
