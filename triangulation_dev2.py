@@ -119,13 +119,6 @@ class Complex:
             #self.perm(dim_i-1, i, xi2)
             self.perm(i, i2_parents, xi2)
 
-    def perm_old(self, dim_i, ind, ):
-        for i in range(self.dimx0, i0, Vsize, D=1):
-            if i is not i0:
-                x0[i] = 1
-                V.append(Vertex(x0, [V[0], V[1]]))
-                V[0].nn.append(V[i1 + Vsize])
-                V[1].nn.append(V[i1 + Vsize])
 
 class Vertex:
     def __init__(self, x, func=None, func_args=(), nn=None):
