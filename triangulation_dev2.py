@@ -34,8 +34,6 @@ class Complex:
         self.perm_cycle = 0
         # List of cells
         self.C = []
-
-
         #self.cell = 0
         # ^ Put every vertex into its own cell which changes
         # every generation
@@ -46,13 +44,11 @@ class Complex:
         # self.V[1] = [(0.5, 0.5, 0.5, ...)]
         # self.V[2] is the second cycle permutation split
         # etc.
-        #self.V = []
-        #self.V.append(VertexCached())
         self.V = VertexCached(func, func_args)
 
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry)
-        #self.C.append()
+        self.C.append(self.C0)
 
     def n_cube(self, dim, symmetry=False, printout=True):
         """
@@ -68,11 +64,8 @@ class Complex:
         self.C0.add_vertex(self.V(tuple(origin)))
         self.C0.add_vertex(self.V(tuple(supremum)))
 
-        i1 = dim + 10 # Let all first rows be generation in first perm
-        i1 = 0
-        i1 = -1
         i_parents = []
-        self.perm(i1, i_parents, origin)
+        self.perm(i_parents, origin)
 
         if printout:
             print("Initial hyper cube:")
@@ -84,7 +77,7 @@ class Complex:
 
                 print(constr)
 
-    def perm(self, i1, i_parents, xi):
+    def perm(self, i_parents, xi):
         #TODO: Cut out of for if outside linear constraint cutting planes
         xi_t = tuple(xi)
 
@@ -94,10 +87,7 @@ class Complex:
         for i in iter_range:
             i2_parents = i_parents.copy()
             i2_parents.append(i)
-        #for i in range(dim_i):
-            #print('i = ')
             xi2 = xi.copy()
-            #if i is not i1:  #TODO: Not needed
             xi2[i] = 1
             # Make new vertex list a hashable tuple
             xi2_t = tuple(xi2)
@@ -115,9 +105,7 @@ class Complex:
             self.V(tuple(self.suprenum)).connect(self.V(xi_t))
 
             # Permutate
-            #self.perm(dim_i - 1, i1 - 1, xi2)
-            #self.perm(dim_i-1, i, xi2)
-            self.perm(i, i2_parents, xi2)
+            self.perm(i2_parents, xi2)
 
 
 class Vertex:
@@ -166,39 +154,4 @@ if __name__ == '__main__':
         import numpy
         return numpy.sum(x ** 2)
 
-
-    HC = Complex(200, test_func)
-    #Cc = Cell(0, 0)
-    #print(Cc())
-
-    if 0:
-        HC.V((0, 0, 0))
-        HC.V((0, 0, 0))
-        HC.V((1, 0, 0))
-        HC.V((0, 1, 0))
-        HC.V((0, 0, 1))
-        HC.V((1, 1, 1))
-        HC.V((0, 0, 0)).connect(HC.V((1, 0, 0)))
-        HC.V((0, 0, 0)).connect(HC.V((0, 1, 0)))
-        HC.V((0, 0, 0)).connect(HC.V((0, 0, 1)))
-        HC.V((0, 0, 0)).connect(HC.V((1, 1, 1)))
-        HC.V((0, 0, 0)).connect(HC.V((1, 1, 0)))
-        HC.V((0, 0, 0)).disconnect(HC.V((1, 1, 1)))
-        #print(HC.V((0, 0, 0)).nn)
-        #print(HC.V((0, 0, 0)).nn[3].x)
-
-        print(HC.V((0, 0, 0)).nn)
-        print(HC.V((0, 0, 0)).nn[3].x)
-        print(HC.V((0, 0, 0)).f)
-        print(HC.V((0, 1, 1)).f)
-
-
-    def fact(N):
-        #print(N)
-        if N == 0 or N == 1:
-            return 1
-        else:
-            return fact(N - 1)*N
-
-    #fact(10)
-
+    HC = Complex(3, test_func)
