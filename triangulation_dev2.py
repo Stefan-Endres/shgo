@@ -62,7 +62,7 @@ class Complex:
         #for v in self.C0():
          #   print(v)
 
-    def n_cube(self, dim, symmetry=False, printout=False):
+    def n_cube(self, dim, symmetry=False, printout=True):
         """
         Generate the simplicial triangulation of the n dimensional hypercube
         containing 2**n vertices
@@ -108,13 +108,10 @@ class Complex:
             # Connect neighbours and vice versa
             # Parent point
             self.V(xi2_t).connect(self.V(tuple(xi_t)))
-            self.V(xi_t).connect(self.V(tuple(xi2_t)))
             # Origin
             self.V(xi2_t).connect(self.V(tuple(self.origin)))
-            self.V(tuple(self.origin)).connect(self.V(xi_t))
             # Suprenum
-            self.V(xi_t).connect(self.V(tuple(self.suprenum)))
-            self.V(tuple(self.suprenum)).connect(self.V(xi_t))
+            self.V(xi2_t).connect(self.V(tuple(self.suprenum)))
 
             # Permutate
             self.perm(i2_parents, xi2)
@@ -141,6 +138,7 @@ class Vertex:
     def connect(self, v):
         if v not in self.nn and v is not self:  # <-- Cool
             self.nn.append(v)
+            v.nn.append(self)
             if self.f > v.f:
                 self.min = False
             #self.check_min = True
@@ -148,6 +146,7 @@ class Vertex:
     def disconnect(self, v):
         if v in self.nn:
             self.nn.remove(v)
+            v.nn.remove(self)
             self.check_min = True
 
     def minimiser(self):
@@ -189,4 +188,12 @@ if __name__ == '__main__':
         import numpy
         return numpy.sum(x ** 2) + 2.0 * x[0]
 
-    HC = Complex(3, test_func)
+    tr = []
+    nr = list(range(9))
+    HC = Complex(4, test_func)
+    for n in range(9):
+        import time
+        ts = time.time()
+        #HC = Complex(4, test_func)
+
+        #tr
