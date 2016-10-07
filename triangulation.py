@@ -354,6 +354,22 @@ class Complex():
         print('Simplices S = {}'.format(self.S))
 
 if __name__ == '__main__':
+    dim = 4
+    HC = Complex(dim)
+    C = HC.n_cube(dim, printout=False, symmetry=False)
+    HC.initial_vertices(C, dim)
+    Ci = HC.index_simplices(C)  # = HC.Ci
+    print(len(HC.V))
+    for ind in range(dim**2 - 1):
+        print("Vertex: {}".format(HC.V[ind]))
+        constr = 'Connections:'
+        for i in HC.connected_vertices(ind, Ci):
+            constr += ' ' + str(HC.V[i])
+
+        print(constr)
+    #print(HC.connected_vertices(ind, Ci))
+    #HC.V[
+
     if 0:
         from matplotlib import pyplot
         #for D in range(60):
@@ -386,7 +402,7 @@ if __name__ == '__main__':
 
             pyplot.show()
 
-    if 1:
+    if 0:
         from matplotlib import pyplot
         # Generate intial simplex
         dim = 2
@@ -405,4 +421,4 @@ if __name__ == '__main__':
                                                 build_complex_array=True)
             print(".generation_cycle = {}".format(HC.generation_cycle))
 
-    pyplot.show()
+        pyplot.show()

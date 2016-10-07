@@ -12,6 +12,7 @@ class Cell:
         self.gen = gen  # generation
         self.hg = hg  # parent homology group
         self.C = []
+        #TODO: self.bounds
 
     def __call__(self):
         return self.C
@@ -115,9 +116,6 @@ class Complex:
 
             # Permutate
             self.perm(i2_parents, xi2)
-
-
-
 
 class Vertex:
     def __init__(self, x, func=None, func_args=(), nn=None):
