@@ -4,6 +4,7 @@ import scipy.optimize
 import numpy
 import logging
 import sys
+import time
 if 0:
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -140,8 +141,10 @@ def unique_minima(xl, tol=1e-5):
 atoms = 2
 atoms = 10#38
 atoms = 3
+atoms = 4
 atoms = 2
-atoms = 3
+atoms = 4
+atoms = 4
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
@@ -157,9 +160,14 @@ options = {'disp': False}
 
 # Symmetry shit
 options = {'symmetry': True,
-           'crystal_iter': 20}
+          # 'crystal_iter': 8}
+          # 'crystal_iter': 15}
+           'crystal_iter': 11}
+
+t0 = time.time()
 res = shgo(LJ.fun, LJ._bounds, options=options, crystal_mode=True,
                sampling_method='simplicial')
+tshgo = time.time() - t0
 
 #shgo(test.f, test.bounds, args=args, g_cons=test.g,
 #                    g_args=g_args, n=100, iter=None, crystal_mode=True)
@@ -184,7 +192,10 @@ print("="*30)
 print("Optimizing with Basinhopping...")
 print("="*40)
 x0 = numpy.zeros(N)
+x0 = numpy.random.randn(N)
+t0 = time.time()
 res2 = scipy.optimize.basinhopping(LJ.fun, x0)
+tbh = time.time() - t0
 print(res2)
 
 print("="*30)
@@ -218,6 +229,13 @@ shgo_uniq = unique_minima(res.xl, tol=1e-5)
 tgo_uniq = unique_minima(res3.xl)
 
 #print('Unique local minima SHGO = {}'.format(len(shgo_uniq)))
+print('SHGO symmetry homology group = {}'.format(shgo_uniq))
 print('Unique local minima SHGO = {}'.format(shgo_uniq))
 #print('Unique local minima TGO = {}'.format(len(tgo_uniq)))
 print('Unique local minima TGO = {}'.format(tgo_uniq))
+print('====================='*3)
+print('SHGO improvment on BH')
+print('=====================')
+print('nfev: {} %'.format( round(res2.nfev/res.nfev *100, 5)))
+print('Simulation time: {} %'.format( round(tbh/tshgo *100, 5)))
+ #     ' nfev: {}')
