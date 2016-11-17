@@ -78,7 +78,9 @@ class Complex:
         self.C0.add_vertex(self.V(tuple(supremum)))
 
         i_parents = []
-        self.perm(i_parents, origin)
+        x_parents = []
+        x_parents.append(self.origin)
+        self.perm(i_parents, x_parents, origin)
 
         if printout:
             print("Initial hyper cube:")
@@ -90,7 +92,7 @@ class Complex:
 
                 print(constr)
 
-    def perm(self, i_parents, xi):
+    def perm(self, i_parents, x_parents, xi):
         #TODO: Cut out of for if outside linear constraint cutting planes
         xi_t = tuple(xi)
 
@@ -109,13 +111,16 @@ class Complex:
             # Connect neighbours and vice versa
             # Parent point
             self.V(xi2_t).connect(self.V(tuple(xi_t)))
-            # Origin
-            self.V(xi2_t).connect(self.V(tuple(self.origin)))
-            # Suprenum
-            self.V(xi2_t).connect(self.V(tuple(self.suprenum)))
+
+            # Connect all family of simplices in parent containers
+            for x_ip in x_parents:
+                self.V(xi2_t).connect(self.V(tuple(x_ip)))
+
+            x_parents2 = x_parents.copy()
+            x_parents2.append(xi_t)
 
             # Permutate
-            self.perm(i2_parents, xi2)
+            self.perm(i2_parents, x_parents2, xi2)
 
 class Vertex:
     def __init__(self, x, func=None, func_args=(), nn=None):
@@ -188,7 +193,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(4, test_func)
+    HC = Complex(10, test_func)
     for n in range(9):
         import time
         ts = time.time()
