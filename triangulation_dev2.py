@@ -21,9 +21,9 @@ class Cell:
         if V not in self.C:
             self.C.append(V)
 
-    def homology_group(self):
+    def homology_group_order(self):
         """
-        Returns the homology group of the current cell
+        Returns the homology group order of the current cell
         """
         hg_n = 0
         for v in self.C:
@@ -59,7 +59,7 @@ class Complex:
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry)
         self.C.append(self.C0)
-        hg0 = self.C0.homology_group()
+        hg0 = self.C0.homology_group_order()
         #for v in self.C0():
          #   print(v)
 
@@ -91,6 +91,7 @@ class Complex:
                     constr += '{} '.format(vc.x)
 
                 print(constr)
+                print('Order = {}'.format(v.order))
 
     def perm(self, i_parents, x_parents, xi):
         #TODO: Cut out of for if outside linear constraint cutting planes
@@ -122,10 +123,29 @@ class Complex:
             # Permutate
             self.perm(i2_parents, x_parents2, xi2)
 
+def stretch(self, cell, factor):
+    """
+    Stretch transformation of all vertices in a cell.
+    """
+    # TODO: Optimize with numpy arrays and matrix operations
+    for v in cell.C:
+        print(tuple(numpy.array(v.x) * factor))
+
+    # (loop through all neighbours and stretch
+
+
+    return
+
+
+def rotation(self, cell):
+    # Return all SO(n) group rotations of input cell
+    return
+
 class Vertex:
     def __init__(self, x, func=None, func_args=(), nn=None):
         import numpy
         self.x = x
+        self.order = sum(x)
         x_a = numpy.array(x)
         # Note Vertex is only initiate once for all x so only
         # evaluated once
@@ -193,7 +213,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(10, test_func)
+    HC = Complex(4, test_func)
     for n in range(9):
         import time
         ts = time.time()
