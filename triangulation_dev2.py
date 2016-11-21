@@ -47,10 +47,16 @@ class Cell:
         """
         pass
 
+    def print_out(self):
+        """
+        Print the current cell to console
+        """
+        return
+    
 class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None):
         self.dim = dim
-        self.gen = 0
+        self.gen = 1
         self.perm_cycle = 0
 
         self.C = []  # List of cells
@@ -59,11 +65,11 @@ class Complex:
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry)
         self.C.append(self.C0)
-        hg0 = self.C0.homology_group_order()
+        self.hg0 = self.C0.homology_group_order()
         #for v in self.C0():
          #   print(v)
 
-    def n_cube(self, dim, symmetry=False, printout=True):
+    def n_cube(self, dim, symmetry=False, printout=False):
         """
         Generate the simplicial triangulation of the n dimensional hypercube
         containing 2**n vertices
@@ -123,23 +129,52 @@ class Complex:
             # Permutate
             self.perm(i2_parents, x_parents2, xi2)
 
-def stretch(self, cell, factor):
-    """
-    Stretch transformation of all vertices in a cell.
-    """
-    # TODO: Optimize with numpy arrays and matrix operations
-    for v in cell.C:
-        print(tuple(numpy.array(v.x) * factor))
+    def generate_gen(self):
+        """Generate all cells in the next generation of subdivisions"""
+        self.gen += 1
+        self.C_new = []
+        for cell in self.C:
+            self.C_new_cells = self.generate_sub(cell, self.gen, self.hg0)
+            for c_new in self.C_new_cells:
+                self.C_new.append(c_new)
 
-    # (loop through all neighbours and stretch
+        # Set new complex
+        self.C = self.C_new
+        return
+
+    def generate_sub(self, cell, gen, hg0=0):
+        """Generate the subdivision of a specified cell"""
+        # Shrink the initial cell
+        factor = float(1/(gen))
+        print(factor)
+
+        return [None]
+
+    def stretch(self, cell, factor):
+        """
+        Stretch transformation of all vertices in a cell.
+        """
+        # TODO: Optimize with numpy arrays and matrix operations
+        C1 = Cell(1, 0)
+        for v in cell.C:
+            print(tuple(numpy.array(v.x) * factor))
+
+        # (loop through all neighbours and stretch
 
 
-    return
+        return
+
+    def translate(self, cell, v_start, v_end):
+        """
+        translate the cell from a vector starting at v_start pointing at v_end
+        """
+
+        return
 
 
-def rotation(self, cell):
-    # Return all SO(n) group rotations of input cell
-    return
+    def rotation(self, cell):
+        # Return all SO(n) group rotations of input cell
+        return
 
 class Vertex:
     def __init__(self, x, func=None, func_args=(), nn=None):
@@ -220,3 +255,8 @@ if __name__ == '__main__':
         #HC = Complex(4, test_func)
 
         #tr
+
+
+    #Complex.stretch(None, HC.C0, 0.5)
+
+    Complex.generate_gen(HC)
