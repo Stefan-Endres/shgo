@@ -52,7 +52,7 @@ class Cell:
         Print the current cell to console
         """
         return
-    
+
 class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None):
         self.dim = dim
