@@ -1,0 +1,1 @@
+README under construction, see [https://bitbucket.org/upiamcompthermo/topographical-global-optimization](Link URL) for instructions on how to use the functions.
