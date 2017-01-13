@@ -2,6 +2,8 @@ import itertools
 import numpy
 import logging
 import sys
+import copy
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Cell:
@@ -107,9 +109,9 @@ class Complex:
         iter_range = [x for x in range(self.dim) if x not in i_parents]
 
         for i in iter_range:
-            i2_parents = i_parents.copy()
+            i2_parents = copy.copy(i_parents)#.copy()
             i2_parents.append(i)
-            xi2 = xi.copy()
+            xi2 = copy.copy(xi)#.copy()
             xi2[i] = 1
             # Make new vertex list a hashable tuple
             xi2_t = tuple(xi2)
@@ -123,11 +125,25 @@ class Complex:
             for x_ip in x_parents:
                 self.V(xi2_t).connect(self.V(tuple(x_ip)))
 
-            x_parents2 = x_parents.copy()
+            x_parents2 = copy.copy(x_parents)#.copy()
             x_parents2.append(xi_t)
 
             # Permutate
             self.perm(i2_parents, x_parents2, xi2)
+
+    def add_centroid(self):
+        """Split the central edge between the origin and suprenum of
+        a cell and add the new vertex to the complex"""
+        self.centroid = list((numpy.array(self.origin) + numpy.array(self.suprenum))/2.0)
+        self.C0.add_vertex(self.V(tuple(self.centroid)))
+
+        # Disconnect origin and suprenum
+        self.V(tuple(self.origin)).disconnect(self.V(tuple(self.suprenum)))
+
+        # Connect centroid to all other vertices
+        for v in HC.C0():
+             self.V(tuple(self.centroid)).connect(self.V(tuple(v.x)))
+        print(self.centroid)
 
     def generate_gen(self):
         """Generate all cells in the next generation of subdivisions"""
@@ -184,7 +200,9 @@ class Vertex:
         x_a = numpy.array(x)
         # Note Vertex is only initiate once for all x so only
         # evaluated once
-        self.f = func(x_a, *func_args)
+        if func is not None:
+            self.f = func(x_a, *func_args)
+
         if nn is not None:
             self.nn = nn
         else:
@@ -248,7 +266,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(4, test_func)
+    HC = Complex(2, test_func)
     for n in range(9):
         import time
         ts = time.time()
@@ -259,4 +277,18 @@ if __name__ == '__main__':
 
     #Complex.stretch(None, HC.C0, 0.5)
 
-    Complex.generate_gen(HC)
+    #Complex.generate_gen(HC)
+
+    HC.add_centroid()
+
+    print(HC.C0())
+
+    if 1:
+        print(HC.V((0.5, 0.5, 0.5, 0.5)).nn)
+        for v in HC.V((0.5, 0.5, 0.5, 0.5)).nn:
+            print('v = {}'.format(v.x))
+
+
+    if 0:
+        for v in HC.C0:
+            print('v = {}'.format(v))
