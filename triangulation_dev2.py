@@ -144,8 +144,40 @@ class Complex:
         for v in HC.C0():
              self.V(tuple(self.centroid)).connect(self.V(tuple(v.x)))
 
+        self.centroid_added = True
         return
 
+    # Construct incidence array:
+    def incidence(self):
+        if self.centroid_added:
+            self.structure = numpy.zeros([2**self.dim + 1, 2**self.dim + 1], dtype=int)
+        else:
+            self.structure = numpy.zeros([2**self.dim, 2**self.dim], dtype=int)\
+
+
+        for v in HC.C0():
+            for v2 in v.nn:
+                #self.structure[0, 15] = 1
+                self.structure[v.I, v2.I] = 1
+
+        return
+
+    # A more sparee incidence generator:
+    def graph_map(self):
+        """ Make a list of size 2**n + 1 where an entry is a vertex
+        incidence, each list element contains a list of indexes
+        corresponding to that entries neighbours"""
+        self.graph = []
+        for i, v in enumerate(HC.C0()):
+            self.graph.append([])
+            for v2 in v.nn:
+                self.graph[i].append(v2.I)
+
+
+
+
+    # Not completed zone:
+    ## Symmetry group topological transformation methods
     def generate_gen(self):
         """Generate all cells in the next generation of subdivisions"""
         self.gen += 1
@@ -194,7 +226,7 @@ class Complex:
         return
 
 class Vertex:
-    def __init__(self, x, func=None, func_args=(), nn=None):
+    def __init__(self, x, func=None, func_args=(), nn=None, I=None):
         import numpy
         self.x = x
         self.order = sum(x)
@@ -211,6 +243,10 @@ class Vertex:
 
         self.fval = None
         self.check_min = True
+
+        # Index:
+        if I is not None:
+            self.I = I
 
     def connect(self, v):
         if v not in self.nn and v is not self:  # <-- Cool
@@ -242,18 +278,25 @@ class Vertex:
             return(self.min)
 
 class VertexCached:
-    def __init__(self, func, func_args):
-    #    from collections import Counter
+    def __init__(self, func, func_args, indexed=True):
+
         self.cache = {}
         self.func = func
         self.func_args = func_args
-    #    self.Index = Counter()
 
-    def __call__(self, x):
+        if indexed:
+            self.Index = -1
+
+    def __call__(self, x, indexed=True):
         if x in self.cache:
             return self.cache[x]
         else:
-            xval = Vertex(x, func=self.func, func_args=self.func_args)
+            if indexed:
+                self.Index += 1
+                xval = Vertex(x, func=self.func, func_args=self.func_args, I=self.Index)
+            else:
+                xval = Vertex(x, func=self.func, func_args=self.func_args)
+
             logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
             return xval
@@ -267,7 +310,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(4, test_func)
+    HC = Complex(3, test_func)
     for n in range(9):
         import time
         ts = time.time()
@@ -281,13 +324,17 @@ if __name__ == '__main__':
     #Complex.generate_gen(HC)
 
     HC.add_centroid()
+    HC.incidence()
+    print(HC.structure)
+    HC.graph_map()
+    print(HC.graph)
+    #print(HC.C0())
 
-    print(HC.C0())
-
-    if 1:
+    if 0:
         print(HC.V((0.5, 0.5, 0.5, 0.5)).nn)
         for v in HC.V((0.5, 0.5, 0.5, 0.5)).nn:
-            print('v = {}'.format(v.x))
+            print('v.I = {}'.format(v.I))
+            print('v.x = {}'.format(v.x))
 
 
     if 0:
