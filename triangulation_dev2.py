@@ -143,7 +143,8 @@ class Complex:
         # Connect centroid to all other vertices
         for v in HC.C0():
              self.V(tuple(self.centroid)).connect(self.V(tuple(v.x)))
-        print(self.centroid)
+
+        return
 
     def generate_gen(self):
         """Generate all cells in the next generation of subdivisions"""
@@ -266,7 +267,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(2, test_func)
+    HC = Complex(4, test_func)
     for n in range(9):
         import time
         ts = time.time()
