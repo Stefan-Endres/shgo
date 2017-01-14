@@ -185,7 +185,7 @@ class Complex:
 
         return
 
-    # A more sparee incidence generator:
+    # A more sparse incidence generator:
     def graph_map(self):
         """ Make a list of size 2**n + 1 where an entry is a vertex
         incidence, each list element contains a list of indexes
@@ -195,7 +195,6 @@ class Complex:
             self.graph.append([])
             for v2 in v.nn:
                 self.graph[i].append(v2.I)
-
 
     # Graph structure method:
     # 0. Capture the indices of the initial cell.
@@ -216,7 +215,6 @@ class Complex:
             self.H[gen]
         except IndexError:
             self.H.append([])
-
 
         # Generate subcubes using every extreme verex in C_i as a suprenum
         # and the centroid of C_i as the origin
@@ -459,8 +457,6 @@ if __name__ == '__main__':
     HC.graph_map()
     print('HC.graph = {}'.format(HC.graph))
     #print(HC.C0())
-
-
     print(HC())
 
     #HC.sub_generate_cell()
@@ -474,20 +470,8 @@ if __name__ == '__main__':
     HC.sub_generate_cell(HC.C0, gen, hgr)
     #HC.construct_hypercube(origin, suprenum, gen, hgr)
 
-
-    if 1:
+    if 0:
         print(HC.H)
         print(len(HC.H[1]))
         print(HC.H[1][0])
         HC.H[1][0].print_out()
-
-    if 0:
-        print(HC.V((0.5, 0.5, 0.5, 0.5)).nn)
-        for v in HC.V((0.5, 0.5, 0.5, 0.5)).nn:
-            print('v.I = {}'.format(v.I))
-            print('v.x = {}'.format(v.x))
-
-
-    if 0:
-        for v in HC.C0:
-            print('v = {}'.format(v))
