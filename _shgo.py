@@ -450,106 +450,109 @@ class SHGO(object):
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
     def construct_complex_simplicial(self):
+        self.HC = Complex(self.dim, self.func)
+        return
 
 
-        # Initiate complex
-        self.n = self.dim + 1
-        HC = Complex(self.dim)
-        self.HC = HC
+        if 0:
+            # Initiate complex
+            self.n = self.dim + 1
+            HC = Complex(self.dim)
+            self.HC = HC
 
-        if self.symmetry:
-            C = self.HC.n_cube(self.dim, symmetry=True)
-        else:
-            C = self.HC.n_cube(self.dim)
-
-        self.HC.initial_vertices(C, self.dim)
-        Ci = self.HC.index_simplices(C)
-        self.C = self.HC.V[0]
-
-        for i in range(len(self.HC.V) - 1):
-            self.C = numpy.vstack((self.C, self.HC.V[i + 1]))
-
-        # stretch values
-        for i in range(len(self.bounds)):
-            self.C[:, i] = (self.C[:, i] *
-                            (self.bounds[i][1] - self.bounds[i][0])
-                            + self.bounds[i][0])
-
-        # Stretch values in complex class
-        self.HC.V = []
-        for vi in range(numpy.shape(self.C)[0]):
-            self.HC.V.append(self.C[vi, :])
-
-        self.Ci = Ci
-        # Containers
-        self.X_min_all = []
-        self.minimizer_pool_F_all = []
-
-        grow_complex = True
-        homology_group = 0
-        homology_group_prev = 0
-        #iter = 2  # Max iterations with no pool growth
-        iter = self.crystal_iter
-        while grow_complex:
-            Ci_new = self.HC.split_generation(self.HC.Ci, self.HC.V,
-                                              build_complex_array=False)
-
-            #print(Ci_new)
-            self.Ci = Ci_new
-            self.HC.connected_vertices(0, Ci_new)
-            #print(HC.V)
-            self.C = HC.V[0]
-
-            # Stack self.C:
-            for i in range(len(HC.V)-1):
-                self.C = numpy.vstack((self.C, HC.V[i + 1]))
-
-            if self.g_cons is not None:
-                self.sampling_subspace()
-                self.fn = numpy.shape(self.C)[0]
+            if self.symmetry:
+                C = self.HC.n_cube(self.dim, symmetry=True)
             else:
-                self.fn = numpy.shape(self.C)[0]
+                C = self.HC.n_cube(self.dim)
 
-            # Sort remaining samples
-            self.sorted_samples()
+            self.HC.initial_vertices(C, self.dim)
+            Ci = self.HC.index_simplices(C)
+            self.C = self.HC.V[0]
 
-            # Find objective function references
-            self.fun_ref()
+            for i in range(len(self.HC.V) - 1):
+                self.C = numpy.vstack((self.C, self.HC.V[i + 1]))
 
-            # Build minimiser pool
-            # DIMENSIONS self.dim
-            if self.dim < 2: #UNTESTED
-                self.ax_subspace()
-                self.surface_topo_ref()
-                self.X_min = self.minimizers()
+            # stretch values
+            for i in range(len(self.bounds)):
+                self.C[:, i] = (self.C[:, i] *
+                                (self.bounds[i][1] - self.bounds[i][0])
+                                + self.bounds[i][0])
 
-            else:  # Multivariate functions.
-                self.X_min = self.simplex_minimizers()
+            # Stretch values in complex class
+            self.HC.V = []
+            for vi in range(numpy.shape(self.C)[0]):
+                self.HC.V.append(self.C[vi, :])
 
-           # Continue loop if pool is zero to iterate
-            print('self.X_min = {}'.format(self.X_min ))
-            if len(self.minimizer_pool) == 0:
-                homology_group = 0
-                continue
-            else:
-                homology_group = len(self.minimizer_pool)
-                print('homology_group = {}'.format(homology_group))
-                print('homology_group_prev = {}'.format(homology_group_prev))
-                if homology_group > homology_group_prev:
-                    homology_group_prev = homology_group
+            self.Ci = Ci
+            # Containers
+            self.X_min_all = []
+            self.minimizer_pool_F_all = []
+
+            grow_complex = True
+            homology_group = 0
+            homology_group_prev = 0
+            #iter = 2  # Max iterations with no pool growth
+            iter = self.crystal_iter
+            while grow_complex:
+                Ci_new = self.HC.split_generation(self.HC.Ci, self.HC.V,
+                                                  build_complex_array=False)
+
+                #print(Ci_new)
+                self.Ci = Ci_new
+                self.HC.connected_vertices(0, Ci_new)
+                #print(HC.V)
+                self.C = HC.V[0]
+
+                # Stack self.C:
+                for i in range(len(HC.V)-1):
+                    self.C = numpy.vstack((self.C, HC.V[i + 1]))
+
+                if self.g_cons is not None:
+                    self.sampling_subspace()
+                    self.fn = numpy.shape(self.C)[0]
+                else:
+                    self.fn = numpy.shape(self.C)[0]
+
+                # Sort remaining samples
+                self.sorted_samples()
+
+                # Find objective function references
+                self.fun_ref()
+
+                # Build minimiser pool
+                # DIMENSIONS self.dim
+                if self.dim < 2: #UNTESTED
+                    self.ax_subspace()
+                    self.surface_topo_ref()
+                    self.X_min = self.minimizers()
+
+                else:  # Multivariate functions.
+                    self.X_min = self.simplex_minimizers()
+
+               # Continue loop if pool is zero to iterate
+                print('self.X_min = {}'.format(self.X_min ))
+                if len(self.minimizer_pool) == 0:
+                    homology_group = 0
                     continue
+                else:
+                    homology_group = len(self.minimizer_pool)
+                    print('homology_group = {}'.format(homology_group))
+                    print('homology_group_prev = {}'.format(homology_group_prev))
+                    if homology_group > homology_group_prev:
+                        homology_group_prev = homology_group
+                        continue
 
-            print(iter)
-            if iter > 0:
-                iter -= 1
-            else:
-                # Stop growth if no new minimisers found:
-                grow_complex = False
+                print(iter)
+                if iter > 0:
+                    iter -= 1
+                else:
+                    # Stop growth if no new minimisers found:
+                    grow_complex = False
 
-        self.res.nfev = self.fn
-        print('self.res.nfev = {}'.format(self.res.nfev))
-        self.processed_n = self.fn
-        self.n = numpy.shape(self.C)[0]
+            self.res.nfev = self.fn
+            print('self.res.nfev = {}'.format(self.res.nfev))
+            self.processed_n = self.fn
+            self.n = numpy.shape(self.C)[0]
 
     def sampling(self, method='sobol'):
         """
@@ -919,6 +922,17 @@ if __name__ == '__main__':
     bounds = [(0, 5), (0, 5)]
 
     SHGOc1 = SHGO(f, bounds)
+    SHGOc1.construct_complex_simplicial()
+
+    if 0:
+        def f(x):  # sin
+            return numpy.sin(x)
+        bounds = [(0, 5)]
+
+        SHGOc2 = SHGO(f, bounds)
+        SHGOc2.construct_complex_simplicial()
+
+
     #print(SHGOc1.disp)
 
     #SHGOc2 = SHGO(f, bounds,

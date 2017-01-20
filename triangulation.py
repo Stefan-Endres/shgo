@@ -12,66 +12,6 @@ except ImportError:
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-class Cell:
-    """
-    Contains a cell that is symmetric to the initial hypercube triangulation
-    """
-    def __init__(self, gen, hgr, origin, suprenum):
-        self.gen = gen  # parent generation
-        self.hgr = hgr  # parent homology group rank
-        self.C = []
-        self.origin = origin
-        self.suprenum = suprenum
-        self.centroid = None  # (Not always used)
-        #TODO: self.bounds
-
-    def __call__(self):
-        return self.C
-
-
-    def add_vertex(self, V):
-        if V not in self.C:
-            self.C.append(V)
-
-    def homology_group_order(self):
-        """
-        Returns the homology group order of the current cell
-        """
-        hg_n = 0
-        for v in self.C:
-            if v.minimiser():
-                hg_n += 1
-
-        self.hg_n = hg_n
-        return hg_n
-
-    def homology_group_differential(self):
-        """
-        Returns the difference between the current homology group of the
-        cell and it's parent group
-        """
-        self.hgd = self.hg_n - self.hg
-
-    def polytopial_sperner_lemma(self):
-        """
-        Returns the number of stationary points theoretically contained in the
-        cell based information currently known about the cell
-        """
-        pass
-
-    def print_out(self):
-        """
-        Print the current cell to console
-        """
-        for v in self():
-            print("Vertex: {}".format(v.x))
-            constr = 'Connections: '
-            for vc in v.nn:
-                constr += '{} '.format(vc.x)
-
-            print(constr)
-            print('Order = {}'.format(v.order))
-
 class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None):
         self.dim = dim
@@ -89,6 +29,7 @@ class Complex:
 
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry, printout=True)
+        self.add_centroid()
         self.H.append([])
         self.H[0].append(self.C0)
         self.hg0 = self.C0.homology_group_order()
@@ -170,7 +111,7 @@ class Complex:
         self.V(tuple(self.origin)).disconnect(self.V(tuple(self.suprenum)))
 
         # Connect centroid to all other vertices
-        for v in HC.C0():
+        for v in self.C0():
              self.V(tuple(self.centroid)).connect(self.V(tuple(v.x)))
 
         self.centroid_added = True
@@ -239,10 +180,7 @@ class Complex:
                 break
 
             for j in connections:
-#                if j is not centroid_index:  # (connect to all new vertices)
-                    #print('C_i()[i] = {}'.format(C_i()[i]))
                 C_i()[i].disconnect(C_i()[j])
-                    #self.V(tuple(C_i()[i])).disconnect(self.V(tuple(C_i()[j])))
 
         # Destroy the old cell
         if C_i is not self.C0:  # Garbage collector does this anyway; not needed
@@ -282,7 +220,6 @@ class Complex:
 
         centroid_index = len(HC.C0()) - 1
         # Build new indexed vertex list
-        #sup = list(suprenum)
         V_new = []
 
         for i, v in enumerate(HC.C0()):
@@ -358,8 +295,6 @@ class Complex:
             print(tuple(numpy.array(v.x) * factor))
 
         # (loop through all neighbours and stretch
-
-
         return
 
     def translate(self, cell, v_start, v_end):
@@ -381,7 +316,7 @@ class Complex:
              2 or 3 dimensional complex
 
              To plot a single simplex S in a set C, use ex. [C[0]]
-             """
+        """
         from matplotlib import pyplot
         if self.dim == 2:
             pyplot.figure()
@@ -438,6 +373,67 @@ class Complex:
         else:
             print("dimension higher than 3 or wrong complex format")
         return
+
+
+class Cell:
+    """
+    Contains a cell that is symmetric to the initial hypercube triangulation
+    """
+    def __init__(self, p_gen, p_hgr, origin, suprenum):
+        self.p_gen = p_gen  # parent generation
+        self.p_hgr = p_hgr  # parent homology group rank
+        self.C = []
+        self.origin = origin
+        self.suprenum = suprenum
+        self.centroid = None  # (Not always used)
+        #TODO: self.bounds
+
+    def __call__(self):
+        return self.C
+
+
+    def add_vertex(self, V):
+        if V not in self.C:
+            self.C.append(V)
+
+    def homology_group_order(self):
+        """
+        Returns the homology group order of the current cell
+        """
+        hg_n = 0
+        for v in self.C:
+            if v.minimiser():
+                hg_n += 1
+
+        self.hg_n = hg_n
+        return hg_n
+
+    def homology_group_differential(self):
+        """
+        Returns the difference between the current homology group of the
+        cell and it's parent group
+        """
+        self.hgd = self.hg_n - self.hg
+
+    def polytopial_sperner_lemma(self):
+        """
+        Returns the number of stationary points theoretically contained in the
+        cell based information currently known about the cell
+        """
+        pass
+
+    def print_out(self):
+        """
+        Print the current cell to console
+        """
+        for v in self():
+            print("Vertex: {}".format(v.x))
+            constr = 'Connections: '
+            for vc in v.nn:
+                constr += '{} '.format(vc.x)
+
+            print(constr)
+            print('Order = {}'.format(v.order))
 
 
 class Vertex:
