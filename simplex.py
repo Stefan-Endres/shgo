@@ -1,4 +1,4 @@
-from _shgo import *
+from _shgo_sobol import *
 
 bounds = [(-1, 1), (-1, 1)]
 n = 10

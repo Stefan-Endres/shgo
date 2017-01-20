@@ -1,5 +1,5 @@
 #from tgo import *
-from _shgo import *
+from _shgo_sobol import *
 import numpy
 n = 23
 #n = 26

@@ -1,4 +1,4 @@
-from _shgo import shgo
+from _shgo_sobol import shgo
 from _tgo import tgo
 import scipy.optimize
 import numpy

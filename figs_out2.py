@@ -1,4 +1,4 @@
-from _shgo import *
+from _shgo_sobol import *
 def f(x):  # Alpine2
     prod = 1
     for i in range(numpy.shape(x)[0]):
