@@ -344,6 +344,8 @@ class SHGO(object):
                 self.disp = options['disp']
             if 'symmetry' in options:
                 self.symmetry = True
+            else:
+                self.symmetry = False
             if 'min_iter' in options:
                 self.min_iter = options['min_iter']
             if 'min_hgrd' in options:
@@ -450,7 +452,9 @@ class SHGO(object):
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
     def construct_complex_simplicial(self):
-        self.HC = Complex(self.dim, self.func)
+        self.HC = Complex(self.dim, self.func, self.args,
+                          self.symmetry, self.g_cons, self.g_args)
+
         return
 
 

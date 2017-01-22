@@ -13,7 +13,7 @@ except ImportError:
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Complex:
-    def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None):
+    def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None, g_args=None):
         self.dim = dim
         self.gen = 0
         self.perm_cycle = 0
@@ -33,8 +33,6 @@ class Complex:
         self.H.append([])
         self.H[0].append(self.C0)
         self.hg0 = self.C0.homology_group_order()
-        #for v in self.C0():
-         #   print(v)
 
     def __call__(self):
         return self.H
@@ -437,15 +435,24 @@ class Cell:
 
 
 class Vertex:
-    def __init__(self, x, func=None, func_args=(), nn=None, I=None):
+    def __init__(self, x, bounds=None, func=None, func_args=(), nn=None, I=None):
         import numpy
         self.x = x
         self.order = sum(x)
-        x_a = numpy.array(x)
+        if bounds is None:
+            x_a = numpy.array(x)
+        else:
+            x_a = numpy.array(x)
+            for i in range(len(bounds)):
+                x_a = (x_a * (bounds[i][1] - bounds[i][0])
+                                + bounds[i][0])
+
         # Note Vertex is only initiate once for all x so only
         # evaluated once
         if func is not None:
             self.f = func(x_a, *func_args)
+            print("self.f = {}".format(self.f))
+            print("self.x_a = {}".format(self.f))
 
         if nn is not None:
             self.nn = nn
@@ -474,6 +481,8 @@ class Vertex:
             self.check_min = True
 
     def minimiser(self):
+        # NOTE: This works pretty well, never call self.min,
+        #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
             self.min = False
@@ -489,11 +498,12 @@ class Vertex:
             return(self.min)
 
 class VertexCached:
-    def __init__(self, func, func_args, indexed=True):
+    def __init__(self, func, func_args, bounds=None, indexed=True):
 
         self.cache = {}
         self.func = func
         self.func_args = func_args
+        self.bounds = bounds
 
         if indexed:
             self.Index = -1
@@ -504,9 +514,12 @@ class VertexCached:
         else:
             if indexed:
                 self.Index += 1
-                xval = Vertex(x, func=self.func, func_args=self.func_args, I=self.Index)
+                xval = Vertex(x, bounds=self.bounds,
+                              func=self.func, func_args=self.func_args,
+                              I=self.Index)
             else:
-                xval = Vertex(x, func=self.func, func_args=self.func_args)
+                xval = Vertex(x, bounds=self.bounds,
+                              func=self.func, func_args=self.func_args)
 
             logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
