@@ -32,7 +32,12 @@ class Complex:
         self.add_centroid()
         self.H.append([])
         self.H[0].append(self.C0)
-        self.hg0 = self.C0.homology_group_order()
+        self.hgr = self.C0.homology_group_rank()
+        self.hgrd = 0  # Complex group rank differential
+        #self.hgr = self.C0.hg_n
+
+        # Build initial graph #TODO: This could be saved
+        self.graph_map()
 
     def __call__(self):
         return self.H
@@ -48,7 +53,7 @@ class Complex:
         self.origin = origin
         supremum = list(numpy.ones(dim, dtype=int))
         self.suprenum = supremum
-        self.C0 = Cell(0, 0, self.origin, self.suprenum)  # Initial cell object
+        self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
         self.C0.add_vertex(self.V(tuple(origin)))
         self.C0.add_vertex(self.V(tuple(supremum)))
 
@@ -61,6 +66,7 @@ class Complex:
             print("Initial hyper cube:")
             for v in self.C0():
                 print("Vertex: {}".format(v.x))
+                print("v.f: {}".format(v.f))
                 constr = 'Connections: '
                 for vc in v.nn:
                     constr += '{} '.format(vc.x)
@@ -136,7 +142,7 @@ class Complex:
         incidence, each list element contains a list of indexes
         corresponding to that entries neighbours"""
         self.graph = []
-        for i, v in enumerate(HC.C0()):
+        for i, v in enumerate(self.C0()):
             self.graph.append([])
             for v2 in v.nn:
                 self.graph[i].append(v2.I)
@@ -169,7 +175,8 @@ class Complex:
             if i is not centroid_index:
                 suprenum = tuple(v.x)
                 H_new.append(
-                    self.construct_hypercube(origin_new, suprenum, gen, C_i.hgr))
+                    self.construct_hypercube(origin_new, suprenum,
+                                             gen, C_i.hg_n, C_i.p_hgr_h))
 
         # Disconnected all edges of parent cells (except origin to sup)
         for i, connections in enumerate(self.graph):
@@ -200,7 +207,7 @@ class Complex:
         self.gen += 1
 
 
-    def construct_hypercube(self, origin, suprenum, gen, hgr, printout=False):
+    def construct_hypercube(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False):
         """
         Build a hypercube with triangulations symmetric to C0.
 
@@ -213,14 +220,14 @@ class Complex:
         """
 
         # Initiate new cell
-        C_new = Cell(gen, hgr, origin, suprenum)
+        C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
         C_new.centroid = list((numpy.array(origin) + numpy.array(suprenum))/2.0)
 
-        centroid_index = len(HC.C0()) - 1
+        centroid_index = len(self.C0()) - 1
         # Build new indexed vertex list
         V_new = []
 
-        for i, v in enumerate(HC.C0()):
+        for i, v in enumerate(self.C0()):
             if i == centroid_index:  # (This should be the last index of HC.C0()
                 C_new.add_vertex(self.V(tuple(C_new.centroid)))
                 V_new.append(C_new.centroid)
@@ -259,6 +266,20 @@ class Complex:
         self.H[gen].append(C_new)
 
         return C_new
+
+    def complex_homology_group_rank(self):
+        #self.hgr = self.C0.homology_group_rank()
+        p_hgr = self.hgr
+        self.hgr = 0
+        cells = 0
+        for Cell in self.H[self.gen]:
+            self.hgr += Cell.homology_group_rank()
+            cells += 1
+
+        #self.hgr = self.hgr/cells * 100
+
+        self.hgrd = self.hgr - p_hgr  # Complex group rank differential
+        return self.hgr
 
     # Not completed zone:
     ## Symmetry group topological transformation methods
@@ -301,7 +322,6 @@ class Complex:
         """
 
         return
-
 
     def rotation(self, cell):
         # Return all SO(n) group rotations of input cell
@@ -377,9 +397,16 @@ class Cell:
     """
     Contains a cell that is symmetric to the initial hypercube triangulation
     """
-    def __init__(self, p_gen, p_hgr, origin, suprenum):
+    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
+        self.p_hgr_h = p_hgr_h  #
+        self.hg_n = None
+        self.hg_d = None
+
+        # Maybe add parent homology group rank total history
+        # This is the sum off all previously split cells
+        # cumulatively throughout its entire history
         self.C = []
         self.origin = origin
         self.suprenum = suprenum
@@ -394,24 +421,30 @@ class Cell:
         if V not in self.C:
             self.C.append(V)
 
-    def homology_group_order(self):
+    def homology_group_rank(self):
         """
         Returns the homology group order of the current cell
         """
-        hg_n = 0
-        for v in self.C:
-            if v.minimiser():
-                hg_n += 1
+        if self.hg_n is not None:
+            return self.hg_n
+        else:
+            hg_n = 0
+            for v in self.C:
+                if v.minimiser():
+                    hg_n += 1
 
-        self.hg_n = hg_n
-        return hg_n
+            self.hg_n = hg_n
+            return hg_n
 
     def homology_group_differential(self):
         """
         Returns the difference between the current homology group of the
         cell and it's parent group
         """
-        self.hgd = self.hg_n - self.hg
+        if self.hg_d is not None:
+            return self.hg_d
+        else:
+            self.hgd = self.hg_n - self.p_hgr
 
     def polytopial_sperner_lemma(self):
         """
@@ -451,8 +484,8 @@ class Vertex:
         # evaluated once
         if func is not None:
             self.f = func(x_a, *func_args)
-            print("self.f = {}".format(self.f))
-            print("self.x_a = {}".format(self.f))
+            #print("self.f = {}".format(self.f))
+            #print("self.x_a = {}".format(self.f))
 
         if nn is not None:
             self.nn = nn
@@ -472,6 +505,10 @@ class Vertex:
             v.nn.append(self)
             if self.f > v.f:
                 self.min = False
+            else:
+                v.min = False
+                #self.min = True
+                #v.min = False
             #self.check_min = True
 
     def disconnect(self, v):
@@ -485,17 +522,19 @@ class Vertex:
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            self.min = False
+            #self.min = False
+            self.min = True
             for v in self.nn:
                 if self.f > v.f:
+                    self.min = False
                     break
 
-                self.min = True
+                #self.min = True
 
             self.check_min = False
-            return (self.min)
+            return self.min
         else:
-            return(self.min)
+            return self.min
 
 class VertexCached:
     def __init__(self, func, func_args, bounds=None, indexed=True):
@@ -521,10 +560,9 @@ class VertexCached:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args)
 
-            logging.info("New generated vertex at x = {}".format(x))
+            #logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
             return xval
-
 
 
 if __name__ == '__main__':

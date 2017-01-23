@@ -452,8 +452,100 @@ class SHGO(object):
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
     def construct_complex_simplicial(self):
+        if self.disp:
+            print('Building initial complex')
+
         self.HC = Complex(self.dim, self.func, self.args,
                           self.symmetry, self.g_cons, self.g_args)
+
+        if self.disp:
+            print('Splitting first generation')
+
+        self.HC.C0.hgr = self.HC.C0.homology_group_rank()#split_generation()
+        print('self.HC.C0.hg_n = {}'.format(self.HC.C0.hg_n))
+
+
+        #TODO: If minimum subspace tolerance is specified split a finite
+        #      amount of generations
+        if 0:
+            # while cell_space < tolerance:
+            for Cell in self.HC.H[self.HC.gen]:
+                Cell.homology_group_rank()
+
+            self.HC.split_generation()
+
+             # Find the smallest subspace covered by a cell
+            sup = self.HC.H[self.HC.gen][0].suprenum
+            origin = self.HC.H[self.HC.gen][0].origin
+            cell_space = numpy.linalg.norm(numpy.array(sup)
+                                           - numpy.array(origin))
+
+            print('cell_space = {}'.format(cell_space))
+
+        #TODO: We can also implement a maximum tolerance to ensure the algorithm
+        #      terminates in finite time for a function with infinite minima
+        else:
+            self.HC.C0.homology_group_rank()
+            self.HC.split_generation()
+
+            #self.HC[1].homology_group_rank()
+
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+            self.HC.split_generation()
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+            self.HC.split_generation()
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+            self.HC.split_generation()
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+            self.HC.split_generation()
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+            self.HC.split_generation()
+            print('complex_homology_group_rank(self) = {}'.format(
+                self.HC.complex_homology_group_rank()
+            ))
+            print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+
+            hgr_h = self.HC.C0.hg_n
+            for Cell in self.HC.H[1]:
+                Cell.homology_group_rank()
+                hgr_h += Cell.hg_n
+
+            for Cell in self.HC.H[1]:
+                Cell.p_hgr_h = hgr_h
+
+                # Homology group iterations with no tolerance:
+        self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
+
+        #TODO: Define a permutaiton function that calls itself after a split
+               # for every cell with a non-zero differential
+
+        for Cell in self.HC.H[self.HC.gen]:
+            pass
+
+        # homology_group_rank(self)
+        # homology_group_differential(self)
+
+        # Cell.p_hgr_h = Cell.p_hgr_h + Cell.hgd
 
         return
 
@@ -923,10 +1015,37 @@ if __name__ == '__main__':
 
     bounds = [(0, 10), (0, 10)]
     bounds = [(0, 10), (0, 10)]
-    bounds = [(0, 5), (0, 5)]
+    #bounds = [(0, 5), (0, 5)]
+    bounds = [(0, 1), (0, 1)]
 
     SHGOc1 = SHGO(f, bounds)
     SHGOc1.construct_complex_simplicial()
+
+
+
+
+
+
+
+    N = 2
+
+    def fun(x):  # Damavand
+        import numpy
+        try:
+            num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
+            den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
+            factor1 = 1.0 - (abs(num / den)) ** 5.0
+            factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
+            return factor1 * factor2
+        except ZeroDivisionError:
+            return numpy.nan
+
+
+    bounds = list(zip([0.0] * N, [14.0] * N))
+
+    SHGOc2 = SHGO(fun, bounds)
+    SHGOc2.construct_complex_simplicial()
+
 
     if 0:
         def f(x):  # sin
