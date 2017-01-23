@@ -456,7 +456,7 @@ class SHGO(object):
             print('Building initial complex')
 
         self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.g_cons, self.g_args)
+                          self.symmetry, self.bounds, self.g_cons, self.g_args)
 
         if self.disp:
             print('Splitting first generation')
@@ -486,45 +486,48 @@ class SHGO(object):
         #      terminates in finite time for a function with infinite minima
         else:
             self.HC.C0.homology_group_rank()
+
+            # self.HC[1].homology_group_rank()
+
+            # print('complex_homology_group_rank(self) = {}'.format(
+            #     self.HC.complex_homology_group_rank()
+            # ))
+            #  print('HC.hgrd = {}'.format(self.HC.hgrd))
+
+
+            gen = 1
+            Stop = False
+            hgr_diff_iter = 3  # USER INPUT?
+
+            # Split first generation
             self.HC.split_generation()
+            while not Stop:
+                #self.HC.split_generation()
 
-            #self.HC[1].homology_group_rank()
-
-            print('complex_homology_group_rank(self) = {}'.format(
+                # Split all cells except for those with hgr_d < 0
+                try:
+                    for Cell in self.HC.H[gen]:
+                        Cell.homology_group_rank()
+                        if Cell.homology_group_differential() >= 0:
+                            self.HC.sub_generate_cell(Cell, gen)
+                except IndexError: # No cells in index range
+                    pass
+                # Find total complex group:
                 self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
-            self.HC.split_generation()
-            print('complex_homology_group_rank(self) = {}'.format(
-                self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
+                if self.HC.hgrd <= 0:
+                    hgr_diff_iter -= 1
+                    if hgr_diff_iter == 0:
+                        Stop = True
 
-            self.HC.split_generation()
-            print('complex_homology_group_rank(self) = {}'.format(
-                self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
+                # Increase generation counter
+                gen +=1
 
-            self.HC.split_generation()
-            print('complex_homology_group_rank(self) = {}'.format(
-                self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
+                # Homology group iterations with no tolerance:
+        #self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
 
-            self.HC.split_generation()
-            print('complex_homology_group_rank(self) = {}'.format(
-                self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
-
-            self.HC.split_generation()
-            print('complex_homology_group_rank(self) = {}'.format(
-                self.HC.complex_homology_group_rank()
-            ))
-            print('HC.hgrd = {}'.format(self.HC.hgrd))
-
-
+        #TODO: Define a permutaiton function that calls itself after a split
+               # for every cell with a non-zero differential
+        if 0:
             hgr_h = self.HC.C0.hg_n
             for Cell in self.HC.H[1]:
                 Cell.homology_group_rank()
@@ -532,15 +535,8 @@ class SHGO(object):
 
             for Cell in self.HC.H[1]:
                 Cell.p_hgr_h = hgr_h
-
-                # Homology group iterations with no tolerance:
-        self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
-
-        #TODO: Define a permutaiton function that calls itself after a split
-               # for every cell with a non-zero differential
-
-        for Cell in self.HC.H[self.HC.gen]:
-            pass
+            for Cell in self.HC.H[self.HC.gen]:
+                pass
 
         # homology_group_rank(self)
         # homology_group_differential(self)
@@ -1017,34 +1013,38 @@ if __name__ == '__main__':
     bounds = [(0, 10), (0, 10)]
     #bounds = [(0, 5), (0, 5)]
     bounds = [(0, 1), (0, 1)]
+    bounds = [(3, 4), (3, 4)]
+    bounds = [(2, 4), (2, 4)]
+    bounds = [(0, 10), (0, 10)]
+    #bounds = [(1, 6), (1, 6)]
 
     SHGOc1 = SHGO(f, bounds)
     SHGOc1.construct_complex_simplicial()
 
+    SHGOc1.HC.plot_complex()
 
 
 
 
+    if 0:
+        N = 2
+
+        def fun(x):  # Damavand
+            import numpy
+            try:
+                num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
+                den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
+                factor1 = 1.0 - (abs(num / den)) ** 5.0
+                factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
+                return factor1 * factor2
+            except ZeroDivisionError:
+                return numpy.nan
 
 
-    N = 2
+        bounds = list(zip([0.0] * N, [14.0] * N))
 
-    def fun(x):  # Damavand
-        import numpy
-        try:
-            num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
-            den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
-            factor1 = 1.0 - (abs(num / den)) ** 5.0
-            factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
-            return factor1 * factor2
-        except ZeroDivisionError:
-            return numpy.nan
-
-
-    bounds = list(zip([0.0] * N, [14.0] * N))
-
-    SHGOc2 = SHGO(fun, bounds)
-    SHGOc2.construct_complex_simplicial()
+        SHGOc2 = SHGO(fun, bounds)
+        SHGOc2.construct_complex_simplicial()
 
 
     if 0:

@@ -13,7 +13,7 @@ except ImportError:
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Complex:
-    def __init__(self, dim, func, func_args=(), symmetry=False, g_cons=None, g_args=None):
+    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None, g_cons=None, g_args=None):
         self.dim = dim
         self.gen = 0
         self.perm_cycle = 0
@@ -24,8 +24,7 @@ class Complex:
         # When a cell is subgenerated it is removed from this list
 
         self.H = []  # Storage structure of cells
-
-        self.V = VertexCached(func, func_args)  # Cache of all vertices
+        self.V = VertexCached(func, func_args, bounds)  # Cache of all vertices
 
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry, printout=True)
@@ -445,6 +444,7 @@ class Cell:
             return self.hg_d
         else:
             self.hgd = self.hg_n - self.p_hgr
+            return self.hgd
 
     def polytopial_sperner_lemma(self):
         """
@@ -484,8 +484,6 @@ class Vertex:
         # evaluated once
         if func is not None:
             self.f = func(x_a, *func_args)
-            #print("self.f = {}".format(self.f))
-            #print("self.x_a = {}".format(self.f))
 
         if nn is not None:
             self.nn = nn
@@ -537,7 +535,7 @@ class Vertex:
             return self.min
 
 class VertexCached:
-    def __init__(self, func, func_args, bounds=None, indexed=True):
+    def __init__(self, func, func_args=(), bounds=None, indexed=True):
 
         self.cache = {}
         self.func = func
@@ -560,7 +558,7 @@ class VertexCached:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args)
 
-            #logging.info("New generated vertex at x = {}".format(x))
+            logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
             return xval
 
