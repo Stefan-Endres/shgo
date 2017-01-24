@@ -15,6 +15,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None, g_cons=None, g_args=None):
         self.dim = dim
+        self.bounds = bounds
         self.gen = 0
         self.perm_cycle = 0
 
@@ -340,23 +341,48 @@ class Complex:
             for C in self.H:
                 for c in C:
                     for v in c():
-                        logging.info('v.x = {}'.format(v.x))
+                        if self.bounds is None:
+                            x_a = numpy.array(v.x)
+                        else:
+                            x_a = numpy.array(v.x)
+                            for i in range(len(self.bounds)):
+                                x_a[i] = (x_a[i] * (self.bounds[i][1]
+                                              - self. bounds[i][0])
+                                       + self.bounds[i][0])
+                                print('self.bounds = {}'.format(self.bounds))
+                                print('x_a = {}'.format(x_a))
 
-                        pyplot.plot([v.x[0]], [v.x[1]], 'o')
+                        logging.info('v.x_a = {}'.format(x_a))
+
+                        pyplot.plot([x_a[0]], [x_a[1]], 'o')
 
                         xlines = []
                         ylines = []
                         for vn in v.nn:
+                            if self.bounds is None:
+                                xn_a = numpy.array(vn.x)
+                            else:
+                                xn_a = numpy.array(vn.x)
+                                for i in range(len(self.bounds)):
+                                    xn_a[i] = (xn_a[i] * (self.bounds[i][1]
+                                                  - self.bounds[i][0])
+                                           + self.bounds[i][0])
+
                             logging.info('vn.x = {}'.format(vn.x))
 
-                            xlines.append(vn.x[0])
-                            ylines.append(vn.x[1])
-                            xlines.append(v.x[0])
-                            ylines.append(v.x[1])
+                            xlines.append(xn_a[0])
+                            ylines.append(xn_a[1])
+                            xlines.append(x_a[0])
+                            ylines.append(x_a[1])
+
                         pyplot.plot(xlines, ylines)
 
-            pyplot.ylim([-1e-2, 1 + 1e-2])
-            pyplot.xlim([-1e-2, 1 + 1e-2])
+            if self.bounds is None:
+                pyplot.ylim([-1e-2, 1 + 1e-2])
+                pyplot.xlim([-1e-2, 1 + 1e-2])
+            else:
+                pyplot.ylim([self.bounds[1][0]-1e-2, self.bounds[1][1] + 1e-2])
+                pyplot.xlim([self.bounds[0][0]-1e-2, self.bounds[0][1] + 1e-2])
 
             pyplot.show()
 
@@ -477,9 +503,9 @@ class Vertex:
         else:
             x_a = numpy.array(x)
             for i in range(len(bounds)):
-                x_a = (x_a * (bounds[i][1] - bounds[i][0])
+                x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
                                 + bounds[i][0])
-
+                print('x_a = {}'.format(x_a))
         # Note Vertex is only initiate once for all x so only
         # evaluated once
         if func is not None:
@@ -501,13 +527,15 @@ class Vertex:
         if v not in self.nn and v is not self:  # <-- Cool
             self.nn.append(v)
             v.nn.append(self)
-            if self.f > v.f:
-                self.min = False
-            else:
-                v.min = False
-                #self.min = True
-                #v.min = False
-            #self.check_min = True
+
+            if self.minimiser():
+                if self.f > v.f:
+                    self.min = False
+                else:
+                    v.min = False
+                    #self.min = True
+                    #v.min = False
+                #self.check_min = True
 
     def disconnect(self, v):
         if v in self.nn:

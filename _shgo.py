@@ -518,14 +518,11 @@ class SHGO(object):
                     print('Current complex generation = {}'.format(gen))
 
                 for Cell in Cells_in_gen:
-                    print('gen = {}'.format(gen))
+                    #print('gen = {}'.format(gen))
                     Cell.homology_group_rank()
                     if Cell.homology_group_differential() >= 0:
                         self.HC.sub_generate_cell(Cell, gen + 1)
 
-
-
-                print('TEST')
                 # Find total complex group:
                 self.HC.complex_homology_group_rank()
                 logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
@@ -567,22 +564,35 @@ class SHGO(object):
         self.minimizer_pool = []
         # TODO: Can easily be parralized
 
-        for ind in range(self.fn):
-            Min_bool = self.sample_simplex_topo(ind)
-            if Min_bool:
-                self.minimizer_pool.append(ind)
+        # TODO: We revisit the same vertex serveral times
+        for Cell_gen in self.HC.H:
+            for Cell in Cell_gen:
+                for v in Cell():
+                    if v.minimiser():
+                        print('v.x = {} is minimiser'.format(v.x))
+                        if v not in self.minimizer_pool:
+                            self.minimizer_pool.append(v)
 
-        self.minimizer_pool_F = self.F[self.minimizer_pool]
+                    print('v.x = {}'.format(v.x))
+        print('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        print('self.HC.V = {}'.format(self.HC.V))
+        #for ind in range(self.fn):
+        #    Min_bool = self.sample_simplex_topo(ind)
+        #    if Min_bool:
+        #        self.minimizer_pool.append(ind)
+
+        self.minimizer_pool_F = []#self.F[self.minimizer_pool]
+        #for v in self.minimizer_pool:
 
         # Sort to find minimum func value in min_pool
-        self.sort_min_pool()
+        #self.sort_min_pool() # TODO: CHANGE THIS
         logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        if not len(self.minimizer_pool) == 0:
-            self.X_min = self.C[self.minimizer_pool]
-        else:
-            self.X_min = []
+        #if not len(self.minimizer_pool) == 0:
+        #    self.X_min = self.C[self.minimizer_pool]
+        #else:
+        #    self.X_min = []
 
-        return self.X_min
+        return #self.X_min
 
     def minimise_pool(self, force_iter=False):
         """
@@ -724,8 +734,10 @@ if __name__ == '__main__':
 
         SHGOc3 = SHGO(fun, bounds)
         SHGOc3.construct_complex_simplicial()
+        SHGOc3.simplex_minimizers()
 
         SHGOc3.HC.plot_complex()
+
 
     # Apline2
     if 0:
