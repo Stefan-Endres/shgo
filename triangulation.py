@@ -558,7 +558,7 @@ class VertexCached:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args)
 
-            logging.info("New generated vertex at x = {}".format(x))
+            #logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
             return xval
 

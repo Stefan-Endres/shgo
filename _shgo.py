@@ -287,9 +287,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
         print('Generating sampling points')
 
     # Construct directed complex.
-
     SHc.construct_complex_simplicial()
-
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -462,7 +460,7 @@ class SHGO(object):
             print('Splitting first generation')
 
         self.HC.C0.hgr = self.HC.C0.homology_group_rank()#split_generation()
-        print('self.HC.C0.hg_n = {}'.format(self.HC.C0.hg_n))
+        print('self.HC.C0.hg_ns = {}'.format(self.HC.C0.hg_n))
 
 
         #TODO: If minimum subspace tolerance is specified split a finite
@@ -497,23 +495,37 @@ class SHGO(object):
 
             gen = 1
             Stop = False
-            hgr_diff_iter = 3  # USER INPUT?
+            hgr_diff_iter = 1  # USER INPUT?
+            #hgr_diff_iter = 1  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
+            #self.HC.split_generation() #TODO REMOVE THIS
+            #gen +=1
             while not Stop:
                 #self.HC.split_generation()
+                print('TEST')
 
                 # Split all cells except for those with hgr_d < 0
                 try:
-                    for Cell in self.HC.H[gen]:
-                        Cell.homology_group_rank()
-                        if Cell.homology_group_differential() >= 0:
-                            self.HC.sub_generate_cell(Cell, gen)
-                except IndexError: # No cells in index range
+                    Cells_in_gen = self.HC.H[gen]
+                except IndexError:  # No cells in index range
+                    logging.warning("INDEXERROR")
                     pass
+
+                for Cell in Cells_in_gen:
+                    print('TEST')
+                    print('gen = {}'.format(gen))
+                    Cell.homology_group_rank()
+                    if Cell.homology_group_differential() >= 0:
+                        self.HC.sub_generate_cell(Cell, gen + 1)
+
+
+
+                print('TEST')
                 # Find total complex group:
                 self.HC.complex_homology_group_rank()
+                logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
                 if self.HC.hgrd <= 0:
                     hgr_diff_iter -= 1
                     if hgr_diff_iter == 0:
@@ -1002,29 +1014,43 @@ if __name__ == '__main__':
     '''
     Temporary dev work:
     '''
-    def f(x):  # Alpine2
-        prod = 1
-        for i in range(numpy.shape(x)[0]):
-            prod = prod * numpy.sqrt(x[i]) * numpy.sin(x[i])
-
-        return prod
-
-    bounds = [(0, 10), (0, 10)]
-    bounds = [(0, 10), (0, 10)]
-    #bounds = [(0, 5), (0, 5)]
-    bounds = [(0, 1), (0, 1)]
-    bounds = [(3, 4), (3, 4)]
-    bounds = [(2, 4), (2, 4)]
-    bounds = [(0, 10), (0, 10)]
-    #bounds = [(1, 6), (1, 6)]
-
-    SHGOc1 = SHGO(f, bounds)
-    SHGOc1.construct_complex_simplicial()
-
-    SHGOc1.HC.plot_complex()
+    # Eggholder
+    if 1:
+        N = 2
+        def fun(x, *args):
+            return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
 
 
+        bounds = list(zip([-5.0] * N, [5.0] * N))
 
+        SHGOc3 = SHGO(fun, bounds)
+        SHGOc3.construct_complex_simplicial()
+
+        SHGOc3.HC.plot_complex()
+
+    # Apline2
+    if 0:
+
+        def f(x):  # Alpine2
+            prod = 1
+            for i in range(numpy.shape(x)[0]):
+                prod = prod * numpy.sqrt(x[i]) * numpy.sin(x[i])
+
+            return prod
+
+        bounds = [(0, 10), (0, 10)]
+        bounds = [(0, 10), (0, 10)]
+        #bounds = [(0, 5), (0, 5)]
+        bounds = [(0, 1), (0, 1)]
+        bounds = [(3, 4), (3, 4)]
+        bounds = [(2, 4), (2, 4)]
+        bounds = [(0, 10), (0, 10)]
+        #bounds = [(1, 6), (1, 6)]
+
+        SHGOc1 = SHGO(f, bounds)
+        SHGOc1.construct_complex_simplicial()
+
+        SHGOc1.HC.plot_complex()
 
     if 0:
         N = 2

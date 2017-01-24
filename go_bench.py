@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.optimize
 from _shgo import *
+from _shgo_sobol import shgo as shgo_sobol
 from _tgo import *
 from go_funcs.go_benchmark import Benchmark
 import go_funcs
