@@ -569,30 +569,68 @@ class SHGO(object):
             for Cell in Cell_gen:
                 for v in Cell():
                     if v.minimiser():
-                        print('v.x = {} is minimiser'.format(v.x))
+                        logging.info('v.x = {} is minimiser'.format(v.x))
                         if v not in self.minimizer_pool:
                             self.minimizer_pool.append(v)
 
-                    print('v.x = {}'.format(v.x))
-        print('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        print('self.HC.V = {}'.format(self.HC.V))
+        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        for v in self.minimizer_pool:
+            logging.info('v.x = {}'.format(v.x))
         #for ind in range(self.fn):
         #    Min_bool = self.sample_simplex_topo(ind)
         #    if Min_bool:
         #        self.minimizer_pool.append(ind)
 
         self.minimizer_pool_F = []#self.F[self.minimizer_pool]
-        #for v in self.minimizer_pool:
+        self.X_min = []
+        for v in self.minimizer_pool:
+            self.X_min.append(v.x)
+            self.minimizer_pool_F.append(v.f)
 
         # Sort to find minimum func value in min_pool
         #self.sort_min_pool() # TODO: CHANGE THIS
-        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+
         #if not len(self.minimizer_pool) == 0:
         #    self.X_min = self.C[self.minimizer_pool]
         #else:
         #    self.X_min = []
 
-        return #self.X_min
+        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
+        self.X_min = numpy.array(self.X_min)
+
+        # TODO: Only do this if global mode
+        self.sort_min_pool()
+
+        return self.X_min
+
+    def sort_min_pool(self):
+        # Sort to find minimum func value in min_pool
+        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
+        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
+        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[self.ind_f_min]
+        return
+
+    def trim_min_pool(self, trim_ind):
+        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
+        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
+        return
+
+    def g_topograph(self, x_min, X_min):
+        """
+        Returns the topographical vector stemming from the specified value
+        value 'x_min' for the current feasible set 'X_min' with True boolean
+        values indicating positive entries and False ref. values indicating
+        negative values.
+        """
+        x_min = numpy.array([x_min])
+        self.Y = scipy.spatial.distance.cdist(x_min,
+                                              X_min,
+                                              'euclidean')
+        # Find sorted indexes of spatial distances:
+        self.Z = numpy.argsort(self.Y, axis=-1)
+
+        self.Ss = X_min[self.Z]
+        return self.Ss
 
     def minimise_pool(self, force_iter=False):
         """
@@ -634,6 +672,7 @@ class SHGO(object):
                 self.stopiter = True
                 break
 
+            #TODO: OLD code, repleace
             # Construct topograph from current minimiser set
             # (NOTE: This is a very small topograph using only the miniser pool
             #        , it might be worth using some graph theory tools instead.
@@ -735,8 +774,11 @@ if __name__ == '__main__':
         SHGOc3 = SHGO(fun, bounds)
         SHGOc3.construct_complex_simplicial()
         SHGOc3.simplex_minimizers()
+        SHGOc3.minimise_pool()
+        SHGOc3.sort_result()
+        print('SHGOc3.res = {}'.format(SHGOc3.res))
 
-        SHGOc3.HC.plot_complex()
+        #SHGOc3.HC.plot_complex()
 
 
     # Apline2
