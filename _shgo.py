@@ -319,6 +319,8 @@ class SHGO(object):
 
         self.func = func
         self.bounds = bounds
+        #  TODO Assert if func output matches dims. found from bounds
+        self.m = len(self.bounds)  # Dimensions
         self.args = args
         self.g_cons = g_cons
         if type(g_cons) is not tuple and type(g_cons) is not list:
@@ -504,7 +506,6 @@ class SHGO(object):
             #gen +=1
             while not Stop:
                 #self.HC.split_generation()
-                print('TEST')
 
                 # Split all cells except for those with hgr_d < 0
                 try:
@@ -513,8 +514,10 @@ class SHGO(object):
                     logging.warning("INDEXERROR")
                     pass
 
+                if self.disp:
+                    print('Current complex generation = {}'.format(gen))
+
                 for Cell in Cells_in_gen:
-                    print('TEST')
                     print('gen = {}'.format(gen))
                     Cell.homology_group_rank()
                     if Cell.homology_group_differential() >= 0:
@@ -557,264 +560,15 @@ class SHGO(object):
 
         return
 
-
-        if 0:
-            # Initiate complex
-            self.n = self.dim + 1
-            HC = Complex(self.dim)
-            self.HC = HC
-
-            if self.symmetry:
-                C = self.HC.n_cube(self.dim, symmetry=True)
-            else:
-                C = self.HC.n_cube(self.dim)
-
-            self.HC.initial_vertices(C, self.dim)
-            Ci = self.HC.index_simplices(C)
-            self.C = self.HC.V[0]
-
-            for i in range(len(self.HC.V) - 1):
-                self.C = numpy.vstack((self.C, self.HC.V[i + 1]))
-
-            # stretch values
-            for i in range(len(self.bounds)):
-                self.C[:, i] = (self.C[:, i] *
-                                (self.bounds[i][1] - self.bounds[i][0])
-                                + self.bounds[i][0])
-
-            # Stretch values in complex class
-            self.HC.V = []
-            for vi in range(numpy.shape(self.C)[0]):
-                self.HC.V.append(self.C[vi, :])
-
-            self.Ci = Ci
-            # Containers
-            self.X_min_all = []
-            self.minimizer_pool_F_all = []
-
-            grow_complex = True
-            homology_group = 0
-            homology_group_prev = 0
-            #iter = 2  # Max iterations with no pool growth
-            iter = self.crystal_iter
-            while grow_complex:
-                Ci_new = self.HC.split_generation(self.HC.Ci, self.HC.V,
-                                                  build_complex_array=False)
-
-                #print(Ci_new)
-                self.Ci = Ci_new
-                self.HC.connected_vertices(0, Ci_new)
-                #print(HC.V)
-                self.C = HC.V[0]
-
-                # Stack self.C:
-                for i in range(len(HC.V)-1):
-                    self.C = numpy.vstack((self.C, HC.V[i + 1]))
-
-                if self.g_cons is not None:
-                    self.sampling_subspace()
-                    self.fn = numpy.shape(self.C)[0]
-                else:
-                    self.fn = numpy.shape(self.C)[0]
-
-                # Sort remaining samples
-                self.sorted_samples()
-
-                # Find objective function references
-                self.fun_ref()
-
-                # Build minimiser pool
-                # DIMENSIONS self.dim
-                if self.dim < 2: #UNTESTED
-                    self.ax_subspace()
-                    self.surface_topo_ref()
-                    self.X_min = self.minimizers()
-
-                else:  # Multivariate functions.
-                    self.X_min = self.simplex_minimizers()
-
-               # Continue loop if pool is zero to iterate
-                print('self.X_min = {}'.format(self.X_min ))
-                if len(self.minimizer_pool) == 0:
-                    homology_group = 0
-                    continue
-                else:
-                    homology_group = len(self.minimizer_pool)
-                    print('homology_group = {}'.format(homology_group))
-                    print('homology_group_prev = {}'.format(homology_group_prev))
-                    if homology_group > homology_group_prev:
-                        homology_group_prev = homology_group
-                        continue
-
-                print(iter)
-                if iter > 0:
-                    iter -= 1
-                else:
-                    # Stop growth if no new minimisers found:
-                    grow_complex = False
-
-            self.res.nfev = self.fn
-            print('self.res.nfev = {}'.format(self.res.nfev))
-            self.processed_n = self.fn
-            self.n = numpy.shape(self.C)[0]
-
-    def sampling(self, method='sobol'):
-        """
-        Generates uniform sampling points in a hypercube and scales the points
-        to the bound limits.
-        """
-        # Generate sampling points.
-        #  TODO Assert if func output matches dims. found from bounds
-        self.m = len(self.bounds)  # Dimensions
-
-        # Generate uniform sample points in [0, 1]^m \subset R^m
-        if method == 'sobol':
-            self.C = self.sobol_points(self.n, self.m)
-
-        # Distribute over bounds
-        # TODO: Find a better way to do this
-        for i in range(len(self.bounds)):
-            self.C[:, i] = (self.C[:, i] *
-                            (self.bounds[i][1] - self.bounds[i][0])
-                            + self.bounds[i][0])
-        return self.C
-
-    def sampling_subspace(self):
-        """Find subspace of feasible points from g_func definition"""
-        # Subspace of feasible points.
-        for g in self.g_func:
-            self.C = self.C[g(self.C.T, *self.g_args) >= 0.0]
-            if self.C.size == 0:
-                self.res.message = ('No sampling point found within the '
-                                    + 'feasible set. Increasing sampling '
-                                    + 'size.')
-                #TODO: Write a unittest to see if algorithm is increasing
-                # sampling correctly for both 1D and >1D cases
-                if self.disp:
-                    print(self.res.message)
-
-        self.fn = numpy.shape(self.C)[0]
-        return
-
-    def sorted_samples(self):  # Validated
-        """Find indexes of the sorted sampling points"""
-        self.I = numpy.argsort(self.C, axis=0)
-        # TODO Use self.I as mask to sort only once
-        self.Xs = numpy.sort(self.C, axis=0)
-        return self.I, self.Xs
-
-    def ax_subspace(self):  # Validated
-        """
-        Finds the subspace vectors along each component axis.
-        """
-        self.Ci = []
-        self.Xs_i = []
-        self.Ii = []
-        for i in range(self.m):
-            self.Ci.append(self.C[:, i])
-            self.Ii.append(self.I[:, i])
-            self.Xs_i.append(self.Xs[:, i])
-
-        return
-
-    def fun_ref(self):
-        """
-        Find the objective function output reference table
-        """
-        #TODO: This process can be pooled
-        # Obj. function returns to be used as reference table.:
-        if self.n_sampled > 0:  # Store old function evaluations
-            Ftemp = self.F
-
-        self.F = numpy.zeros(numpy.shape(self.C)[0])
-        for i in range(self.n_sampled, numpy.shape(self.C)[0]):
-            self.F[i] = self.func(self.C[i, :], *self.args)
-
-        if self.n_sampled > 0:  # Restore saved function evaluations
-            self.F[0:self.n_sampled] = Ftemp
-
-        self.n_sampled = numpy.shape(self.C)[0]
-
-        return self.F
-
-    def surface_topo_ref(self):  # Validated
-        """
-        Find the BD and FD finite differences along each component
-        vector.
-        """
-        # Replace numpy inf, -inf and nan objects with floating point numbers
-        # fixme: Find a better way to deal with numpy.nan values.
-        # nan --> float
-        self.F[numpy.isnan(self.F)] = numpy.inf
-        # inf, -inf  --> floats
-        self.F = numpy.nan_to_num(self.F)
-
-        self.Ft = self.F[self.I]
-        self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
-        self.Ftm = numpy.diff(self.Ft[::-1], axis=0)[::-1]  # BD
-        return
-
-    def sample_topo(self, ind):
-        # Find the position of the sample in the component axial directions
-        self.Xi_ind_pos = []
-        self.Xi_ind_topo_i = []
-
-        for i in range(self.m):
-            for x, I_ind in zip(self.Ii[i], range(len(self.Ii[i]))):
-                if x == ind:
-                     self.Xi_ind_pos.append(I_ind)
-
-            # Use the topo reference tables to find if point is a minimizer on
-            # the current axis
-
-            # First check if index is on the boundary of the sampling points:
-            if self.Xi_ind_pos[i] == 0:
-                if self.Ftp[:, i][0] > 0:  # if boundary is in basin
-                    BoundBasin = True
-                    self.Xi_ind_topo_i.append(True)
-                    #self.Xi_ind_topo_i.append(False)
-                else:
-                    self.Xi_ind_topo_i.append(False)
-
-            elif self.Xi_ind_pos[i] == self.fn - 1:
-                # Largest value at sample size
-                if self.Ftp[:, i][self.fn - 2] < 0:
-                    self.Xi_ind_topo_i.append(True)
-                else:
-                    self.Xi_ind_topo_i.append(False)
-
-            # Find axial reference for other points
-            else:
-                if self.Ftp[:, i][self.Xi_ind_pos[i]] > 0:
-                    Xi_ind_top_p = True
-                else:
-                    Xi_ind_top_p = False
-
-                if self.Ftm[:, i][self.Xi_ind_pos[i] - 1] > 0:
-                    Xi_ind_top_m = True
-                else:
-                    Xi_ind_top_m = False
-
-                if Xi_ind_top_p and Xi_ind_top_m:
-                    self.Xi_ind_topo_i.append(True)
-                else:
-                    self.Xi_ind_topo_i.append(False)
-
-        if numpy.array(self.Xi_ind_topo_i).all():
-            self.Xi_ind_topo = True
-        else:
-            self.Xi_ind_topo = False
-
-        return self.Xi_ind_topo
-
-    def minimizers(self):
+    def simplex_minimizers(self):
         """
         Returns the indexes of all minimizers
         """
         self.minimizer_pool = []
-        #TODO: Can be parralized
+        # TODO: Can easily be parralized
+
         for ind in range(self.fn):
-            Min_bool = self.sample_topo(ind)
+            Min_bool = self.sample_simplex_topo(ind)
             if Min_bool:
                 self.minimizer_pool.append(ind)
 
@@ -822,25 +576,13 @@ class SHGO(object):
 
         # Sort to find minimum func value in min_pool
         self.sort_min_pool()
+        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
         if not len(self.minimizer_pool) == 0:
             self.X_min = self.C[self.minimizer_pool]
-            # If function is called again and pool is found unbreak:
         else:
-            return []
+            self.X_min = []
 
         return self.X_min
-
-    def sort_min_pool(self):
-        # Sort to find minimum func value in min_pool
-        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = self.minimizer_pool_F[self.ind_f_min]
-        return
-
-    def trim_min_pool(self, trim_ind):
-        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
-        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
-        return
 
     def minimise_pool(self, force_iter=False):
         """
@@ -896,24 +638,6 @@ class SHGO(object):
             self.trim_min_pool(ind_xmin_l)
         return
 
-    def g_topograph(self, x_min, X_min):
-        """
-        Returns the topographical vector stemming from the specified value
-        value 'x_min' for the current feasible set 'X_min' with True boolean
-        values indicating positive entries and False ref. values indicating
-        negative values.
-        """
-        x_min = numpy.array([x_min])
-        self.Y = scipy.spatial.distance.cdist(x_min,
-                                              X_min,
-                                              'euclidean')
-        # Find sorted indexes of spatial distances:
-        self.Z = numpy.argsort(self.Y, axis=-1)
-
-        self.Ss = X_min[self.Z]
-        return self.Ss
-
-
     def minimize(self, x_min):
         """
         This function is used to calculate the local minima using the specified
@@ -952,31 +676,6 @@ class SHGO(object):
             self.fun_min_glob.append(lres.fun)
 
         return lres
-
-
-    def simplex_minimizers(self):
-        """
-        Returns the indexes of all minimizers
-        """
-        self.minimizer_pool = []
-        # TODO: Can easily be parralized
-
-        for ind in range(self.fn):
-            Min_bool = self.sample_simplex_topo(ind)
-            if Min_bool:
-                self.minimizer_pool.append(ind)
-
-        self.minimizer_pool_F = self.F[self.minimizer_pool]
-
-        # Sort to find minimum func value in min_pool
-        self.sort_min_pool()
-        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        if not len(self.minimizer_pool) == 0:
-            self.X_min = self.C[self.minimizer_pool]
-        else:
-            self.X_min = []
-
-        return self.X_min
 
     # Post local minimisation processing
     def sort_result(self):
