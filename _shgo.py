@@ -293,6 +293,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
         if SHc.disp:
             print("Succesfully completed construction of complex.")
 
+        # Build minimiser pool
+        SHc.simplex_minimizers()
+
         # Minimise the pool of minisers with local minimisation methods
         SHc.minimise_pool()
 
@@ -498,10 +501,19 @@ class SHGO(object):
             gen = 1
             Stop = False
             hgr_diff_iter = 1  # USER INPUT?
+            hgr_diff_iter = 1  # USER INPUT?
+            hgr_diff_iter = 3  # USER INPUT?
+            hgr_diff_iter = 1  # USER INPUT?
             #hgr_diff_iter = 1  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
+            if 1:
+                self.HC.split_generation()
+                self.HC.split_generation()
+                gen = 3
+         #   self.HC.split_generation()
+         #   gen = 2
             #self.HC.split_generation() #TODO REMOVE THIS
             #gen +=1
             while not Stop:
@@ -771,12 +783,17 @@ if __name__ == '__main__':
 
         bounds = list(zip([-5.0] * N, [5.0] * N))
 
-        SHGOc3 = SHGO(fun, bounds)
-        SHGOc3.construct_complex_simplicial()
-        SHGOc3.simplex_minimizers()
-        SHGOc3.minimise_pool()
-        SHGOc3.sort_result()
-        print('SHGOc3.res = {}'.format(SHGOc3.res))
+        if 0:
+            options = {'disp': True}
+            SHGOc3 = SHGO(fun, bounds, options=options)
+            SHGOc3.construct_complex_simplicial()
+            SHGOc3.simplex_minimizers()
+            SHGOc3.minimise_pool()
+            SHGOc3.sort_result()
+            print('SHGOc3.res = {}'.format(SHGOc3.res))
+
+        print(shgo(fun, bounds))
+
 
         #SHGOc3.HC.plot_complex()
 

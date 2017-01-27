@@ -349,8 +349,6 @@ class Complex:
                                 x_a[i] = (x_a[i] * (self.bounds[i][1]
                                               - self. bounds[i][0])
                                        + self.bounds[i][0])
-                                print('self.bounds = {}'.format(self.bounds))
-                                print('x_a = {}'.format(x_a))
 
                         logging.info('v.x_a = {}'.format(x_a))
 
@@ -505,7 +503,6 @@ class Vertex:
             for i in range(len(bounds)):
                 x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
                                 + bounds[i][0])
-                print('x_a = {}'.format(x_a))
         # Note Vertex is only initiate once for all x so only
         # evaluated once
         if func is not None:

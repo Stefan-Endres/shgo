@@ -48,6 +48,7 @@ class GoRunner:
 
         self.solvers = solvers
         self.solvers_wrap = {'shgo': self.run_shgo,
+                             'shgo_sobol': self.run_shgo_sobol,
                              'tgo': self.run_tgo,
                              'de': self.run_differentialevolution,
                              'bh': self.run_basinhopping}
@@ -100,6 +101,27 @@ class GoRunner:
              }
         return
 
+    def run_shgo_sobol(self):
+        self.function.nfev = 0
+
+        t0 = time.time()
+        # Add exception handling here?
+        res = shgo_sobol(self.function.fun, self.function._bounds)#,
+                   #,n=5000)#, n=50, crystal_mode=False)
+        runtime = time.time() - t0
+
+        # Prepare Return dictionary
+        self.results[self.name]['shgo_sobol'] = \
+            {'nfev': self.function.nfev,
+             'nlmin': len(res.xl),  #TODO: Find no. unique local minima
+             'nulmin': self.unique_minima(res.xl),
+             'runtime': runtime,
+             'success': self.function.success(res.x),
+             'ndim': self.function._dimensions,
+             'name': 'shgo_sobol'
+             }
+        return
+
 
     def run_differentialevolution(self):
         """
@@ -128,6 +150,8 @@ class GoRunner:
         """
         Do an optimization run for basinhopping
         """
+        self.function.nfev = 0
+
         if 0:  #TODO: Find out if these are important:
             kwargs = self.minimizer_kwargs
             if hasattr(self.fun, "temperature"):
@@ -168,6 +192,8 @@ class GoRunner:
         """
         Do an optimization run for tgo
         """
+        self.function.nfev = 0
+
         t0 = time.time()
         # Add exception handling here?
         res = tgo(self.function.fun, self.function._bounds)
