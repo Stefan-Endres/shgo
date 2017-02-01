@@ -3,6 +3,8 @@ import numpy
 import logging
 import sys
 import copy
+import functools
+from functools import lru_cache
 
 try:
     pass
@@ -206,7 +208,7 @@ class Complex:
 
         self.gen += 1
 
-
+    #@lru_cache(maxsize=None)
     def construct_hypercube(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False):
         """
         Build a hypercube with triangulations symmetric to C0.
@@ -227,21 +229,46 @@ class Complex:
         # Build new indexed vertex list
         V_new = []
 
-        for i, v in enumerate(self.C0()):
-            if i == centroid_index:  # (This should be the last index of HC.C0()
-                C_new.add_vertex(self.V(tuple(C_new.centroid)))
-                V_new.append(C_new.centroid)
-                break
+        origin_t = tuple(origin)
+        suprenum_t = tuple(suprenum)
 
-            vec = list(origin)  # set a vec equal to origin tuple
-            for j, x_i in enumerate(v.x):
-                if x_i:  # (if x_i = 1, else leave x_i = 0 at origin
-                    vec[j] = suprenum[j]
-
+        # Cached calculation
+        for i, v in enumerate(self.C0()[:-1]):
+            t1 = self.generate_sub_cell_t1(origin_t, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum_t, v.x)
+            #t2 = v_s * numpy.array(v.x)
+            vec = t1 + t2
             C_new.add_vertex(self.V(tuple(vec)))
             V_new.append(vec)
 
-        # Connect new vertices
+        # Add new centroid
+        C_new.add_vertex(self.V(tuple(C_new.centroid)))
+        V_new.append(C_new.centroid)
+
+        ## Uncached methods:
+        if 0:
+            v_o = numpy.array(origin)  # Only needed for array method
+            v_s_min_o = numpy.array(suprenum) - v_o
+
+            for i, v in enumerate(self.C0()):
+                if i == centroid_index:  # (This should be the last index of HC.C0()
+                    C_new.add_vertex(self.V(tuple(C_new.centroid)))
+                    V_new.append(C_new.centroid)
+                    break
+
+                if 0:  # Array method
+                    vec = v_o + v_s_min_o * numpy.array(v.x)
+
+                if 1:  # For loop method
+                    vec = list(origin)  # set a vec equal to origin tuple
+                    for j, x_i in enumerate(v.x):
+                        if x_i:  # (if x_i = 1, else leave x_i = 0 at origin
+                            vec[j] = suprenum[j]
+
+                C_new.add_vertex(self.V(tuple(vec)))
+                V_new.append(vec)
+
+        # Connect new vertices #TODO: Thread into other loop; no need for V_new
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             for j in connections:
@@ -266,6 +293,90 @@ class Complex:
         self.H[gen].append(C_new)
 
         return C_new
+
+    def C0_array(self):
+        X_c0 = []
+        for v in self.C0():
+            X_c0.append(v.x)
+
+        self.X_c0 = numpy.matrix(X_c0, dtype=int)
+        self.minX_c0 = numpy.ones_like(self.X_c0, dtype=int) - self.X_c0   # (I - X)
+        self.minX_c0 = numpy.matrix(self.minX_c0)
+        print(self.X_c0)
+        print(self.minX_c0)
+
+    @lru_cache(maxsize=None)
+    def generate_sub_cell_matrix(self, origin, suprenum):
+        """
+        Use the origin and suprenum vectors to find a new cell in that
+        subspace direction
+
+        Requires self.C0_array() to have been called at least once
+
+        Parameters
+        ----------
+        origin : tuple vector (hashable)
+        suprenum : tuple vector (hashable)
+
+        Returns
+        -------
+
+        """
+
+        O_cast = numpy.full(numpy.shape(self.minX_c0), origin)
+
+        #self.V_new_m = self.minX_c0 * numpy.matrix(origin).T #+ self.X_c0 * numpy.matrix(suprenum).T
+#        self.V_new_m = numpy.matrix(origin) * self.minX_c0.T
+        self.V_new_m =  self.minX_c0 * O_cast.T
+        self.V_new_m =  O_cast.T * self.minX_c0
+        #self.V_new_m =  O_cast * self.minX_c0.T
+        #self.V_new_m = numpy.matrix(origin) * self.minX_c0.T +  numpy.matrix(suprenum) * self.minX_c0.T
+        print('self.V_new_m = {}'.format(self.V_new_m))
+        return self.V_new_m
+
+
+    #@lru_cache(maxsize=None)
+    def generate_sub_cell(self, origin, suprenum):
+        """
+        Use the origin and suprenum vectors to find a new cell in that
+        subspace direction
+
+        NOTE: NOT CURRENTLY IN USE!
+
+        Parameters
+        ----------
+        origin : tuple vector (hashable)
+        suprenum : tuple vector (hashable)
+
+        Returns
+        -------
+
+        """
+        vec_list = []
+        for i, v in enumerate(self.C0()[:-1]):
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            #t2 = v_s * numpy.array(v.x)
+            vec = t1 + t2
+            vec_list.append(vec)
+
+            # TODO: Might be better to take this outside func and loop twice?
+
+
+        print('vec_list = {}'.format(vec_list))
+        return vec_list
+
+    @lru_cache(maxsize=None)
+    def generate_sub_cell_t1(self, origin, v_x):
+        # TODO: Calc these arrays outside
+        v_o = numpy.array(origin)
+        return v_o - v_o * numpy.array(v_x)
+
+    @lru_cache(maxsize=None)
+    def generate_sub_cell_t2(self, suprenum, v_x):
+        v_s = numpy.array(suprenum)
+        return v_s * numpy.array(v_x)
+
 
     def complex_homology_group_rank(self):
         #self.hgr = self.C0.homology_group_rank()
@@ -530,9 +641,6 @@ class Vertex:
                     self.min = False
                 else:
                     v.min = False
-                    #self.min = True
-                    #v.min = False
-                #self.check_min = True
 
     def disconnect(self, v):
         if v in self.nn:
@@ -545,14 +653,11 @@ class Vertex:
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            #self.min = False
             self.min = True
             for v in self.nn:
                 if self.f > v.f:
                     self.min = False
                     break
-
-                #self.min = True
 
             self.check_min = False
             return self.min
@@ -583,7 +688,7 @@ class VertexCached:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args)
 
-            #logging.info("New generated vertex at x = {}".format(x))
+            logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
             return xval
 
@@ -595,17 +700,13 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(4, test_func)
+    HC = Complex(5, test_func)
     if 0:
         for n in range(9):
             import time
             ts = time.time()
             HC = Complex(n, test_func)
             logging.info('Total time at n = {}: {}'.format(n, time.time() - ts))
-
-    #Complex.stretch(None, HC.C0, 0.5)
-
-    #Complex.generate_gen(HC)
 
     HC.add_centroid()
 
@@ -615,24 +716,20 @@ if __name__ == '__main__':
 
     HC.graph_map()
     logging.info('HC.graph = {}'.format(HC.graph))
-    #print(HC.C0())
-    #print(HC())
 
-
-    origin = (0.5, 0.5, 0.5, 0.5)
-    suprenum = (1.0, 1.0, 1.0, 1.0)
-    gen = 1
-    HC.H.append([])
-
-   # HC.sub_generate_cell(HC.C0, gen)
-
-    #for i in range(4):
-    for i in range(0):
+    import time
+    start = time.time()
+    for i in range(2):
         HC.split_generation()
+        logging.info('Done splitting gen = {}'.format(i))
 
-    #print(HC.V)
-    HC.plot_complex()
-    #HC.construct_hypercube(origin, suprenum, gen, hgr)
+    print('TOTAL TIME = {}'.format(time.time() - start))
+
+    print(HC.generate_sub_cell_t1.cache_info())
+    print(HC.generate_sub_cell_t2.cache_info())
+
+    if 0:
+        HC.plot_complex()
 
     if 0:
         print(HC.H)
