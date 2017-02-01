@@ -243,11 +243,11 @@ class Complex:
             #t2 = v_s * numpy.array(v.x)
             vec = t1 + t2
             C_new.add_vertex(self.V(tuple(vec)))
-            V_new.append(vec)
+            V_new.append(tuple(vec))
 
         # Add new centroid
         C_new.add_vertex(self.V(tuple(C_new.centroid)))
-        V_new.append(C_new.centroid)
+        V_new.append(tuple(C_new.centroid))
 
         ## Uncached methods:
         if 0:
@@ -276,7 +276,7 @@ class Complex:
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             for j in connections:
-                self.V(tuple(V_new[i])).connect(self.V(tuple(V_new[j])))
+                self.V(V_new[i]).connect(self.V(V_new[j]))
 
         #print('V_new = {}'.format(V_new))
 
@@ -680,6 +680,7 @@ class VertexCache:
         if indexed:
             self.Index = -1
 
+    #TODO: Get item method (works with square brackers)
     def __call__(self, x, indexed=True):
         if x in self.cache:  #TODO: Hash x instead of looking cache dictionary
             # Python hash function (tuple input; hash is reculated)
@@ -789,5 +790,29 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
      4152    0.014    0.000    0.029    0.000 __init__.py:1369(findCaller)
        33    0.014    0.000    4.689    0.142 triangulation.py:164(sub_generate_cell)
      4149    0.013    0.000    0.037    0.000 fromnumeric.py:1743(sum)
+
+"""
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  1060781    1.833    0.000    2.171    0.000 triangulation.py:684(__call__)
+     1056    0.615    0.001    3.495    0.003 triangulation.py:216(construct_hypercube)
+   512800    0.245    0.000    0.643    0.000 triangulation.py:643(connect)
+   719520    0.209    0.000    0.320    0.000 triangulation.py:639(__hash__)
+   719520    0.111    0.000    0.111    0.000 {built-in method builtins.hash}
+   183843    0.063    0.000    0.139    0.000 {method 'add' of 'set' objects}
+    23967    0.035    0.000    0.035    0.000 {built-in method numpy.core.multiarray.array}
+     4742    0.031    0.000    0.032    0.000 {method 'format' of 'str' objects}
+     4152    0.029    0.000    0.064    0.000 __init__.py:246(__init__)
+     8304    0.025    0.000    0.025    0.000 {method 'write' of '_io.TextIOWrapper' objects}
+    35177    0.020    0.000    0.023    0.000 triangulation.py:558(add_vertex)
+    91818    0.020    0.000    0.025    0.000 triangulation.py:662(minimiser)
+     4149    0.019    0.000    0.019    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+     4149    0.018    0.000    0.079    0.000 triangulation.py:610(__init__)
+     7776    0.015    0.000    0.034    0.000 triangulation.py:379(generate_sub_cell_t2)
+     4149    0.015    0.000    0.048    0.000 triangulation.py:708(test_func)
+       33    0.013    0.000    3.530    0.107 triangulation.py:164(sub_generate_cell)
+     4152    0.013    0.000    0.027    0.000 __init__.py:1369(findCaller)
+     4149    0.011    0.000    0.034    0.000 fromnumeric.py:1743(sum)
 
 """
