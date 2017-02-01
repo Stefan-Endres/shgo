@@ -41,6 +41,10 @@ class Complex:
         # Build initial graph #TODO: This could be saved
         self.graph_map()
 
+        self.performance = []
+        self.performance.append(0)
+        self.performance.append(0)
+
     def __call__(self):
         return self.H
 
@@ -622,7 +626,7 @@ class Vertex:
         if nn is not None:
             self.nn = nn
         else:
-            self.nn = []
+            self.nn = []  # Make into a set
 
         self.fval = None
         self.check_min = True
@@ -676,7 +680,12 @@ class VertexCached:
             self.Index = -1
 
     def __call__(self, x, indexed=True):
-        if x in self.cache:
+        if x in self.cache:  #TODO: Hash x instead of looking cache dictionary
+            # Python hash function (tuple input; hash is reculated)
+            # We might be able to write a faster hash function.
+            # Rewrite this function with @lru_cache to see if faster
+            # Otherwise build own, faster hash
+            #
             return self.cache[x]
         else:
             if indexed:
@@ -736,3 +745,23 @@ if __name__ == '__main__':
         print(len(HC.H[1]))
         print(HC.H[1][0])
         HC.H[1][0].print_out()
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  1060781    1.948    0.000    2.322    0.000 triangulation.py:682(__call__)
+     1056    1.607    0.002    4.352    0.004 triangulation.py:216(construct_hypercube)
+   512800    0.317    0.000    0.347    0.000 triangulation.py:638(connect)
+    23967    0.040    0.000    0.040    0.000 {built-in method numpy.core.multiarray.array}
+     4152    0.035    0.000    0.073    0.000 __init__.py:246(__init__)
+     4742    0.033    0.000    0.034    0.000 {method 'format' of 'str' objects}
+     8304    0.031    0.000    0.031    0.000 {method 'write' of '_io.TextIOWrapper' objects}
+    35177    0.021    0.000    0.024    0.000 triangulation.py:558(add_vertex)
+   258691    0.021    0.000    0.021    0.000 {method 'append' of 'list' objects}
+     4149    0.020    0.000    0.020    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+     7776    0.017    0.000    0.039    0.000 triangulation.py:379(generate_sub_cell_t2)
+     4149    0.016    0.000    0.054    0.000 triangulation.py:701(test_func)
+    91818    0.016    0.000    0.016    0.000 triangulation.py:655(minimiser)
+    14918    0.016    0.000    0.017    0.000 triangulation.py:649(disconnect)
+     4152    0.015    0.000    0.030    0.000 __init__.py:1369(findCaller)
+     4149    0.014    0.000    0.038    0.000 fromnumeric.py:1743(sum)
+"""
