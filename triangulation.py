@@ -626,7 +626,7 @@ class Vertex:
         if nn is not None:
             self.nn = nn
         else:
-            self.nn = []  # Make into a set
+            self.nn = set()
 
         self.fval = None
         self.check_min = True
@@ -635,10 +635,15 @@ class Vertex:
         if I is not None:
             self.I = I
 
+
+    def __hash__(self):
+        return hash(tuple(self.x))
+
+
     def connect(self, v):
         if v not in self.nn and v is not self:  # <-- Cool
-            self.nn.append(v)
-            v.nn.append(self)
+            self.nn.add(v)
+            v.nn.add(self)
 
             if self.minimiser():
                 if self.f > v.f:
@@ -657,16 +662,10 @@ class Vertex:
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            self.min = True
-            for v in self.nn:
-                if self.f > v.f:
-                    self.min = False
-                    break
-
+            self.min = all(self.f <= v.f for v in self.nn)
             self.check_min = False
-            return self.min
-        else:
-            return self.min
+
+        return self.min
 
 class VertexCached:
     def __init__(self, func, func_args=(), bounds=None, indexed=True):
