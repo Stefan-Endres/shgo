@@ -60,8 +60,8 @@ class Complex:
         supremum = list(numpy.ones(dim, dtype=int))
         self.suprenum = supremum
         self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
-        self.C0.add_vertex(self.V(tuple(origin)))
-        self.C0.add_vertex(self.V(tuple(supremum)))
+        self.C0.add_vertex(self.V[tuple(origin)])
+        self.C0.add_vertex(self.V[tuple(supremum)])
 
         i_parents = []
         x_parents = []
@@ -71,6 +71,7 @@ class Complex:
         if printout:
             print("Initial hyper cube:")
             for v in self.C0():
+                print(self.C0())
                 print("Vertex: {}".format(v.x))
                 print("v.f: {}".format(v.f))
                 constr = 'Connections: '
@@ -95,14 +96,14 @@ class Complex:
             # Make new vertex list a hashable tuple
             xi2_t = tuple(xi2)
             # Append to cell
-            self.C0.add_vertex(self.V(tuple(xi2_t)))
+            self.C0.add_vertex(self.V[tuple(xi2_t)])
             # Connect neighbours and vice versa
             # Parent point
-            self.V(xi2_t).connect(self.V(tuple(xi_t)))
+            self.V[xi2_t].connect(self.V[tuple(xi_t)])
 
             # Connect all family of simplices in parent containers
             for x_ip in x_parents:
-                self.V(xi2_t).connect(self.V(tuple(x_ip)))
+                self.V[xi2_t].connect(self.V[tuple(x_ip)])
 
             x_parents2 = copy.copy(x_parents)#.copy()
             x_parents2.append(xi_t)
@@ -114,15 +115,15 @@ class Complex:
         """Split the central edge between the origin and suprenum of
         a cell and add the new vertex to the complex"""
         self.centroid = list((numpy.array(self.origin) + numpy.array(self.suprenum))/2.0)
-        self.C0.add_vertex(self.V(tuple(self.centroid)))
+        self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
         # Disconnect origin and suprenum
-        self.V(tuple(self.origin)).disconnect(self.V(tuple(self.suprenum)))
+        self.V[tuple(self.origin)].disconnect(self.V[tuple(self.suprenum)])
 
         # Connect centroid to all other vertices
         for v in self.C0():
-             self.V(tuple(self.centroid)).connect(self.V(tuple(v.x)))
+             self.V[tuple(self.centroid)].connect(self.V[tuple(v.x)])
 
         self.centroid_added = True
         return
@@ -242,11 +243,11 @@ class Complex:
             t2 = self.generate_sub_cell_t2(suprenum_t, v.x)
             #t2 = v_s * numpy.array(v.x)
             vec = t1 + t2
-            C_new.add_vertex(self.V(tuple(vec)))
+            C_new.add_vertex(self.V[tuple(vec)])
             V_new.append(tuple(vec))
 
         # Add new centroid
-        C_new.add_vertex(self.V(tuple(C_new.centroid)))
+        C_new.add_vertex(self.V[tuple(C_new.centroid)])
         V_new.append(tuple(C_new.centroid))
 
         ## Uncached methods:
@@ -276,7 +277,7 @@ class Complex:
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             for j in connections:
-                self.V(V_new[i]).connect(self.V(V_new[j]))
+                self.V[V_new[i]].connect(self.V[V_new[j]])
 
         #print('V_new = {}'.format(V_new))
 
@@ -673,6 +674,7 @@ class VertexCache:
     def __init__(self, func, func_args=(), bounds=None, indexed=True):
 
         self.cache = {}
+        # self.cache = set()
         self.func = func
         self.func_args = func_args
         self.bounds = bounds
@@ -681,15 +683,10 @@ class VertexCache:
             self.Index = -1
 
     #TODO: Get item method (works with square brackers)
-    def __call__(self, x, indexed=True):
-        if x in self.cache:  #TODO: Hash x instead of looking cache dictionary
-            # Python hash function (tuple input; hash is reculated)
-            # We might be able to write a faster hash function.
-            # Rewrite this function with @lru_cache to see if faster
-            # Otherwise build own, faster hash
-            #
+    def __getitem__(self, x, indexed=True):
+        try:
             return self.cache[x]
-        else:
+        except KeyError:
             if indexed:
                 self.Index += 1
                 xval = Vertex(x, bounds=self.bounds,
@@ -701,8 +698,31 @@ class VertexCache:
 
             logging.info("New generated vertex at x = {}".format(x))
             self.cache[x] = xval
-            return xval
+            return self.cache[x]
 
+    """
+   def __call__(self, x, indexed=True):
+       if x in self.cache:  #TODO: Hash x instead of looking cache dictionary
+           # Python hash function (tuple input; hash is reculated)
+           # We might be able to write a faster hash function.
+           # Rewrite this function with @lru_cache to see if faster
+           # Otherwise build own, faster hash
+           #
+           return self.cache[x]
+       else:
+           if indexed:
+               self.Index += 1
+               xval = Vertex(x, bounds=self.bounds,
+                             func=self.func, func_args=self.func_args,
+                             I=self.Index)
+           else:
+               xval = Vertex(x, bounds=self.bounds,
+                             func=self.func, func_args=self.func_args)
+
+           logging.info("New generated vertex at x = {}".format(x))
+           self.cache[x] = xval
+           return xval
+"""
 
 if __name__ == '__main__':
     def test_func(x):
@@ -730,7 +750,7 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(2):
+    for i in range(3):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i))
 
