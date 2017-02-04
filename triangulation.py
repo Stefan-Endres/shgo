@@ -65,7 +65,7 @@ class Complex:
 
         i_parents = []
         x_parents = []
-        x_parents.append(self.origin)
+        x_parents.append(tuple(self.origin))
         self.perm(i_parents, x_parents, origin)
 
         if printout:
@@ -96,14 +96,14 @@ class Complex:
             # Make new vertex list a hashable tuple
             xi2_t = tuple(xi2)
             # Append to cell
-            self.C0.add_vertex(self.V[tuple(xi2_t)])
+            self.C0.add_vertex(self.V[xi2_t])
             # Connect neighbours and vice versa
             # Parent point
-            self.V[xi2_t].connect(self.V[tuple(xi_t)])
+            self.V[xi2_t].connect(self.V[xi_t])
 
             # Connect all family of simplices in parent containers
             for x_ip in x_parents:
-                self.V[xi2_t].connect(self.V[tuple(x_ip)])
+                self.V[xi2_t].connect(self.V[x_ip])
 
             x_parents2 = copy.copy(x_parents)#.copy()
             x_parents2.append(xi_t)
@@ -731,7 +731,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(5, test_func)
+    HC = Complex(8, test_func)
     if 0:
         for n in range(9):
             import time
@@ -750,9 +750,9 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(2):
+    for i in range(0):
         HC.split_generation()
-        logging.info('Done splitting gen = {}'.format(i))
+        logging.info('Done splitting gen = {}'.format(i+1))
 
     print('TOTAL TIME = {}'.format(time.time() - start))
 
@@ -767,3 +767,57 @@ if __name__ == '__main__':
         print(len(HC.H[1]))
         print(HC.H[1][0])
         HC.H[1][0].print_out()
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 109601/1    1.114    0.000    2.829    2.829 triangulation.py:84(perm)
+  1864252    0.673    0.000    0.697    0.000 triangulation.py:686(__getitem__)
+   890446    0.277    0.000    0.411    0.000 triangulation.py:640(__hash__)
+   877322    0.264    0.000    0.681    0.000 triangulation.py:644(connect)
+   329229    0.140    0.000    0.175    0.000 copy.py:66(copy)
+   890646    0.134    0.000    0.134    0.000 {built-in method builtins.hash}
+     1285    0.118    0.000    0.118    0.000 {built-in method builtins.print}
+   109601    0.080    0.000    0.080    0.000 triangulation.py:89(<listcomp>)
+   109604    0.066    0.000    0.066    0.000 triangulation.py:559(add_vertex)
+   333599    0.034    0.000    0.034    0.000 {method 'get' of 'dict' objects}
+    43/42    0.033    0.001    0.035    0.001 {built-in method _imp.create_dynamic}
+    13997    0.032    0.000    0.081    0.000 {method 'format' of 'str' objects}
+      261    0.028    0.000    0.028    0.000 {built-in method marshal.loads}
+
+"""
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 109601/1    1.026    0.000    2.677    2.677 triangulation.py:84(perm)
+  1864252    0.645    0.000    0.669    0.000 triangulation.py:686(__getitem__)
+   890446    0.266    0.000    0.397    0.000 triangulation.py:640(__hash__)
+   877322    0.257    0.000    0.659    0.000 triangulation.py:644(connect)
+     1285    0.151    0.000    0.151    0.000 {built-in method builtins.print}
+   329229    0.137    0.000    0.169    0.000 copy.py:66(copy)
+
+"""
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 109601/1    0.874    0.000    2.405    2.405 triangulation.py:84(perm)
+  1864252    0.607    0.000    0.629    0.000 triangulation.py:686(__getitem__)
+   890446    0.245    0.000    0.364    0.000 triangulation.py:640(__hash__)
+   877322    0.236    0.000    0.606    0.000 triangulation.py:644(connect)
+   329229    0.124    0.000    0.154    0.000 copy.py:66(copy)
+   890646    0.119    0.000    0.119    0.000 {built-in method builtins.hash}
+     1285    0.110    0.000    0.110    0.000 {built-in method builtins.print}
+
+"""
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+ 109601/1    0.882    0.000    2.413    2.413 triangulation.py:84(perm)
+  1864252    0.603    0.000    0.624    0.000 triangulation.py:686(__getitem__)
+   890446    0.243    0.000    0.362    0.000 triangulation.py:640(__hash__)
+   877322    0.239    0.000    0.607    0.000 triangulation.py:644(connect)
+   329229    0.125    0.000    0.155    0.000 copy.py:66(copy)
+   890646    0.119    0.000    0.119    0.000 {built-in method builtins.hash}
+     1285    0.106    0.000    0.106    0.000 {built-in method builtins.print}
+   109601    0.071    0.000    0.071    0.000 triangulation.py:89(<listcomp>)
+
+"""
