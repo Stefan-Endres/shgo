@@ -299,48 +299,7 @@ class Complex:
 
         return C_new
 
-    def C0_array(self):
-        X_c0 = []
-        for v in self.C0():
-            X_c0.append(v.x)
 
-        self.X_c0 = numpy.matrix(X_c0, dtype=int)
-        self.minX_c0 = numpy.ones_like(self.X_c0, dtype=int) - self.X_c0   # (I - X)
-        self.minX_c0 = numpy.matrix(self.minX_c0)
-        print(self.X_c0)
-        print(self.minX_c0)
-
-    @lru_cache(maxsize=None)
-    def generate_sub_cell_matrix(self, origin, suprenum):
-        """
-        Use the origin and suprenum vectors to find a new cell in that
-        subspace direction
-
-        Requires self.C0_array() to have been called at least once
-
-        Parameters
-        ----------
-        origin : tuple vector (hashable)
-        suprenum : tuple vector (hashable)
-
-        Returns
-        -------
-
-        """
-
-        O_cast = numpy.full(numpy.shape(self.minX_c0), origin)
-
-        #self.V_new_m = self.minX_c0 * numpy.matrix(origin).T #+ self.X_c0 * numpy.matrix(suprenum).T
-#        self.V_new_m = numpy.matrix(origin) * self.minX_c0.T
-        self.V_new_m =  self.minX_c0 * O_cast.T
-        self.V_new_m =  O_cast.T * self.minX_c0
-        #self.V_new_m =  O_cast * self.minX_c0.T
-        #self.V_new_m = numpy.matrix(origin) * self.minX_c0.T +  numpy.matrix(suprenum) * self.minX_c0.T
-        print('self.V_new_m = {}'.format(self.V_new_m))
-        return self.V_new_m
-
-
-    #@lru_cache(maxsize=None)
     def generate_sub_cell(self, origin, suprenum):
         """
         Use the origin and suprenum vectors to find a new cell in that
@@ -727,7 +686,7 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(0):
+    for i in range(1):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i+1))
 
