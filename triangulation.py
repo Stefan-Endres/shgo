@@ -682,7 +682,7 @@ class VertexCache:
         if indexed:
             self.Index = -1
 
-    #TODO: Get item method (works with square brackers)
+
     def __getitem__(self, x, indexed=True):
         try:
             return self.cache[x]
@@ -700,29 +700,6 @@ class VertexCache:
             self.cache[x] = xval
             return self.cache[x]
 
-    """
-   def __call__(self, x, indexed=True):
-       if x in self.cache:  #TODO: Hash x instead of looking cache dictionary
-           # Python hash function (tuple input; hash is reculated)
-           # We might be able to write a faster hash function.
-           # Rewrite this function with @lru_cache to see if faster
-           # Otherwise build own, faster hash
-           #
-           return self.cache[x]
-       else:
-           if indexed:
-               self.Index += 1
-               xval = Vertex(x, bounds=self.bounds,
-                             func=self.func, func_args=self.func_args,
-                             I=self.Index)
-           else:
-               xval = Vertex(x, bounds=self.bounds,
-                             func=self.func, func_args=self.func_args)
-
-           logging.info("New generated vertex at x = {}".format(x))
-           self.cache[x] = xval
-           return xval
-"""
 
 if __name__ == '__main__':
     def test_func(x):
