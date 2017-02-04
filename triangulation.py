@@ -750,7 +750,7 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(3):
+    for i in range(2):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i))
 
@@ -759,7 +759,7 @@ if __name__ == '__main__':
     print(HC.generate_sub_cell_t1.cache_info())
     print(HC.generate_sub_cell_t2.cache_info())
 
-    if 0:
+    if 1:
         HC.plot_complex()
 
     if 0:
@@ -767,72 +767,3 @@ if __name__ == '__main__':
         print(len(HC.H[1]))
         print(HC.H[1][0])
         HC.H[1][0].print_out()
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  1060781    1.948    0.000    2.322    0.000 triangulation.py:682(__call__)
-     1056    1.607    0.002    4.352    0.004 triangulation.py:216(construct_hypercube)
-   512800    0.317    0.000    0.347    0.000 triangulation.py:638(connect)
-    23967    0.040    0.000    0.040    0.000 {built-in method numpy.core.multiarray.array}
-     4152    0.035    0.000    0.073    0.000 __init__.py:246(__init__)
-     4742    0.033    0.000    0.034    0.000 {method 'format' of 'str' objects}
-     8304    0.031    0.000    0.031    0.000 {method 'write' of '_io.TextIOWrapper' objects}
-    35177    0.021    0.000    0.024    0.000 triangulation.py:558(add_vertex)
-   258691    0.021    0.000    0.021    0.000 {method 'append' of 'list' objects}
-     4149    0.020    0.000    0.020    0.000 {method 'reduce' of 'numpy.ufunc' objects}
-     7776    0.017    0.000    0.039    0.000 triangulation.py:379(generate_sub_cell_t2)
-     4149    0.016    0.000    0.054    0.000 triangulation.py:701(test_func)
-    91818    0.016    0.000    0.016    0.000 triangulation.py:655(minimiser)
-    14918    0.016    0.000    0.017    0.000 triangulation.py:649(disconnect)
-     4152    0.015    0.000    0.030    0.000 __init__.py:1369(findCaller)
-     4149    0.014    0.000    0.038    0.000 fromnumeric.py:1743(sum)
-"""
-
-
-"""
-ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  1060781    1.933    0.000    2.308    0.000 triangulation.py:681(__call__)
-     1056    1.596    0.002    4.652    0.004 triangulation.py:216(construct_hypercube)
-   512800    0.260    0.000    0.677    0.000 triangulation.py:643(connect)
-   719522    0.216    0.000    0.331    0.000 triangulation.py:639(__hash__)
-   719522    0.114    0.000    0.114    0.000 {built-in method builtins.hash}
-   183843    0.068    0.000    0.146    0.000 {method 'add' of 'set' objects}
-    23967    0.037    0.000    0.037    0.000 {built-in method numpy.core.multiarray.array}
-     4152    0.035    0.000    0.074    0.000 __init__.py:246(__init__)
-     8304    0.034    0.000    0.034    0.000 {method 'write' of '_io.TextIOWrapper' objects}
-     4742    0.033    0.000    0.035    0.000 {method 'format' of 'str' objects}
-    91818    0.023    0.000    0.029    0.000 triangulation.py:660(minimiser)
-    35177    0.021    0.000    0.024    0.000 triangulation.py:558(add_vertex)
-     4149    0.021    0.000    0.021    0.000 {method 'reduce' of 'numpy.ufunc' objects}
-     4149    0.017    0.000    0.084    0.000 triangulation.py:610(__init__)
-     4149    0.016    0.000    0.054    0.000 triangulation.py:705(test_func)
-     7776    0.016    0.000    0.036    0.000 triangulation.py:379(generate_sub_cell_t2)
-     4152    0.014    0.000    0.029    0.000 __init__.py:1369(findCaller)
-       33    0.014    0.000    4.689    0.142 triangulation.py:164(sub_generate_cell)
-     4149    0.013    0.000    0.037    0.000 fromnumeric.py:1743(sum)
-
-"""
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  1060781    1.833    0.000    2.171    0.000 triangulation.py:684(__call__)
-     1056    0.615    0.001    3.495    0.003 triangulation.py:216(construct_hypercube)
-   512800    0.245    0.000    0.643    0.000 triangulation.py:643(connect)
-   719520    0.209    0.000    0.320    0.000 triangulation.py:639(__hash__)
-   719520    0.111    0.000    0.111    0.000 {built-in method builtins.hash}
-   183843    0.063    0.000    0.139    0.000 {method 'add' of 'set' objects}
-    23967    0.035    0.000    0.035    0.000 {built-in method numpy.core.multiarray.array}
-     4742    0.031    0.000    0.032    0.000 {method 'format' of 'str' objects}
-     4152    0.029    0.000    0.064    0.000 __init__.py:246(__init__)
-     8304    0.025    0.000    0.025    0.000 {method 'write' of '_io.TextIOWrapper' objects}
-    35177    0.020    0.000    0.023    0.000 triangulation.py:558(add_vertex)
-    91818    0.020    0.000    0.025    0.000 triangulation.py:662(minimiser)
-     4149    0.019    0.000    0.019    0.000 {method 'reduce' of 'numpy.ufunc' objects}
-     4149    0.018    0.000    0.079    0.000 triangulation.py:610(__init__)
-     7776    0.015    0.000    0.034    0.000 triangulation.py:379(generate_sub_cell_t2)
-     4149    0.015    0.000    0.048    0.000 triangulation.py:708(test_func)
-       33    0.013    0.000    3.530    0.107 triangulation.py:164(sub_generate_cell)
-     4152    0.013    0.000    0.027    0.000 __init__.py:1369(findCaller)
-     4149    0.011    0.000    0.034    0.000 fromnumeric.py:1743(sum)
-
-"""
