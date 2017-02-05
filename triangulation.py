@@ -63,10 +63,15 @@ class Complex:
         self.C0.add_vertex(self.V[tuple(origin)])
         self.C0.add_vertex(self.V[tuple(supremum)])
 
-        i_parents = []
+
         x_parents = []
         x_parents.append(tuple(self.origin))
-        self.perm(i_parents, x_parents, origin)
+        if symmetry:
+            i_s = 0
+            self.perm_symmetry(i_s, x_parents, origin)
+        else:
+            i_parents = []
+            self.perm(i_parents, x_parents, origin)
 
         if printout:
             print("Initial hyper cube:")
@@ -110,6 +115,40 @@ class Complex:
 
             # Permutate
             self.perm(i2_parents, x_parents2, xi2)
+
+    def perm_symmetry(self, i_s, x_parents, xi):
+        #TODO: Cut out of for if outside linear constraint cutting planes
+        xi_t = tuple(xi)
+
+        # Construct required iterator
+        #iter_range = [x for x in range(self.dim) if x not in i_parents]
+
+
+    #    i2_parents = copy.copy(i_parents)#.copy()
+    #    i2_parents.append(i)
+        xi2 = copy.copy(xi)#.copy()
+        xi2[i_s] = 1
+        # Make new vertex list a hashable tuple
+        xi2_t = tuple(xi2)
+        # Append to cell
+        self.C0.add_vertex(self.V[xi2_t])
+        # Connect neighbours and vice versa
+        # Parent point
+        self.V[xi2_t].connect(self.V[xi_t])
+
+        # Connect all family of simplices in parent containers
+        for x_ip in x_parents:
+            self.V[xi2_t].connect(self.V[x_ip])
+
+        x_parents2 = copy.copy(x_parents)#.copy()
+        x_parents2.append(xi_t)
+
+        i_s += 1
+        if i_s == self.dim:
+            return
+        # Permutate
+        self.perm_symmetry(i_s, x_parents2, xi2)
+
 
     def add_centroid(self):
         """Split the central edge between the origin and suprenum of
@@ -165,7 +204,7 @@ class Complex:
     def sub_generate_cell(self, C_i, gen):
         """Subgenerate a cell `C_i` of generation `gen` and
         homology group rank `hgr`."""
-        origin_new = C_i.centroid
+        origin_new = tuple(C_i.centroid)
         centroid_index = len(C_i()) - 1
 
         # If not gen append
@@ -181,6 +220,7 @@ class Complex:
             #origin = tuple(C_i.centroid)
             if i is not centroid_index:
                 suprenum = tuple(v.x)
+                print('suprenum = {}'.format(suprenum))
                 H_new.append(
                     self.construct_hypercube(origin_new, suprenum,
                                              gen, C_i.hg_n, C_i.p_hgr_h))
@@ -221,34 +261,33 @@ class Complex:
         Parameters
         ----------
         origin : vec
-        suprenum : vec
+        suprenum : vec (tuple)
         gen : generation
         hgr : parent homology group rank
         """
 
         # Initiate new cell
         C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
-        C_new.centroid = list((numpy.array(origin) + numpy.array(suprenum))/2.0)
+        C_new.centroid = tuple((numpy.array(origin) + numpy.array(suprenum))/2.0)
+        #C_new.centroid =
 
         centroid_index = len(self.C0()) - 1
         # Build new indexed vertex list
         V_new = []
 
-        origin_t = tuple(origin)
-        suprenum_t = tuple(suprenum)
-
         # Cached calculation
         for i, v in enumerate(self.C0()[:-1]):
-            t1 = self.generate_sub_cell_t1(origin_t, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum_t, v.x)
-            #t2 = v_s * numpy.array(v.x)
+            print("v.x = {}".format(v.x))
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
             vec = t1 + t2
-            C_new.add_vertex(self.V[tuple(vec)])
-            V_new.append(tuple(vec))
+            vec = tuple(vec)
+            C_new.add_vertex(self.V[vec])
+            V_new.append(vec)
 
         # Add new centroid
-        C_new.add_vertex(self.V[tuple(C_new.centroid)])
-        V_new.append(tuple(C_new.centroid))
+        C_new.add_vertex(self.V[C_new.centroid])
+        V_new.append(C_new.centroid)
 
         ## Uncached methods:
         if 0:
@@ -257,7 +296,7 @@ class Complex:
 
             for i, v in enumerate(self.C0()):
                 if i == centroid_index:  # (This should be the last index of HC.C0()
-                    C_new.add_vertex(self.V(tuple(C_new.centroid)))
+                    C_new.add_vertex(self.V(C_new.centroid))
                     V_new.append(C_new.centroid)
                     break
 
@@ -299,8 +338,20 @@ class Complex:
 
         return C_new
 
+    @lru_cache(maxsize=None)
+    def generate_sub_cell(self, origin, suprenum):  # No hits
+        V_new = []
+        for i, v in enumerate(self.C0()[:-1]):
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            vec = t1 + t2
+            vec = tuple(vec)
+            V_new.append(vec)
 
-    def generate_sub_cell(self, origin, suprenum):
+        return V_new
+
+    @lru_cache(maxsize=None)
+    def generate_sub_cell_2(self, origin, suprenum, v_x_t):  # No hits
         """
         Use the origin and suprenum vectors to find a new cell in that
         subspace direction
@@ -316,19 +367,10 @@ class Complex:
         -------
 
         """
-        vec_list = []
-        for i, v in enumerate(self.C0()[:-1]):
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
-            #t2 = v_s * numpy.array(v.x)
-            vec = t1 + t2
-            vec_list.append(vec)
-
-            # TODO: Might be better to take this outside func and loop twice?
-
-
-        print('vec_list = {}'.format(vec_list))
-        return vec_list
+        t1 = self.generate_sub_cell_t1(origin, v_x_t)
+        t2 = self.generate_sub_cell_t2(suprenum, v_x_t)
+        vec = t1 + t2
+        return tuple(vec)
 
     @lru_cache(maxsize=None)
     def generate_sub_cell_t1(self, origin, v_x):
@@ -597,7 +639,8 @@ class Vertex:
 
 
     def __hash__(self):
-        return hash(tuple(self.x))
+        #return hash(tuple(self.x))
+        return hash(self.x)
 
 
     def connect(self, v):
@@ -655,7 +698,8 @@ class VertexCache:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args)
 
-            logging.info("New generated vertex at x = {}".format(x))
+            #logging.info("New generated vertex at x = {}".format(x))
+            #NOTE: Surprisingly high performance increase if logging is commented out
             self.cache[x] = xval
             return self.cache[x]
 
@@ -667,7 +711,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(8, test_func)
+    HC = Complex(2, test_func, symmetry=1)
     if 0:
         for n in range(9):
             import time
@@ -675,7 +719,6 @@ if __name__ == '__main__':
             HC = Complex(n, test_func)
             logging.info('Total time at n = {}: {}'.format(n, time.time() - ts))
 
-    HC.add_centroid()
 
     if 0:
         HC.incidence()
@@ -692,6 +735,7 @@ if __name__ == '__main__':
 
     print('TOTAL TIME = {}'.format(time.time() - start))
 
+    print(HC.generate_sub_cell.cache_info())
     print(HC.generate_sub_cell_t1.cache_info())
     print(HC.generate_sub_cell_t2.cache_info())
 
@@ -704,3 +748,93 @@ if __name__ == '__main__':
         print(HC.H[1][0])
         HC.H[1][0].print_out()
 
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484    7.350    0.000    7.901    0.000 triangulation.py:645(__getitem__)
+      256    3.337    0.013   15.632    0.061 triangulation.py:217(construct_hypercube)
+  4236042    2.001    0.000    5.236    0.000 triangulation.py:603(connect)
+  5173838    1.776    0.000    2.813    0.000 triangulation.py:599(__hash__)
+  5174038    1.037    0.000    1.037    0.000 {built-in method builtins.hash}
+ 109601/1    0.944    0.000    2.549    2.549 triangulation.py:84(perm)
+   912431    0.342    0.000    0.799    0.000 {method 'add' of 'set' objects}
+   140722    0.215    0.000    0.215    0.000 {built-in method numpy.core.multiarray.array}
+   175396    0.202    0.000    0.210    0.000 triangulation.py:518(add_vertex)
+   329229    0.133    0.000    0.167    0.000 copy.py:66(copy)
+     1285    0.128    0.000    0.128    0.000 {built-in method builtins.print}
+
+"""
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484    6.850    0.000    6.943    0.000 triangulation.py:645(__getitem__)
+      256    3.111    0.012   14.066    0.055 triangulation.py:217(construct_hypercube)
+  4236042    1.849    0.000    4.870    0.000 triangulation.py:603(connect)
+  5173838    1.664    0.000    2.635    0.000 triangulation.py:599(__hash__)
+  5174038    0.971    0.000    0.971    0.000 {built-in method builtins.hash}
+ 109601/1    0.904    0.000    2.469    2.469 triangulation.py:84(perm)
+   912431    0.313    0.000    0.743    0.000 {method 'add' of 'set' objects}
+   140722    0.192    0.000    0.192    0.000 {built-in method numpy.core.multiarray.array}
+   175396    0.187    0.000    0.193    0.000 triangulation.py:518(add_vertex)
+   329229    0.132    0.000    0.165    0.000 copy.py:66(copy)
+     1285    0.115    0.000    0.115    0.000 {built-in method builtins.print}
+    65536    0.079    0.000    0.254    0.000 triangulation.py:339(generate_sub_cell_t2)
+   456162    0.076    0.000    0.086    0.000 triangulation.py:622(minimiser)
+   109601    0.073    0.000    0.073    0.000 triangulation.py:89(<listcomp>)
+"""
+
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484   10.486    0.000   10.664    0.000 triangulation.py:644(__getitem__)
+      256    4.966    0.019   20.951    0.082 triangulation.py:217(construct_hypercube)
+  4236042    2.836    0.000    6.416    0.000 triangulation.py:602(connect)
+  5174038    1.506    0.000    1.506    0.000 {built-in method builtins.hash}
+  5173838    1.474    0.000    2.980    0.000 triangulation.py:597(__hash__)
+ 109601/1    1.336    0.000    3.537    3.537 triangulation.py:84(perm)
+   912431    0.471    0.000    0.980    0.000 {method 'add' of 'set' objects}
+   140722    0.309    0.000    0.309    0.000 {built-in method numpy.core.multiarray.array}
+   175396    0.290    0.000    0.302    0.000 triangulation.py:516(add_vertex)
+     1285    0.196    0.000    0.196    0.000 {built-in method builtins.print}
+   329229    0.195    0.000    0.244    0.000 copy.py:66(copy)
+
+
+"""
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484    7.290    0.000    7.408    0.000 triangulation.py:644(__getitem__)
+      256    3.474    0.014   14.522    0.057 triangulation.py:217(construct_hypercube)
+  4236042    1.947    0.000    4.386    0.000 triangulation.py:602(connect)
+  5174038    1.035    0.000    1.035    0.000 {built-in method builtins.hash}
+  5173838    1.007    0.000    2.041    0.000 triangulation.py:597(__hash__)
+ 109601/1    0.912    0.000    2.415    2.415 triangulation.py:84(perm)
+   912431    0.318    0.000    0.656    0.000 {method 'add' of 'set' objects}
+   140722    0.206    0.000    0.206    0.000 {built-in method numpy.core.multiarray.a
+"""
+
+
+"""
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484    7.153    0.000    7.269    0.000 triangulation.py:644(__getitem__)
+      256    3.442    0.013   14.357    0.056 triangulation.py:217(construct_hypercube)
+  4236042    1.937    0.000    4.374    0.000 triangulation.py:602(connect)
+  5174038    1.024    0.000    1.024    0.000 {built-in method builtins.hash}
+  5173838    1.017    0.000    2.041    0.000 triangulation.py:597(__hash__)
+ 109601/1    0.892    0.000    2.365    2.365 triangulation.py:84(perm)
+   912431    0.316    0.000    0.652    0.000 {method 'add' of 'set' objects}
+
+"""
+
+"""
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+  8647484    7.416    0.000    7.538    0.000 triangulation.py:645(__getitem__)
+      256    3.480    0.014   14.829    0.058 triangulation.py:217(construct_hypercube)
+  4236042    2.032    0.000    4.643    0.000 triangulation.py:603(connect)
+  5173838    1.095    0.000    2.189    0.000 triangulation.py:598(__hash__)
+  5174038    1.094    0.000    1.094    0.000 {built-in method builtins.hash}
+ 109601/1    0.972    0.000    2.590    2.590 triangulation.py:84(perm)
+   912431    0.336    0.000    0.697    0.000 {method 'add' of 'set' objects}
+   140722    0.217    0.000    0.217    0.000 {built-in method numpy.core.multiarray.array}
+   175396    0.210    0.000    0.218    0.000 triangulation.py:517(add_vertex)
+
+"""
