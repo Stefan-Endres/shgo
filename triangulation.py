@@ -94,9 +94,9 @@ class Complex:
         iter_range = [x for x in range(self.dim) if x not in i_parents]
 
         for i in iter_range:
-            i2_parents = copy.copy(i_parents)#.copy()
+            i2_parents = copy.copy(i_parents)
             i2_parents.append(i)
-            xi2 = copy.copy(xi)#.copy()
+            xi2 = copy.copy(xi)
             xi2[i] = 1
             # Make new vertex list a hashable tuple
             xi2_t = tuple(xi2)
@@ -110,7 +110,7 @@ class Complex:
             for x_ip in x_parents:
                 self.V[xi2_t].connect(self.V[x_ip])
 
-            x_parents2 = copy.copy(x_parents)#.copy()
+            x_parents2 = copy.copy(x_parents)
             x_parents2.append(xi_t)
 
             # Permutate
@@ -119,14 +119,7 @@ class Complex:
     def perm_symmetry(self, i_s, x_parents, xi):
         #TODO: Cut out of for if outside linear constraint cutting planes
         xi_t = tuple(xi)
-
-        # Construct required iterator
-        #iter_range = [x for x in range(self.dim) if x not in i_parents]
-
-
-    #    i2_parents = copy.copy(i_parents)#.copy()
-    #    i2_parents.append(i)
-        xi2 = copy.copy(xi)#.copy()
+        xi2 = copy.copy(xi)
         xi2[i_s] = 1
         # Make new vertex list a hashable tuple
         xi2_t = tuple(xi2)
@@ -140,7 +133,7 @@ class Complex:
         for x_ip in x_parents:
             self.V[xi2_t].connect(self.V[x_ip])
 
-        x_parents2 = copy.copy(x_parents)#.copy()
+        x_parents2 = copy.copy(x_parents)
         x_parents2.append(xi_t)
 
         i_s += 1
