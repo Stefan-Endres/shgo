@@ -150,6 +150,15 @@ class Complex:
         self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
+        if 0:  # Constrained centroid
+            v_sum = 0
+            for v in self.C0():
+                v_sum += numpy.array(v.x)
+
+            self.centroid = list(v_sum / len(self.C0()))
+            self.C0.add_vertex(self.V[tuple(self.centroid)])
+            self.C0.centroid = self.centroid
+
         # Disconnect origin and suprenum
         self.V[tuple(self.origin)].disconnect(self.V[tuple(self.suprenum)])
 
@@ -198,7 +207,12 @@ class Complex:
         """Subgenerate a cell `C_i` of generation `gen` and
         homology group rank `hgr`."""
         origin_new = tuple(C_i.centroid)
+        #origin_new = tuple(-numpy.array(C_i.centroid))
         centroid_index = len(C_i()) - 1
+
+
+        # NNEN
+        self.even_or_odd = self.dim - 1#1
 
         # If not gen append
         try:
@@ -213,6 +227,10 @@ class Complex:
             #origin = tuple(C_i.centroid)
             if i is not centroid_index:
                 suprenum = tuple(v.x)
+                #suprenum = numpy.array(v.x) - numpy.array(origin_new)
+
+                suprenum = tuple(suprenum)
+
                 print('suprenum = {}'.format(suprenum))
                 H_new.append(
                     self.construct_hypercube(origin_new, suprenum,
@@ -270,13 +288,39 @@ class Complex:
 
         # Cached calculation
         for i, v in enumerate(self.C0()[:-1]):
-            print("v.x = {}".format(v.x))
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            if 1:
+                if self.even_or_odd:
+                    v_perm = numpy.ones(self.dim) - v.x
+                    v_perm = tuple(v_perm)
+                    #even_or_odd = 0
+                else:
+                    v_perm = tuple(v.x)
+                    #even_or_odd = 1
+
+                t1 = self.generate_sub_cell_t1(origin, v_perm )
+                t2 = self.generate_sub_cell_t2(suprenum, v_perm )
+
+            if 0:
+                t1 = self.generate_sub_cell_t1(origin, v.x)
+                t2 = self.generate_sub_cell_t2(suprenum, v.x)
+
             vec = t1 + t2
+
             vec = tuple(vec)
             C_new.add_vertex(self.V[vec])
             V_new.append(vec)
+
+        if 1:
+            #if self.even_or_odd:
+            #    self.even_or_odd = 0
+            #else:
+            #    self.even_or_odd = 1
+
+            #  x % y
+            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
+            eoo = eoo_new
+            self.even_or_odd = eoo
+            print('self.even_or_odd = {}'.format(self.even_or_odd))
 
         # Add new centroid
         C_new.add_vertex(self.V[C_new.centroid])
@@ -460,7 +504,7 @@ class Complex:
                                               - self. bounds[i][0])
                                        + self.bounds[i][0])
 
-                        logging.info('v.x_a = {}'.format(x_a))
+                        #logging.info('v.x_a = {}'.format(x_a))
 
                         pyplot.plot([x_a[0]], [x_a[1]], 'o')
 
@@ -476,7 +520,7 @@ class Complex:
                                                   - self.bounds[i][0])
                                            + self.bounds[i][0])
 
-                            logging.info('vn.x = {}'.format(vn.x))
+                            #logging.info('vn.x = {}'.format(vn.x))
 
                             xlines.append(xn_a[0])
                             ylines.append(xn_a[1])
@@ -722,7 +766,7 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(1):
+    for i in range(6):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i+1))
 
