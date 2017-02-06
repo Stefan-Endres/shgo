@@ -18,6 +18,8 @@ class Complex:
     def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None, g_cons=None, g_args=None):
         self.dim = dim
         self.bounds = bounds
+        self.symmetry = symmetry #TODO: Define the functions to be used
+                                  #      here in init to avoid if checks
         self.gen = 0
         self.perm_cycle = 0
 
@@ -223,19 +225,83 @@ class Complex:
         # Generate subcubes using every extreme verex in C_i as a suprenum
         # and the centroid of C_i as the origin
         H_new = []  # list storing all the new cubes split from C_i
-        for i, v in enumerate(C_i()):
-            #origin = tuple(C_i.centroid)
-            if i is not centroid_index:
-                suprenum = tuple(v.x)
-                #suprenum = numpy.array(v.x) - numpy.array(origin_new)
+        for i, v in enumerate(C_i()[:-1]):
+            suprenum = tuple(v.x)
+            #suprenum = numpy.array(v.x) - numpy.array(origin_new)
+            suprenum = tuple(suprenum)
 
-                suprenum = tuple(suprenum)
-
-                print('suprenum = {}'.format(suprenum))
+            print('suprenum = {}'.format(suprenum))
+            if not self.symmetry:
                 H_new.append(
                     self.construct_hypercube(origin_new, suprenum,
                                              gen, C_i.hg_n, C_i.p_hgr_h))
+            else:
+                H_new.append(
+                    self.construct_hypercube_symmetry(origin_new, suprenum,
+                                             gen, C_i.hg_n, C_i.p_hgr_h))
+        # Disconnected all edges of parent cells (except origin to sup)
+        for i, connections in enumerate(self.graph):
+            # Present vertex V_new[i]; connect to all connections:
+            if i == centroid_index:  # Break out of centroid
+                break
 
+            for j in connections:
+                C_i()[i].disconnect(C_i()[j])
+
+        # Destroy the old cell
+        if C_i is not self.C0:  # Garbage collector does this anyway; not needed
+            del(C_i)
+
+        #TODO: Recalculate all the homology group ranks of each cell
+        return H_new
+
+
+    def sub_generate_cell_symmetry(self, C_i, gen):
+        """Subgenerate a cell `C_i` of generation `gen` and
+        homology group rank `hgr`."""
+        origin_new = tuple(C_i.centroid)
+        #origin_new = tuple(-numpy.array(C_i.centroid))
+        centroid_index = len(C_i()) - 1
+
+
+        # NNEN
+        self.even_or_odd = self.dim - 1#1
+
+        # If not gen append
+        try:
+            self.H[gen]
+        except IndexError:
+            self.H.append([])
+
+        # Generate subcubes using every extreme verex in C_i as a suprenum
+        # and the centroid of C_i as the origin
+        H_new = []  # list storing all the new cubes split from C_i
+        #for i, v in enumerate(C_i()[:-1]):
+        v = C_i()[0]
+        suprenum = tuple(v.x)
+        suprenum = tuple(suprenum)
+        H_new.append(
+            self.construct_hypercube_symmetry(origin_new, suprenum,
+                                              gen, C_i.hg_n, C_i.p_hgr_h,
+                                              inv=1))
+        # NOTE: [1] is the suprenum, second entry:
+        v = C_i()[2]
+        suprenum = tuple(v.x)
+        suprenum = tuple(suprenum)
+        H_new.append(
+            self.construct_hypercube_symmetry(origin_new, suprenum,
+                                              gen, C_i.hg_n, C_i.p_hgr_h,
+                                              inv=1))
+
+
+        #for i, v in enumerate(C_i()[1:-1]):
+        for i, v in enumerate(C_i()[1:]):
+            suprenum = tuple(v.x)
+            #suprenum = numpy.array(v.x) - numpy.array(origin_new)
+            suprenum = tuple(suprenum)
+            H_new.append(
+                self.construct_hypercube_symmetry(origin_new, suprenum,
+                                         gen, C_i.hg_n, C_i.p_hgr_h))
         # Disconnected all edges of parent cells (except origin to sup)
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
@@ -258,7 +324,10 @@ class Complex:
         """
         try:
             for c in self.H[self.gen]:
-                self.sub_generate_cell(c, self.gen + 1)
+                if self.symmetry:
+                    self.sub_generate_cell_symmetry(c, self.gen + 1)
+                else:
+                    self.sub_generate_cell(c, self.gen + 1)
         except IndexError:
             pass
 
@@ -288,39 +357,14 @@ class Complex:
 
         # Cached calculation
         for i, v in enumerate(self.C0()[:-1]):
-            if 1:
-                if self.even_or_odd:
-                    v_perm = numpy.ones(self.dim) - v.x
-                    v_perm = tuple(v_perm)
-                    #even_or_odd = 0
-                else:
-                    v_perm = tuple(v.x)
-                    #even_or_odd = 1
-
-                t1 = self.generate_sub_cell_t1(origin, v_perm )
-                t2 = self.generate_sub_cell_t2(suprenum, v_perm )
-
-            if 0:
-                t1 = self.generate_sub_cell_t1(origin, v.x)
-                t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
 
             vec = t1 + t2
 
             vec = tuple(vec)
             C_new.add_vertex(self.V[vec])
             V_new.append(vec)
-
-        if 1:
-            #if self.even_or_odd:
-            #    self.even_or_odd = 0
-            #else:
-            #    self.even_or_odd = 1
-
-            #  x % y
-            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
-            eoo = eoo_new
-            self.even_or_odd = eoo
-            print('self.even_or_odd = {}'.format(self.even_or_odd))
 
         # Add new centroid
         C_new.add_vertex(self.V[C_new.centroid])
@@ -348,6 +392,114 @@ class Complex:
 
                 C_new.add_vertex(self.V(tuple(vec)))
                 V_new.append(vec)
+
+        # Connect new vertices #TODO: Thread into other loop; no need for V_new
+        for i, connections in enumerate(self.graph):
+            # Present vertex V_new[i]; connect to all connections:
+            for j in connections:
+                self.V[V_new[i]].connect(self.V[V_new[j]])
+
+        #print('V_new = {}'.format(V_new))
+
+        if printout:
+            print("A sub hyper cube with:")
+            print("origin: {}".format(origin))
+            print("suprenum: {}".format(suprenum))
+            for v in C_new():
+                print("Vertex: {}".format(v.x))
+                constr = 'Connections: '
+                for vc in v.nn:
+                    constr += '{} '.format(vc.x)
+
+                print(constr)
+                print('Order = {}'.format(v.order))
+
+        # Append the new cell to the to complex
+        self.H[gen].append(C_new)
+
+        return C_new
+
+
+    def construct_hypercube_symmetry(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False, inv=0):
+        """
+        Build a hypercube with triangulations symmetric to C0.
+
+        This function utilizes the knowledge that the problem is specified
+        with symmetric constraints
+
+        Parameters
+        ----------
+        origin : vec
+        suprenum : vec (tuple)
+        gen : generation
+        hgr : parent homology group rank
+        """
+        # Initiate new cell
+        C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
+        C_new.centroid = tuple((numpy.array(origin) + numpy.array(suprenum))/2.0)
+
+        centroid_index = len(self.C0()) - 1
+        # Build new indexed vertex list
+        V_new = []
+
+        # Cached calculation
+        # Origin
+        if 0:
+            v = self.C0()[0]
+            v_perm = numpy.ones(self.dim) - v.x
+            v_perm = tuple(v_perm)
+            t1 = self.generate_sub_cell_t1(origin, v_perm)
+            t2 = self.generate_sub_cell_t2(suprenum, v_perm)
+            vec = t1 + t2
+            vec = tuple(vec)
+            C_new.add_vertex(self.V[vec])
+            V_new.append(vec)
+
+        # All intermediate vertices
+        for i, v in enumerate(self.C0()[:]):
+            print('v.x = {}'.format(v.x))
+
+            if inv:
+                v_perm = numpy.ones(self.dim) - v.x
+                v_perm = tuple(v_perm)
+                t1 = self.generate_sub_cell_t1(origin, v_perm)
+                t2 = self.generate_sub_cell_t2(suprenum, v_perm)
+
+                vec = t1 + t2
+
+                vec = tuple(vec)
+                C_new.add_vertex(self.V[vec])
+                V_new.append(vec)
+
+            else:
+                t1 = self.generate_sub_cell_t1(origin, v.x)
+                t2 = self.generate_sub_cell_t2(suprenum, v.x)
+
+                vec = t1 + t2
+
+                vec = tuple(vec)
+                C_new.add_vertex(self.V[vec])
+                V_new.append(vec)
+
+        if 0:
+            # Suprenum
+            v = self.C0()[1]
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            vec = t1 + t2
+            vec = tuple(vec)
+            C_new.add_vertex(self.V[vec])
+            V_new.append(vec)
+
+        if 0:
+            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
+            eoo = eoo_new
+            self.even_or_odd = eoo
+            print('self.even_or_odd = {}'.format(self.even_or_odd))
+
+        # Add new centroid
+        C_new.add_vertex(self.V[C_new.centroid])
+        V_new.append(C_new.centroid)
 
         # Connect new vertices #TODO: Thread into other loop; no need for V_new
         for i, connections in enumerate(self.graph):
@@ -766,7 +918,9 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(6):
+    print("HC.C0() ======")
+    HC.C0.print_out()
+    for i in range(5):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i+1))
 
