@@ -178,35 +178,6 @@ class Complex:
         self.centroid_added = True
         return
 
-    def add_centroid_symmetry(self):
-        """Split the central edge between the origin and suprenum of
-        a cell and add the new vertex to the complex"""
-
-        if 1:  # Constrained centroid
-            v_sum = numpy.zeros(self.dim)
-            #for v in self.C0()[:-1]:
-            for v in self.C0()[:]:
-                v_sum += numpy.array(v.x)
-
-            # Disconnect all non-extreme vertices and add weight:
-            for v in self.C0()[2:-1]: # 0 = origin, 1 = suprenum
-                v.disconnect(self.C0()[-1])
-                v_sum += numpy.array(v.x)
-
-            self.centroid = list(v_sum / (len(self.C0()) + len(self.C0()) - 2))
-            self.C0.add_vertex(self.V[tuple(self.centroid)])
-            self.C0.centroid = self.centroid
-
-        # Disconnect origin and suprenum
-        self.V[tuple(self.origin)].disconnect(self.V[tuple(self.suprenum)])
-
-        # Connect centroid to all other vertices
-        for v in self.C0():
-             self.V[tuple(self.centroid)].connect(self.V[tuple(v.x)])
-
-        self.centroid_added = True
-        return
-
 
     # Construct incidence array:
     def incidence(self):
@@ -286,8 +257,9 @@ class Complex:
         """
         try:
             for c in self.H[self.gen]:
-                if 0:#self.symmetry:
-                    self.sub_generate_cell_symmetry(c, self.gen + 1)
+                if self.symmetry:
+                    #self.sub_generate_cell_symmetry(c, self.gen + 1)
+                    self.split_simplex_symmetry(c, self.gen + 1)
                 else:
                     self.sub_generate_cell(c, self.gen + 1)
         except IndexError:
@@ -357,7 +329,7 @@ class Complex:
         return C_new
 
 
-    def split_hypercube_symmetry(self, C, gen, hgr, p_hgr_h, printout=False, inv=0):
+    def split_simplex_symmetry(self, C, gen):
         """
         Split a hypersimplex S into two sub simplcies by building a hyperplane which connects
         to a new vertex on an edge (the longest edge in dim = {2, 3})
@@ -371,6 +343,14 @@ class Complex:
         vertices in every simplices, the edge between first and second
         vertex is the longest edge to be split in the next iteration.
         """
+        # If not gen append
+        try:
+            self.H[gen]
+        except IndexError:
+            self.H.append([])
+        # gen, hgr, p_hgr_h,
+        # gen, C_i.hg_n, C_i.p_hgr_h
+
         # Initiate new cell
         C_new = Simplex(gen, hgr, p_hgr_h, C()[0], C()[1], C.generation_cycle)
         C_new.centroid = tuple((numpy.array(C()[0]) + numpy.array(C[1]))/2.0)
