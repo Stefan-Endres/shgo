@@ -34,8 +34,10 @@ class Complex:
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry, printout=True)
 
+        # TODO: Assign functions to a the complex instead
         if symmetry:
             pass
+            self.generation_cycle = 1
             #self.centroid = self.C0()[-1].x
             #self.C0.centroid = self.centroid
         else:
@@ -68,19 +70,27 @@ class Complex:
         self.origin = origin
         supremum = list(numpy.ones(dim, dtype=int))
         self.suprenum = supremum
-        self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
-        self.C0.add_vertex(self.V[tuple(origin)])
-        self.C0.add_vertex(self.V[tuple(supremum)])
-
 
         x_parents = []
         x_parents.append(tuple(self.origin))
+
         if symmetry:
+            #self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
+            self.C0 = Simplex(0, 0, 0, 0, self.dim)  # Initial cell object
+            self.C0.add_vertex(self.V[tuple(origin)])
+
+
             i_s = 0
             self.perm_symmetry(i_s, x_parents, origin)
+            self.C0.add_vertex(self.V[tuple(supremum)])
         else:
+            self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
+            self.C0.add_vertex(self.V[tuple(origin)])
+            self.C0.add_vertex(self.V[tuple(supremum)])
+
             i_parents = []
             self.perm(i_parents, x_parents, origin)
+
 
         if printout:
             print("Initial hyper cube:")
@@ -225,12 +235,11 @@ class Complex:
         except IndexError:
             self.H.append([])
 
-        # Generate subcubes using every extreme verex in C_i as a suprenum
+        # Generate subcubes using every extreme vertex in C_i as a suprenum
         # and the centroid of C_i as the origin
         H_new = []  # list storing all the new cubes split from C_i
         for i, v in enumerate(C_i()[:-1]):
             suprenum = tuple(v.x)
-            #suprenum = tuple(suprenum)
             H_new.append(
                 self.construct_hypercube(origin_new, suprenum,
                                          gen, C_i.hg_n, C_i.p_hgr_h))
@@ -329,7 +338,7 @@ class Complex:
         return C_new
 
 
-    def split_simplex_symmetry(self, C, gen):
+    def split_simplex_symmetry(self, S, gen):
         """
         Split a hypersimplex S into two sub simplcies by building a hyperplane which connects
         to a new vertex on an edge (the longest edge in dim = {2, 3})
@@ -351,95 +360,61 @@ class Complex:
         # gen, hgr, p_hgr_h,
         # gen, C_i.hg_n, C_i.p_hgr_h
 
-        # Initiate new cell
-        C_new = Simplex(gen, hgr, p_hgr_h, C()[0], C()[1], C.generation_cycle)
-        C_new.centroid = tuple((numpy.array(C()[0]) + numpy.array(C[1]))/2.0)
-        V_new = tuple((numpy.array(C()[0]) + numpy.array(C[1]))/2.0)
+        # Find new vertex.
+        #V_new_x = tuple((numpy.array(C()[0].x) + numpy.array(C()[1].x)) / 2.0)
+        V_new = self.V[tuple((numpy.array(S()[0].x) + numpy.array(S()[-1].x)) / 2.0)]
+
+        # Disconnect old longest edge
+        self.V[S()[0].x].disconnect(self.V[S()[-1].x])
+
+        # Connect new vertices to all other vertices
+        for v in S()[:]:
+            v.connect(self.V[V_new.x])
+
+        # New "lower" simplex
+        S_new_l = Simplex(gen, S.hg_n, S.p_hgr_h, self.generation_cycle, self.dim)
+        S_new_l.add_vertex(S()[0])
+        S_new_l.add_vertex(V_new)  # Add new vertex
+        for v in S()[1:-1]:  # Add all other vertices
+            S_new_l.add_vertex(v)
 
 
-        # Next in cycle mod(dim - 1)
-        gci_n = (self.generation_cycle + 1) % (self.dim - 1)
-        gci = gci_n
-        self.generation_cycle = gci
+        # New "upper" simplex
+        #self.generation_cycle = S.generation_cycle
+        S_new_u = Simplex(gen, S.hg_n, S.p_hgr_h, S.generation_cycle, self.dim)
+        print('S_new_l.generation_cycle = {}'.format(S_new_l.generation_cycle))
+        #print('S_new_l.generation_cycle + 2 = {}'.format(S_new_l.generation_cycle + 2))
+        print('S_new_l.generation_cycle + 1 = {}'.format(S_new_l.generation_cycle + 1))
+        #S_new_u.add_vertex(S()[S_new_l.generation_cycle + 2])  # First vertex on new long edge
+        S_new_u.add_vertex(S()[S_new_u.generation_cycle + 1])  # First vertex on new long edge
 
 
-        # Build new indexed vertex list
-        V_new = []
+        for v in S()[1:-1]:  # Remaining vertices
+            S_new_u.add_vertex(v)
 
-        C_new.add_vertex(self.V[C_new.centroid])
-        V_new.append(C_new.centroid)
+        for k, v in enumerate(S()[1:-1]):  # iterate through inner vertices
+            #for easier k / gci tracking
+            k += 1
+            #if k == 0:
+            #    continue  # We do this rather than S[1:-1]
+                          # for easier k / gci tracking
+            if k == (S.generation_cycle + 1):
+                S_new_u.add_vertex(V_new)
+            else:
+                S_new_u.add_vertex(v)
 
-        # Connect new vertices #TODO: Thread into other loop; no need for V_new
-        for i, connections in enumerate(self.graph):
-            # Present vertex V_new[i]; connect to all connections:
-            for j in connections:
-                self.V[V_new[i]].connect(self.V[V_new[j]])
+        S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
 
-        # Cached calculation
-        # Origin
-        if 0:
-            v = self.C0()[0]
-            v_perm = numpy.ones(self.dim) - v.x
-            v_perm = tuple(v_perm)
-            t1 = self.generate_sub_cell_t1(origin, v_perm)
-            t2 = self.generate_sub_cell_t2(suprenum, v_perm)
-            vec = t1 + t2
-            vec = tuple(vec)
-            C_new.add_vertex(self.V[vec])
-            V_new.append(vec)
+        for i, v in enumerate(S_new_u()):
+            print(f'S_new_u()[{i}].x = {v.x}')
 
-        # All intermediate vertices
-        if 0:
-            for i, v in enumerate(self.C0()[:]):
-                print('v.x = {}'.format(v.x))
+        self.H[gen].append(S_new_l)
+        if 1:
+            self.H[gen].append(S_new_u)
 
-                if inv:
-                    v_perm = numpy.ones(self.dim) - v.x
-                    v_perm = tuple(v_perm)
-                    t1 = self.generate_sub_cell_t1(origin, v_perm)
-                    t2 = self.generate_sub_cell_t2(suprenum, v_perm)
+        return
 
-                    vec = t1 + t2
 
-                    vec = tuple(vec)
-                    C_new.add_vertex(self.V[vec])
-                    V_new.append(vec)
-
-                else:
-                    t1 = self.generate_sub_cell_t1(origin, v.x)
-                    t2 = self.generate_sub_cell_t2(suprenum, v.x)
-
-                    vec = t1 + t2
-
-                    vec = tuple(vec)
-                    C_new.add_vertex(self.V[vec])
-                    V_new.append(vec)
-
-        if 0:
-            # Suprenum
-            v = self.C0()[1]
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
-            vec = t1 + t2
-            vec = tuple(vec)
-            C_new.add_vertex(self.V[vec])
-            V_new.append(vec)
-
-        if 0:
-            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
-            eoo = eoo_new
-            self.even_or_odd = eoo
-            print('self.even_or_odd = {}'.format(self.even_or_odd))
-
-        # Add new centroid
-        C_new.add_vertex(self.V[C_new.centroid])
-        V_new.append(C_new.centroid)
-
-        # Connect new vertices #TODO: Thread into other loop; no need for V_new
-        for i, connections in enumerate(self.graph):
-            # Present vertex V_new[i]; connect to all connections:
-            for j in connections:
-                self.V[V_new[i]].connect(self.V[V_new[j]])
 
 
     @lru_cache(maxsize=None)
@@ -671,14 +646,14 @@ class Simplex:
     Contains a simplex that is symmetric to the initial symmetry constrained
     hypersimplex triangulation
     """
-    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum, generation_cycle):
+    def __init__(self, p_gen, p_hgr, p_hgr_h, generation_cycle, dim):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
         self.p_hgr_h = p_hgr_h  #
         self.hg_n = None
         self.hg_d = None
 
-        gci_n = (generation_cycle + 1) % (self.dim - 1)
+        gci_n = (generation_cycle + 1) % (dim - 1)
         gci = gci_n
         self.generation_cycle = gci
 
@@ -686,8 +661,6 @@ class Simplex:
         # This is the sum off all previously split cells
         # cumulatively throughout its entire history
         self.C = []
-        self.origin = origin
-        self.suprenum = suprenum
 
     def __call__(self):
         return self.C
@@ -847,7 +820,7 @@ if __name__ == '__main__':
 
     tr = []
     nr = list(range(9))
-    HC = Complex(2, test_func, symmetry=1)
+    HC = Complex(3, test_func, symmetry=1)
     #HC = Complex(13, test_func, symmetry=1)
     if 0:
         nr = []
@@ -890,6 +863,11 @@ if __name__ == '__main__':
     if 1:
         HC.plot_complex()
 
+    for i in range(7):
+        HC.split_generation()
+        logging.info('Done splitting gen = {}'.format(i+1))
+
+        HC.plot_complex()
     if 0:
         print(HC.H)
         print(len(HC.H[1]))
