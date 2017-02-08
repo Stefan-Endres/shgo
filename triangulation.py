@@ -34,16 +34,12 @@ class Complex:
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry, printout=True)
 
-        if 0:
-            self.add_centroid()
-            if symmetry:
-                self.add_centroid_symmetry()
-
         if symmetry:
-            self.centroid = self.C0()[-1].x
-            self.C0.centroid = self.centroid
-
-        #self.add_centroid()
+            pass
+            #self.centroid = self.C0()[-1].x
+            #self.C0.centroid = self.centroid
+        else:
+            self.add_centroid()
 
         self.H.append([])
         self.H[0].append(self.C0)
@@ -251,7 +247,7 @@ class Complex:
         homology group rank `hgr`."""
         origin_new = tuple(C_i.centroid)
         centroid_index = len(C_i()) - 1
-        
+
         # If not gen append
         try:
             self.H[gen]
@@ -263,20 +259,11 @@ class Complex:
         H_new = []  # list storing all the new cubes split from C_i
         for i, v in enumerate(C_i()[:-1]):
             suprenum = tuple(v.x)
-            #suprenum = numpy.array(v.x) - numpy.array(origin_new)
-            suprenum = tuple(suprenum)
-
-            print('suprenum = {}'.format(suprenum))
-            print('origin = {}'.format(origin_new))
-            #if not self.symmetry:
+            #suprenum = tuple(suprenum)
             H_new.append(
                 self.construct_hypercube(origin_new, suprenum,
                                          gen, C_i.hg_n, C_i.p_hgr_h))
-            #else:
-            #    H_new.append(
-            #        self.construct_hypercube_symmetry(origin_new, suprenum,
-            #                                 gen, C_i.hg_n, C_i.p_hgr_h))
-        # Disconnected all edges of parent cells (except origin to sup)
+
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             if i == centroid_index:  # Break out of centroid
@@ -292,68 +279,6 @@ class Complex:
         #TODO: Recalculate all the homology group ranks of each cell
         return H_new
 
-
-    def sub_generate_cell_symmetry(self, C_i, gen):
-        """Subgenerate a cell `C_i` of generation `gen` and
-        homology group rank `hgr`."""
-        origin_new = tuple(C_i.centroid)
-        #origin_new = tuple(-numpy.array(C_i.centroid))
-        centroid_index = len(C_i()) - 1
-
-
-        # NNEN
-        self.even_or_odd = self.dim - 1#1
-
-        # If not gen append
-        try:
-            self.H[gen]
-        except IndexError:
-            self.H.append([])
-
-        # Generate subcubes using every extreme verex in C_i as a suprenum
-        # and the centroid of C_i as the origin
-        H_new = []  # list storing all the new cubes split from C_i
-        #for i, v in enumerate(C_i()[:-1]):
-        v = C_i()[0]
-        suprenum = tuple(v.x)
-        suprenum = tuple(suprenum)
-        H_new.append(
-            self.construct_hypercube_symmetry(origin_new, suprenum,
-                                              gen, C_i.hg_n, C_i.p_hgr_h,
-                                              inv=1))
-        # NOTE: [1] is the suprenum, second entry:
-        v = C_i()[2]
-        suprenum = tuple(v.x)
-        suprenum = tuple(suprenum)
-        H_new.append(
-            self.construct_hypercube_symmetry(origin_new, suprenum,
-                                              gen, C_i.hg_n, C_i.p_hgr_h,
-                                              inv=1))
-
-
-        #for i, v in enumerate(C_i()[1:-1]):
-        for i, v in enumerate(C_i()[1:]):
-            suprenum = tuple(v.x)
-            #suprenum = numpy.array(v.x) - numpy.array(origin_new)
-            suprenum = tuple(suprenum)
-            H_new.append(
-                self.construct_hypercube_symmetry(origin_new, suprenum,
-                                         gen, C_i.hg_n, C_i.p_hgr_h))
-        # Disconnected all edges of parent cells (except origin to sup)
-        for i, connections in enumerate(self.graph):
-            # Present vertex V_new[i]; connect to all connections:
-            if i == centroid_index:  # Break out of centroid
-                break
-
-            for j in connections:
-                C_i()[i].disconnect(C_i()[j])
-
-        # Destroy the old cell
-        if C_i is not self.C0:  # Garbage collector does this anyway; not needed
-            del(C_i)
-
-        #TODO: Recalculate all the homology group ranks of each cell
-        return H_new
 
     def split_generation(self):
         """
@@ -413,8 +338,6 @@ class Complex:
             for j in connections:
                 self.V[V_new[i]].connect(self.V[V_new[j]])
 
-        #print('V_new = {}'.format(V_new))
-
         if printout:
             print("A sub hyper cube with:")
             print("origin: {}".format(origin))
@@ -434,7 +357,7 @@ class Complex:
         return C_new
 
 
-    def construct_hypercube_symmetry(self, C, gen, hgr, p_hgr_h, printout=False, inv=0):
+    def split_hypercube_symmetry(self, C, gen, hgr, p_hgr_h, printout=False, inv=0):
         """
         Split a hypersimplex S into two sub simplcies by building a hyperplane which connects
         to a new vertex on an edge (the longest edge in dim = {2, 3})
@@ -449,7 +372,7 @@ class Complex:
         vertex is the longest edge to be split in the next iteration.
         """
         # Initiate new cell
-        C_new = Simplex(gen, hgr, p_hgr_h, C()[0], C()[1])
+        C_new = Simplex(gen, hgr, p_hgr_h, C()[0], C()[1], C.generation_cycle)
         C_new.centroid = tuple((numpy.array(C()[0]) + numpy.array(C[1]))/2.0)
         V_new = tuple((numpy.array(C()[0]) + numpy.array(C[1]))/2.0)
 
@@ -538,112 +461,6 @@ class Complex:
             for j in connections:
                 self.V[V_new[i]].connect(self.V[V_new[j]])
 
-    def construct_hypercube_symmetry_old(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False, inv=0):
-        """
-        Build a hypercube with triangulations symmetric to C0.
-
-        This function utilizes the knowledge that the problem is specified
-        with symmetric constraints
-
-        Parameters
-        ----------
-        origin : vec
-        suprenum : vec (tuple)
-        gen : generation
-        hgr : parent homology group rank
-        """
-        # Initiate new cell
-        C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
-        C_new.centroid = tuple((numpy.array(origin) + numpy.array(suprenum))/2.0)
-
-        centroid_index = len(self.C0()) - 1
-        # Build new indexed vertex list
-        V_new = []
-
-        # Cached calculation
-        # Origin
-        if 0:
-            v = self.C0()[0]
-            v_perm = numpy.ones(self.dim) - v.x
-            v_perm = tuple(v_perm)
-            t1 = self.generate_sub_cell_t1(origin, v_perm)
-            t2 = self.generate_sub_cell_t2(suprenum, v_perm)
-            vec = t1 + t2
-            vec = tuple(vec)
-            C_new.add_vertex(self.V[vec])
-            V_new.append(vec)
-
-        # All intermediate vertices
-        for i, v in enumerate(self.C0()[:]):
-            print('v.x = {}'.format(v.x))
-
-            if inv:
-                v_perm = numpy.ones(self.dim) - v.x
-                v_perm = tuple(v_perm)
-                t1 = self.generate_sub_cell_t1(origin, v_perm)
-                t2 = self.generate_sub_cell_t2(suprenum, v_perm)
-
-                vec = t1 + t2
-
-                vec = tuple(vec)
-                C_new.add_vertex(self.V[vec])
-                V_new.append(vec)
-
-            else:
-                t1 = self.generate_sub_cell_t1(origin, v.x)
-                t2 = self.generate_sub_cell_t2(suprenum, v.x)
-
-                vec = t1 + t2
-
-                vec = tuple(vec)
-                C_new.add_vertex(self.V[vec])
-                V_new.append(vec)
-
-        if 0:
-            # Suprenum
-            v = self.C0()[1]
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
-            vec = t1 + t2
-            vec = tuple(vec)
-            C_new.add_vertex(self.V[vec])
-            V_new.append(vec)
-
-        if 0:
-            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
-            eoo = eoo_new
-            self.even_or_odd = eoo
-            print('self.even_or_odd = {}'.format(self.even_or_odd))
-
-        # Add new centroid
-        C_new.add_vertex(self.V[C_new.centroid])
-        V_new.append(C_new.centroid)
-
-        # Connect new vertices #TODO: Thread into other loop; no need for V_new
-        for i, connections in enumerate(self.graph):
-            # Present vertex V_new[i]; connect to all connections:
-            for j in connections:
-                self.V[V_new[i]].connect(self.V[V_new[j]])
-
-        #print('V_new = {}'.format(V_new))
-
-        if printout:
-            print("A sub hyper cube with:")
-            print("origin: {}".format(origin))
-            print("suprenum: {}".format(suprenum))
-            for v in C_new():
-                print("Vertex: {}".format(v.x))
-                constr = 'Connections: '
-                for vc in v.nn:
-                    constr += '{} '.format(vc.x)
-
-                print(constr)
-                print('Order = {}'.format(v.order))
-
-        # Append the new cell to the to complex
-        self.H[gen].append(C_new)
-
-        return C_new
 
     @lru_cache(maxsize=None)
     def generate_sub_cell(self, origin, suprenum):  # No hits
@@ -920,12 +737,16 @@ class Simplex:
     Contains a simplex that is symmetric to the initial symmetry constrained
     hypersimplex triangulation
     """
-    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
+    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum, generation_cycle):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
         self.p_hgr_h = p_hgr_h  #
         self.hg_n = None
         self.hg_d = None
+
+        gci_n = (generation_cycle + 1) % (self.dim - 1)
+        gci = gci_n
+        self.generation_cycle = gci
 
         # Maybe add parent homology group rank total history
         # This is the sum off all previously split cells
@@ -933,8 +754,6 @@ class Simplex:
         self.C = []
         self.origin = origin
         self.suprenum = suprenum
-        self.centroid = None  # (Not always used)
-        #TODO: self.bounds
 
     def __call__(self):
         return self.C
@@ -1124,7 +943,7 @@ if __name__ == '__main__':
     start = time.time()
     print("HC.C0() ======")
     HC.C0.print_out()
-    for i in range(1):
+    for i in range(0):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i+1))
 
@@ -1142,94 +961,3 @@ if __name__ == '__main__':
         print(len(HC.H[1]))
         print(HC.H[1][0])
         HC.H[1][0].print_out()
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484    7.350    0.000    7.901    0.000 triangulation.py:645(__getitem__)
-      256    3.337    0.013   15.632    0.061 triangulation.py:217(construct_hypercube)
-  4236042    2.001    0.000    5.236    0.000 triangulation.py:603(connect)
-  5173838    1.776    0.000    2.813    0.000 triangulation.py:599(__hash__)
-  5174038    1.037    0.000    1.037    0.000 {built-in method builtins.hash}
- 109601/1    0.944    0.000    2.549    2.549 triangulation.py:84(perm)
-   912431    0.342    0.000    0.799    0.000 {method 'add' of 'set' objects}
-   140722    0.215    0.000    0.215    0.000 {built-in method numpy.core.multiarray.array}
-   175396    0.202    0.000    0.210    0.000 triangulation.py:518(add_vertex)
-   329229    0.133    0.000    0.167    0.000 copy.py:66(copy)
-     1285    0.128    0.000    0.128    0.000 {built-in method builtins.print}
-
-"""
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484    6.850    0.000    6.943    0.000 triangulation.py:645(__getitem__)
-      256    3.111    0.012   14.066    0.055 triangulation.py:217(construct_hypercube)
-  4236042    1.849    0.000    4.870    0.000 triangulation.py:603(connect)
-  5173838    1.664    0.000    2.635    0.000 triangulation.py:599(__hash__)
-  5174038    0.971    0.000    0.971    0.000 {built-in method builtins.hash}
- 109601/1    0.904    0.000    2.469    2.469 triangulation.py:84(perm)
-   912431    0.313    0.000    0.743    0.000 {method 'add' of 'set' objects}
-   140722    0.192    0.000    0.192    0.000 {built-in method numpy.core.multiarray.array}
-   175396    0.187    0.000    0.193    0.000 triangulation.py:518(add_vertex)
-   329229    0.132    0.000    0.165    0.000 copy.py:66(copy)
-     1285    0.115    0.000    0.115    0.000 {built-in method builtins.print}
-    65536    0.079    0.000    0.254    0.000 triangulation.py:339(generate_sub_cell_t2)
-   456162    0.076    0.000    0.086    0.000 triangulation.py:622(minimiser)
-   109601    0.073    0.000    0.073    0.000 triangulation.py:89(<listcomp>)
-"""
-
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484   10.486    0.000   10.664    0.000 triangulation.py:644(__getitem__)
-      256    4.966    0.019   20.951    0.082 triangulation.py:217(construct_hypercube)
-  4236042    2.836    0.000    6.416    0.000 triangulation.py:602(connect)
-  5174038    1.506    0.000    1.506    0.000 {built-in method builtins.hash}
-  5173838    1.474    0.000    2.980    0.000 triangulation.py:597(__hash__)
- 109601/1    1.336    0.000    3.537    3.537 triangulation.py:84(perm)
-   912431    0.471    0.000    0.980    0.000 {method 'add' of 'set' objects}
-   140722    0.309    0.000    0.309    0.000 {built-in method numpy.core.multiarray.array}
-   175396    0.290    0.000    0.302    0.000 triangulation.py:516(add_vertex)
-     1285    0.196    0.000    0.196    0.000 {built-in method builtins.print}
-   329229    0.195    0.000    0.244    0.000 copy.py:66(copy)
-
-
-"""
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484    7.290    0.000    7.408    0.000 triangulation.py:644(__getitem__)
-      256    3.474    0.014   14.522    0.057 triangulation.py:217(construct_hypercube)
-  4236042    1.947    0.000    4.386    0.000 triangulation.py:602(connect)
-  5174038    1.035    0.000    1.035    0.000 {built-in method builtins.hash}
-  5173838    1.007    0.000    2.041    0.000 triangulation.py:597(__hash__)
- 109601/1    0.912    0.000    2.415    2.415 triangulation.py:84(perm)
-   912431    0.318    0.000    0.656    0.000 {method 'add' of 'set' objects}
-   140722    0.206    0.000    0.206    0.000 {built-in method numpy.core.multiarray.a
-"""
-
-
-"""
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484    7.153    0.000    7.269    0.000 triangulation.py:644(__getitem__)
-      256    3.442    0.013   14.357    0.056 triangulation.py:217(construct_hypercube)
-  4236042    1.937    0.000    4.374    0.000 triangulation.py:602(connect)
-  5174038    1.024    0.000    1.024    0.000 {built-in method builtins.hash}
-  5173838    1.017    0.000    2.041    0.000 triangulation.py:597(__hash__)
- 109601/1    0.892    0.000    2.365    2.365 triangulation.py:84(perm)
-   912431    0.316    0.000    0.652    0.000 {method 'add' of 'set' objects}
-
-"""
-
-"""
-
-   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-  8647484    7.416    0.000    7.538    0.000 triangulation.py:645(__getitem__)
-      256    3.480    0.014   14.829    0.058 triangulation.py:217(construct_hypercube)
-  4236042    2.032    0.000    4.643    0.000 triangulation.py:603(connect)
-  5173838    1.095    0.000    2.189    0.000 triangulation.py:598(__hash__)
-  5174038    1.094    0.000    1.094    0.000 {built-in method builtins.hash}
- 109601/1    0.972    0.000    2.590    2.590 triangulation.py:84(perm)
-   912431    0.336    0.000    0.697    0.000 {method 'add' of 'set' objects}
-   140722    0.217    0.000    0.217    0.000 {built-in method numpy.core.multiarray.array}
-   175396    0.210    0.000    0.218    0.000 triangulation.py:517(add_vertex)
-
-"""
