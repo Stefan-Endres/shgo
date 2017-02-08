@@ -522,52 +522,6 @@ class Complex:
         self.hgrd = self.hgr - p_hgr  # Complex group rank differential
         return self.hgr
 
-    # Not completed zone:
-    ## Symmetry group topological transformation methods
-    def generate_gen(self):
-        """Generate all cells in the next generation of subdivisions"""
-        self.gen += 1
-        self.C_new = []
-        for cell in self.C:
-            self.C_new_cells = self.generate_sub(cell, self.gen, self.hg0)
-            for c_new in self.C_new_cells:
-                self.C_new.append(c_new)
-
-        # Set new complex
-        self.C = self.C_new
-        return
-
-    def generate_sub(self, cell, gen, hg0=0):
-        """Generate the subdivision of a specified cell"""
-        # Shrink the initial cell
-        factor = float(1/(gen))
-        print(factor)
-
-        return [None]
-
-    def stretch(self, cell, factor):
-        """
-        Stretch transformation of all vertices in a cell.
-        """
-        # TODO: Optimize with numpy arrays and matrix operations
-        C1 = Cell(1, 0)
-        for v in cell.C:
-            print(tuple(numpy.array(v.x) * factor))
-
-        # (loop through all neighbours and stretch
-        return
-
-    def translate(self, cell, v_start, v_end):
-        """
-        translate the cell from a vector starting at v_start pointing at v_end
-        """
-
-        return
-
-    def rotation(self, cell):
-        # Return all SO(n) group rotations of input cell
-        return
-
     # Plots
     def plot_complex(self):
         """
