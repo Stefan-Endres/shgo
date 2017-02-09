@@ -380,12 +380,9 @@ class Complex:
 
 
         # New "upper" simplex
-        #self.generation_cycle = S.generation_cycle
         S_new_u = Simplex(gen, S.hg_n, S.p_hgr_h, S.generation_cycle, self.dim)
-        print('S_new_l.generation_cycle = {}'.format(S_new_l.generation_cycle))
-        #print('S_new_l.generation_cycle + 2 = {}'.format(S_new_l.generation_cycle + 2))
-        print('S_new_l.generation_cycle + 1 = {}'.format(S_new_l.generation_cycle + 1))
-        #S_new_u.add_vertex(S()[S_new_l.generation_cycle + 2])  # First vertex on new long edge
+        #print('S_new_l.generation_cycle = {}'.format(S_new_l.generation_cycle))
+        #print('S_new_l.generation_cycle + 1 = {}'.format(S_new_l.generation_cycle + 1))
         S_new_u.add_vertex(S()[S_new_u.generation_cycle + 1])  # First vertex on new long edge
 
 
@@ -468,12 +465,14 @@ class Complex:
         p_hgr = self.hgr
         self.hgr = 0
         cells = 0
-        for Cell in self.H[self.gen]:
-            self.hgr += Cell.homology_group_rank()
-            cells += 1
+        for Cell_gen in self.H:
+            #for Cell in self.H[self.gen]:
+            for Cell in Cell_gen:
+                self.hgr += Cell.homology_group_rank()
+                cells += 1
 
         #self.hgr = self.hgr/cells * 100
-
+        logging.info('self.hgr = {}'.format(self.hgr))
         self.hgrd = self.hgr - p_hgr  # Complex group rank differential
         return self.hgr
 
