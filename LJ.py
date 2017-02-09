@@ -1,4 +1,5 @@
-from _shgo_sobol import shgo
+#from _shgo_sobol import shgo
+from _shgo import shgo
 from _tgo import tgo
 import scipy.optimize
 import numpy
@@ -145,6 +146,7 @@ atoms = 4
 atoms = 2
 atoms = 4
 atoms = 4
+atoms = 10
 N = atoms * 3
 LJ = LennardJones(N)
 print(LJ.fun([0.1] * N))
@@ -156,6 +158,12 @@ options = {'disp': False}
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=1000)
 
 #res = shgo(LJ.fun, LJ._bounds, options=options, n=50, crystal_mode=True)
+
+
+print("="*30)
+print("="*30)
+print("Optimizing with SHGO...")
+print("="*40)
 
 
 # Symmetry shit

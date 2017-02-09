@@ -489,26 +489,13 @@ class SHGO(object):
         #      terminates in finite time for a function with infinite minima
         else:
             self.HC.C0.homology_group_rank()
-
-            # self.HC[1].homology_group_rank()
-
-            # print('complex_homology_group_rank(self) = {}'.format(
-            #     self.HC.complex_homology_group_rank()
-            # ))
-            #  print('HC.hgrd = {}'.format(self.HC.hgrd))
-
-
             gen = 1
             Stop = False
             hgr_diff_iter = 1  # USER INPUT?
-            hgr_diff_iter = 1  # USER INPUT?
-            hgr_diff_iter = 3  # USER INPUT?
-            hgr_diff_iter = 1  # USER INPUT?
-            #hgr_diff_iter = 1  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
-            if 1:
+            if 0:
                 self.HC.split_generation()
                 self.HC.split_generation()
                 gen = 3
@@ -529,22 +516,41 @@ class SHGO(object):
                 if self.disp:
                     print('Current complex generation = {}'.format(gen))
 
+                no_hgrd = True  # True at end of loop if no local homology group differential >= 0
+
                 for Cell in Cells_in_gen:
                     #print('gen = {}'.format(gen))
                     Cell.homology_group_rank()
                     if Cell.homology_group_differential() >= 0:
-                        self.HC.sub_generate_cell(Cell, gen + 1)
+                        no_hgrd = False
+                        if self.symmetry:
+                            self.HC.split_simplex_symmetry(Cell, gen + 1)
+                        else:
+                            self.HC.sub_generate_cell(Cell, gen + 1)
 
                 # Find total complex group:
                 self.HC.complex_homology_group_rank()
                 logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
-                if self.HC.hgrd <= 0:
-                    hgr_diff_iter -= 1
-                    if hgr_diff_iter == 0:
-                        Stop = True
+                logging.info('self.HC.hgr = {}'.format(self.HC.hgr))
+                #logging.info('self.HC.hg_n = {}'.format(self.HC.hg_n))
 
                 # Increase generation counter
-                gen +=1
+                gen += 1
+
+                force_split = False
+                if self.HC.hgrd <= 0:
+                    hgr_diff_iter -= 1
+                    print('hgr_diff_iter = {}'.format(hgr_diff_iter))
+                    #if hgr_diff_iter == 0:
+                    if hgr_diff_iter <= 0 :
+                        if self.HC.hgr > 0:
+                            Stop = True
+                        else:
+                            force_split = True
+
+                if force_split:
+                    self.HC.split_generation()
+                    force_split = False
 
                 # Homology group iterations with no tolerance:
         #self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
@@ -775,7 +781,7 @@ if __name__ == '__main__':
     Temporary dev work:
     '''
     # Eggholder
-    if 1:
+    if 0:
         N = 2
         def fun(x, *args):
             return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
@@ -819,8 +825,9 @@ if __name__ == '__main__':
 
         SHGOc1 = SHGO(f, bounds)
         SHGOc1.construct_complex_simplicial()
-
+        print(shgo(f, bounds))
         SHGOc1.HC.plot_complex()
+
 
     if 0:
         N = 2
@@ -858,6 +865,22 @@ if __name__ == '__main__':
     #              crystal_mode=True, sampling_method='simplicial')
     #SHGOc2.construct_complex_simplicial()
 
+    # Ursem01
+    if 1:
+        def f(x):
+            return -numpy.sin(2 * x[0] - 0.5 * math.pi) - 3 * numpy.cos(x[0]) - 0.5 * x[0]
+
+        def f(x):
+            return x[0]**2 + x[1]**2
+
+        bounds = [(0, 9), (-2.5, 2.5)]
+        bounds = [(-1, 1), (-1, 2)]
+        #bounds = [(-15, 1), (-1, 1)]
+
+        #SHGOc2 = SHGO(f, bounds)
+        #SHGOc2.construct_complex_simplicial()
+        print(shgo(f, bounds))
+        #SHGOc2.HC.plot_complex()
 
     if 0:
         print(shgo(f, bounds,

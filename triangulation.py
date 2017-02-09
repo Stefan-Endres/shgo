@@ -465,11 +465,20 @@ class Complex:
         p_hgr = self.hgr
         self.hgr = 0
         cells = 0
-        for Cell_gen in self.H:
-            #for Cell in self.H[self.gen]:
-            for Cell in Cell_gen:
-                self.hgr += Cell.homology_group_rank()
-                cells += 1
+
+        for x in self.V.cache:
+            #print(self.V[x].minimiser())
+            print('self.V[{}].f = {}'.format(x, self.V[x].f))
+            if self.V[x].minimiser():
+                print(f'self.V[{x}].minimiser() is a minimiser')
+                print('self.V[x].f = {}'.format(self.V[x].f))
+                self.hgr += 1
+        if 0:
+            for Cell_gen in self.H:
+                #for Cell in self.H[self.gen]:
+                for Cell in Cell_gen:
+                    self.hgr += Cell.homology_group_rank()
+                    cells += 1
 
         #self.hgr = self.hgr/cells * 100
         logging.info('self.hgr = {}'.format(self.hgr))
@@ -764,6 +773,11 @@ class Vertex:
                 v.min = False
                 v.check_min = False
 
+            #TEMPORARY
+            self.check_min = True
+            v.check_min = True
+
+
     def disconnect(self, v):
         if v in self.nn:
             self.nn.remove(v)
@@ -776,7 +790,14 @@ class Vertex:
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            self.min = all(self.f <= v.f for v in self.nn)
+            #self.min = all(self.f <= v.f for v in self.nn)
+            self.min = True
+            for v in self.nn:
+                #if self.f <= v.f:
+                if self.f >= v.f:
+                    self.min = False
+                    break
+
             self.check_min = False
 
         return self.min
