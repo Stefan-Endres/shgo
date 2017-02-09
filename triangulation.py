@@ -769,6 +769,7 @@ class Vertex:
             self.nn.remove(v)
             v.nn.remove(self)
             self.check_min = True
+            v.check_min = True
 
     def minimiser(self):
         # NOTE: This works pretty well, never call self.min,
