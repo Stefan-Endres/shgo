@@ -498,7 +498,7 @@ class SHGO(object):
             hgr_diff_iter = 6  # USER INPUT?
             hgr_diff_iter = 4  # USER INPUT?
             hgr_diff_iter = 2  # USER INPUT?
-            hgr_diff_iter = 6  # USER INPUT?
+            hgr_diff_iter = 3  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
@@ -623,7 +623,8 @@ class SHGO(object):
         self.minimizer_pool_F = []#self.F[self.minimizer_pool]
         self.X_min = []
         for v in self.minimizer_pool:
-            self.X_min.append(v.x)
+            #self.X_min.append(v.x)
+            self.X_min.append(v.x_a)
             self.minimizer_pool_F.append(v.f)
 
         # Sort to find minimum func value in min_pool
@@ -802,13 +803,13 @@ class SHGO(object):
             for i, x_i in enumerate(vn.x_a):
                 # Lower bound
                 #if x_i > cbounds[i][0] and (x_i < self.bounds[i][0]):
-                if (x_i < v_min.x[i]) and (x_i > cbounds[i][0]):
+                if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
                 #if x_i < bounds[i][0]:
                     cbounds[i][0] = x_i
 
                 # Upper bound
                 #if x_i < cbounds[i][1] and (x_i > self.bounds[i][1]):
-                if (x_i > v_min.x[i]) and (x_i < cbounds[i][1]):
+                if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
                 #if x_i > bounds[i][1]:
                     cbounds[i][1] = x_i
 
