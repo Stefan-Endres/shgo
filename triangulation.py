@@ -264,6 +264,7 @@ class Complex:
         """
         Run sub_generate_cell for every cell in the current complex self.gen
         """
+        no_splits = False  # USED IN SHGO
         try:
             for c in self.H[self.gen]:
                 if self.symmetry:
@@ -272,9 +273,10 @@ class Complex:
                 else:
                     self.sub_generate_cell(c, self.gen + 1)
         except IndexError:
-            pass
+            no_splits = True  # USED IN SHGO
 
         self.gen += 1
+        return no_splits  # USED IN SHGO
 
     #@lru_cache(maxsize=None)
     def construct_hypercube(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False):
@@ -294,7 +296,7 @@ class Complex:
         C_new.centroid = tuple((numpy.array(origin) + numpy.array(suprenum))/2.0)
         #C_new.centroid =
 
-        centroid_index = len(self.C0()) - 1
+        #centroid_index = len(self.C0()) - 1
         # Build new indexed vertex list
         V_new = []
 
@@ -500,9 +502,9 @@ class Complex:
                 for c in C:
                     for v in c():
                         if self.bounds is None:
-                            x_a = numpy.array(v.x)
+                            x_a = numpy.array(v.x, dtype=float)
                         else:
-                            x_a = numpy.array(v.x)
+                            x_a = numpy.array(v.x, dtype=float)
                             for i in range(len(self.bounds)):
                                 x_a[i] = (x_a[i] * (self.bounds[i][1]
                                               - self. bounds[i][0])
@@ -516,9 +518,9 @@ class Complex:
                         ylines = []
                         for vn in v.nn:
                             if self.bounds is None:
-                                xn_a = numpy.array(vn.x)
+                                xn_a = numpy.array(vn.x, dtype=float)
                             else:
-                                xn_a = numpy.array(vn.x)
+                                xn_a = numpy.array(vn.x, dtype=float)
                                 for i in range(len(self.bounds)):
                                     xn_a[i] = (xn_a[i] * (self.bounds[i][1]
                                                   - self.bounds[i][0])
@@ -731,16 +733,22 @@ class Vertex:
         self.x = x
         self.order = sum(x)
         if bounds is None:
-            x_a = numpy.array(x)
+            x_a = numpy.array(x, dtype=float)
         else:
-            x_a = numpy.array(x)
+            x_a = numpy.array(x, dtype=float)
             for i in range(len(bounds)):
                 x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
                                 + bounds[i][0])
+
+            print(f'x = {x}; x_a = {x_a}')
+        if 1:  #TODO: Make saving the array structure optional
+            self.x_a = x_a
+
         # Note Vertex is only initiate once for all x so only
         # evaluated once
         if func is not None:
             self.f = func(x_a, *func_args)
+            print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
 
         if nn is not None:
             self.nn = nn
@@ -794,6 +802,7 @@ class Vertex:
             self.min = True
             for v in self.nn:
                 #if self.f <= v.f:
+                #if self.f > v.f:
                 if self.f >= v.f:
                     self.min = False
                     break

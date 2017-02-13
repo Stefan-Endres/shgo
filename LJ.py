@@ -170,6 +170,7 @@ print("="*40)
 options = {'symmetry': True,
           # 'crystal_iter': 8}
           # 'crystal_iter': 15}
+           'disp': True,
            'crystal_iter': 11}
 
 t0 = time.time()
