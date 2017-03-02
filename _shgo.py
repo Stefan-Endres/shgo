@@ -499,6 +499,8 @@ class SHGO(object):
             hgr_diff_iter = 4  # USER INPUT?
             hgr_diff_iter = 2  # USER INPUT?
             hgr_diff_iter = 3  # USER INPUT?
+            hgr_diff_iter = 5  # USER INPUT?
+            hgr_diff_iter = 3  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
@@ -590,6 +592,92 @@ class SHGO(object):
 
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
+        self.res.nfev += len(self.HC.V.cache)
+        return
+
+    def construct_complex_simplicial_2(self):
+        if self.disp:
+            print('Building initial complex')
+
+        self.HC = Complex(self.dim, self.func, self.args,
+                          self.symmetry, self.bounds, self.g_cons, self.g_args)
+
+        if self.disp:
+            print('Splitting first generation')
+
+        self.HC.C0.hgr = self.HC.C0.homology_group_rank()#split_generation()
+        print('self.HC.C0.hg_ns = {}'.format(self.HC.C0.hg_n))
+
+
+
+        #TODO: We can also implement a maximum tolerance to ensure the algorithm
+        #      terminates in finite time for a function with infinite minima
+        self.HC.C0.homology_group_rank()
+        Stop = False
+        hgr_diff_iter = 1  # USER INPUT?
+
+        # Split first generation
+        self.HC.split_generation()
+        gen = 1
+
+        if 0:
+            self.HC.split_generation()
+            gen += 1
+
+        while not Stop:
+            # Split all cells except for those with hgr_d < 0
+            try:
+                Cells_in_gen = self.HC.H[gen]
+            except IndexError:  # No cells in index range
+                logging.warning("INDEXERROR: list of specified generation")
+                pass
+
+            if self.disp:
+                print('Current complex generation = {}'.format(gen))
+
+            no_hgrd = True  # True at end of loop if no local homology group differential >= 0
+
+            for Cell in Cells_in_gen:
+                #print('gen = {}'.format(gen))
+                Cell.homology_group_rank()
+                if 1:#Cell.homology_group_differential() >= 0:
+                    no_hgrd = False
+                    if self.symmetry:
+                        self.HC.split_simplex_symmetry(Cell, gen + 1)
+                    else:
+                        self.HC.sub_generate_cell(Cell, gen + 1)
+
+            # Find total complex group:
+            self.HC.complex_homology_group_rank()
+            logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
+            logging.info('self.HC.hgr = {}'.format(self.HC.hgr))
+            #logging.info('self.HC.hg_n = {}'.format(self.HC.hg_n))
+
+            # Increase generation counter
+            gen += 1
+
+            force_split = False
+            if self.HC.hgrd <= 0:
+                hgr_diff_iter -= 1
+                print('hgr_diff_iter = {}'.format(hgr_diff_iter))
+                #if hgr_diff_iter == 0:
+                if hgr_diff_iter <= 0 :
+                    if self.HC.hgr > 0:
+                        Stop = True
+                    else:
+                        force_split = True
+
+            if force_split:
+                generating = True
+                while generating:
+                    generating = self.HC.split_generation()
+
+                    gen += 1
+                force_split = False
+
+            # Homology group iterations with no tolerance:
+        #self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
+
         self.res.nfev += len(self.HC.V.cache)
         return
 

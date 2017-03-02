@@ -802,8 +802,8 @@ class Vertex:
             self.min = True
             for v in self.nn:
                 #if self.f <= v.f:
-                #if self.f > v.f:
-                if self.f >= v.f:
+                if self.f > v.f:
+                    #if self.f >= v.f:
                     self.min = False
                     break
 
@@ -893,11 +893,12 @@ if __name__ == '__main__':
     if 1:
         HC.plot_complex()
 
-    for i in range(7):
-        HC.split_generation()
-        logging.info('Done splitting gen = {}'.format(i+1))
+    if 0:
+        for i in range(6):
+            HC.split_generation()
+            logging.info('Done splitting gen = {}'.format(i+1))
 
-        HC.plot_complex()
+            HC.plot_complex()
     if 0:
         print(HC.H)
         print(len(HC.H[1]))
