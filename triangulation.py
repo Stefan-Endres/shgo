@@ -15,7 +15,8 @@ except ImportError:
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Complex:
-    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None, g_cons=None, g_args=None):
+    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None,
+                 g_cons=None, g_args=()):
         self.dim = dim
         self.bounds = bounds
         self.symmetry = symmetry #TODO: Define the functions to be used
@@ -29,7 +30,7 @@ class Complex:
         # When a cell is subgenerated it is removed from this list
 
         self.H = []  # Storage structure of cells
-        self.V = VertexCache(func, func_args, bounds)  # Cache of all vertices
+        self.V = VertexCache(func, func_args, bounds, g_cons, g_args)  # Cache of all vertices
 
         # Generate n-cube here:
         self.n_cube(dim, symmetry=symmetry, printout=True)
@@ -726,9 +727,10 @@ class Simplex:
             print(constr)
             print('Order = {}'.format(v.order))
 
-
+#TODO: Different classes to init when not using bounds etc.
 class Vertex:
-    def __init__(self, x, bounds=None, func=None, func_args=(), nn=None, I=None):
+    def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
+                 g_cons_args=(), nn=None, I=None):
         import numpy
         self.x = x
         self.order = sum(x)
@@ -746,7 +748,19 @@ class Vertex:
 
         # Note Vertex is only initiate once for all x so only
         # evaluated once
-        if func is not None:
+        if g_cons is not None:
+            eval = True
+            for g in g_cons:
+                if g(self.x_a, *g_cons_args) >= 0.0:
+                    self.f = numpy.inf
+                    print("Constraints found")
+                    eval = False
+            if eval:
+                self.f = func(x_a, *func_args)
+            print(f"self.x_a = {x_a}")
+            print(f"self.f = {self.f}")
+
+        elif func is not None:
             self.f = func(x_a, *func_args)
             print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
 
@@ -812,11 +826,14 @@ class Vertex:
         return self.min
 
 class VertexCache:
-    def __init__(self, func, func_args=(), bounds=None, indexed=True):
+    def __init__(self, func, func_args=(), bounds=None, g_cons=None,
+                 g_cons_args=(), indexed=True):
 
         self.cache = {}
         # self.cache = set()
         self.func = func
+        self.g_cons = g_cons
+        self.g_cons_args = g_cons_args
         self.func_args = func_args
         self.bounds = bounds
 
@@ -832,10 +849,14 @@ class VertexCache:
                 self.Index += 1
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args,
+                              g_cons=self.g_cons,
+                              g_cons_args=self.g_cons_args,
                               I=self.Index)
             else:
                 xval = Vertex(x, bounds=self.bounds,
-                              func=self.func, func_args=self.func_args)
+                              func=self.func, func_args=self.func_args,
+                              g_cons=self.g_cons,
+                              g_cons_args=self.g_cons_args)
 
             #logging.info("New generated vertex at x = {}".format(x))
             #NOTE: Surprisingly high performance increase if logging is commented out
@@ -848,9 +869,14 @@ if __name__ == '__main__':
         import numpy
         return numpy.sum(x ** 2) + 2.0 * x[0]
 
+    def test_g_cons(x): #(Requires n > 2)
+        import numpy
+        #return x[0] - 0.5 * x[2] + 0.5
+        return x[0] + x[2] #+ 0.5
+    g_cons = [test_g_cons]
     tr = []
     nr = list(range(9))
-    HC = Complex(3, test_func, symmetry=1)
+    HC = Complex(3, test_func, symmetry=1, g_cons=g_cons)
     #HC = Complex(13, test_func, symmetry=1)
     if 0:
         nr = []
@@ -865,6 +891,8 @@ if __name__ == '__main__':
             logging.info('Total time at n = {}: {}'.format(n, timet))
 
         from matplotlib import pyplot
+
+        pyplot.figure()
         pyplot.plot(nr, times)
         pyplot.show()
 
@@ -893,8 +921,8 @@ if __name__ == '__main__':
     if 1:
         HC.plot_complex()
 
-    if 0:
-        for i in range(6):
+    if 1:
+        for i in range(7):
             HC.split_generation()
             logging.info('Done splitting gen = {}'.format(i+1))
 
