@@ -495,12 +495,6 @@ class SHGO(object):
             self.HC.C0.homology_group_rank()
             Stop = False
             hgr_diff_iter = 1  # USER INPUT?
-            hgr_diff_iter = 6  # USER INPUT?
-            hgr_diff_iter = 4  # USER INPUT?
-            hgr_diff_iter = 2  # USER INPUT?
-            hgr_diff_iter = 3  # USER INPUT?
-            hgr_diff_iter = 5  # USER INPUT?
-            hgr_diff_iter = 3  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
@@ -689,24 +683,26 @@ class SHGO(object):
         # TODO: Can easily be parralized
         for x in self.HC.V.cache:
             if self.HC.V[x].minimiser():
-                logging.info('=' * 60)
-                logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x))
-                logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
-                logging.info('=' * 30)
+                if 0: pass
+                    #logging.info('=' * 60)
+                    #logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x))
+                    #logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                    #logging.info('=' * 30)
                 if self.HC.V[x] not in self.minimizer_pool:
                     self.minimizer_pool.append(self.HC.V[x])
 
-                #TODO: DELETE THIS DEBUG ROUTINE
-                logging.info('Neighbours:')
-                logging.info('='*30)
-                for vn in self.HC.V[x].nn:
-                    logging.info('x = {} || f = {}'.format(vn.x, vn.f))
+                if 0:
+                    #TODO: DELETE THIS DEBUG ROUTINE
+                    logging.info('Neighbours:')
+                    logging.info('='*30)
+                    for vn in self.HC.V[x].nn:
+                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
 
-                logging.info('=' * 60)
+                    logging.info('=' * 60)
 
-        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        for v in self.minimizer_pool:
-            logging.info('v.x = {}'.format(v.x))
+        #logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        #for v in self.minimizer_pool:
+        #    logging.info('v.x = {}'.format(v.x))
 
         self.minimizer_pool_F = []#self.F[self.minimizer_pool]
         self.X_min = []
@@ -947,7 +943,13 @@ if __name__ == '__main__':
         def fun(x, *args):
             return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
 
+        def g_cons1(x):
+            return x[0] # -x[0] ** 2 - x[1] ** 2 + 2.5
 
+        def g_cons2(x):
+            return x[0] # -x[0] ** 2 - x[1] ** 2 + 2.5
+
+        g_cons = (g_cons1, g_cons2)
         bounds = list(zip([-5.0] * N, [5.0] * N))
 
         if 0:
@@ -959,7 +961,8 @@ if __name__ == '__main__':
             SHGOc3.sort_result()
             print('SHGOc3.res = {}'.format(SHGOc3.res))
 
-        print(shgo(fun, bounds))
+        print(shgo(fun, bounds, g_cons=g_cons))
+        #print(shgo(fun, bounds))#, g_cons=g_cons))
 
 
         #SHGOc3.HC.plot_complex()

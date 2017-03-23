@@ -34,9 +34,11 @@ args = parser.parse_args()
 
 
 excluded = ['Cola', 'Paviani', 'Xor',  # <--- Fucked
-            'AMGM', 'Csendes', "Infinity", "Plateau",  # <--- Partially Fucked
+          #  'AMGM', 'Csendes', "Infinity", "Plateau",  # <--- Partially Fucked
             #"Bukin06",  # <--- Working, but fail on all solvers + high nfev
             'Benchmark'  # Not a GO function
+            # New fucked list:
+            'Beale'
             ]
 
 class GoRunner:
@@ -268,17 +270,19 @@ if __name__ == '__main__':
 
     for name, obj in inspect.getmembers(go_funcs):
         #if name == 'Ackley01':
-        #if name == 'Ackley03':
+            #if name == 'Ackley03':
         #if name == 'Alpine02':
-        if inspect.isclass(obj):
-            logging.info(obj)
-            logging.info(name)
-            if name not in excluded:
-                FuncClass = obj()
-                try:
-                    GR.run_func(FuncClass, name)
-                except:
-                    pass
+        #nif name == 'Wolfe':
+            if inspect.isclass(obj):
+                logging.info(obj)
+                logging.info(name)
+                logging.info(str(name) in excluded)
+                if name not in excluded:
+                    FuncClass = obj()
+                    try:
+                        GR.run_func(FuncClass, name)
+                    except:
+                        pass
     for solver in GR.results['All'].keys():
         print("=" * 60)
         print("Results for {}".format(solver))

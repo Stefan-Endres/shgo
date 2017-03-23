@@ -33,7 +33,7 @@ class Complex:
         self.V = VertexCache(func, func_args, bounds, g_cons, g_args)  # Cache of all vertices
 
         # Generate n-cube here:
-        self.n_cube(dim, symmetry=symmetry, printout=True)
+        self.n_cube(dim, symmetry=symmetry)
 
         # TODO: Assign functions to a the complex instead
         if symmetry:
@@ -471,10 +471,10 @@ class Complex:
 
         for x in self.V.cache:
             #print(self.V[x].minimiser())
-            print('self.V[{}].f = {}'.format(x, self.V[x].f))
+            #print('self.V[{}].f = {}'.format(x, self.V[x].f))
             if self.V[x].minimiser():
-                print(f'self.V[{x}].minimiser() is a minimiser')
-                print('self.V[x].f = {}'.format(self.V[x].f))
+                #print(f'self.V[{x}].minimiser() is a minimiser')
+                #print('self.V[x].f = {}'.format(self.V[x].f))
                 self.hgr += 1
         if 0:
             for Cell_gen in self.H:
@@ -742,7 +742,7 @@ class Vertex:
                 x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
                                 + bounds[i][0])
 
-            print(f'x = {x}; x_a = {x_a}')
+            #print(f'x = {x}; x_a = {x_a}')
         if 1:  #TODO: Make saving the array structure optional
             self.x_a = x_a
 
@@ -751,18 +751,22 @@ class Vertex:
         if g_cons is not None:
             eval = True
             for g in g_cons:
-                if g(self.x_a, *g_cons_args) >= 0.0:
+                #if g(self.x_a, *g_cons_args) >= 0.0:
+                if g(self.x_a, *g_cons_args) > 0.0:
+                    #print(self.x_a)
+                    #print((self.x_a, *g_cons_args))
                     self.f = numpy.inf
-                    print("Constraints found")
+                    #print("Constraints found")
                     eval = False
             if eval:
+                #print(f"EVAL x.a = {self.x_a}")
                 self.f = func(x_a, *func_args)
-            print(f"self.x_a = {x_a}")
-            print(f"self.f = {self.f}")
+            #print(f"self.x_a = {x_a}")
+            #print(f"self.f = {self.f}")
 
         elif func is not None:
             self.f = func(x_a, *func_args)
-            print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
+            #print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
 
         if nn is not None:
             self.nn = nn
@@ -816,7 +820,8 @@ class Vertex:
             self.min = True
             for v in self.nn:
                 #if self.f <= v.f:
-                if self.f > v.f:
+                #if self.f > v.f: #TODO: LAST STABLE
+                if self.f >= v.f:
                     #if self.f >= v.f:
                     self.min = False
                     break
