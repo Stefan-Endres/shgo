@@ -33,12 +33,9 @@ parser.add_argument('-debug', nargs=1, type=bool,
 args = parser.parse_args()
 
 
-excluded = ['Cola', 'Paviani', 'Xor',  # <--- Fucked
-          #  'AMGM', 'Csendes', "Infinity", "Plateau",  # <--- Partially Fucked
+excluded = ['Cola', 'Paviani', 'Xor',
             #"Bukin06",  # <--- Working, but fail on all solvers + high nfev
-            'Benchmark'  # Not a GO function
-            # New fucked list:
-            'Beale'
+            'Benchmark',  # Not a GO function
             ]
 
 class GoRunner:
@@ -276,7 +273,6 @@ if __name__ == '__main__':
             if inspect.isclass(obj):
                 logging.info(obj)
                 logging.info(name)
-                logging.info(str(name) in excluded)
                 if name not in excluded:
                     FuncClass = obj()
                     try:

@@ -937,8 +937,55 @@ if __name__ == '__main__':
     '''
     Temporary dev work:
     '''
+    if 1:  # "Churchill's problem"
+        Voc = 32.9
+        Isc = 8.21
+        Vmp = 26.3
+        Imp = 7.61
+
+        Ns = 54
+        q = 1.602e-19
+        k = 1.381e-23
+        T = 298  # K
+        Vt = k * T / q
+
+
+        def f(variables):
+            (Rs, Rsh, a) = variables
+            x = (Imp / Vmp) - (1 / (a * Vt)) * (1 - Rs * (Imp / Vmp)) * ((-Voc + (Rs + Rsh) * Isc) / Rsh) * numpy.exp(
+                (Vmp - Voc + Rs * Imp) / (a * Vt)) - (1 / Rsh) * (1 - Rs * (Imp / Vmp))
+            y = -Imp * (1 + (Rs / Rsh)) + ((-Voc + (Rs + Rsh) * Isc) / Rsh) * (
+            1 - numpy.exp((Vmp - Voc + Rs * Imp) / (a * Vt))) + (Voc - Vmp) / Rsh
+            z = (-Rs / Rsh) + (Rsh - Rs) / (a * Vt) + ((-Voc + (Rs + Rsh) * Isc) / Rsh) * numpy.exp(
+                (Rs * Isc - Voc) / (a * Vt))
+            #return x, y, z
+            return numpy.sum([numpy.abs(x), numpy.abs(y), numpy.abs(z)])
+            #return numpy.sum([x**2, y**2, z**2])
+
+        bounds = [(1e-5, 100), (1e-5, 10000), (1e-5, 10000)]
+        bounds = [(1e-3, 2), (1e-1, 10000), (1e-1, 1000)]
+
+        if 0:
+            print(shgo(f, bounds))
+        if 1:
+            from _tgo import tgo
+            print(tgo(f, bounds, n=5000))
+        if 0:
+            scipy.optimize.fsolve(f, [0.217 * 1e-1, 952* 1e-1, 76* 1e-1])
+
+
+
+
+
+
+
+
+
+
+
+
     # Eggcrate
-    if 1:
+    if 0:
         N = 2
         def fun(x, *args):
             return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
