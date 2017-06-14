@@ -717,7 +717,6 @@ class TGO(object):
         Min_fun = self.F[Min_ind]
         fun_min_ind = numpy.argsort(Min_fun)
         Min_ind = Min_ind[fun_min_ind]
-        Min_fun = Min_fun[fun_min_ind]
 
         # Init storages
         self.x_vals = []

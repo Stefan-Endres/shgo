@@ -421,8 +421,12 @@ class SHGO(object):
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
+                                     #'method': 'COBYLA',
+                                     #'method': 'L-BFGS-B',
                                      'bounds': self.bounds,
-                                     'options': {'ftol': 1e-12},
+                                     'options': {'ftol': 1e-12
+                                                 #,'eps': 1e-15
+                                                 },
                                      'callback': self.callback
                                      }
 
@@ -489,62 +493,75 @@ class SHGO(object):
         #      terminates in finite time for a function with infinite minima
         else:
             self.HC.C0.homology_group_rank()
-
-            # self.HC[1].homology_group_rank()
-
-            # print('complex_homology_group_rank(self) = {}'.format(
-            #     self.HC.complex_homology_group_rank()
-            # ))
-            #  print('HC.hgrd = {}'.format(self.HC.hgrd))
-
-
-            gen = 1
             Stop = False
             hgr_diff_iter = 1  # USER INPUT?
-            hgr_diff_iter = 1  # USER INPUT?
-            hgr_diff_iter = 3  # USER INPUT?
-            hgr_diff_iter = 1  # USER INPUT?
-            #hgr_diff_iter = 1  # USER INPUT?
 
             # Split first generation
             self.HC.split_generation()
-            if 1:
+            gen = 1
+
+            if 0:
+                #self.HC.c[].homology_group_rank()
                 self.HC.split_generation()
-                self.HC.split_generation()
-                gen = 3
+                gen += 1
+                #self.HC.split_generation()
+                #gen += 1
          #   self.HC.split_generation()
          #   gen = 2
             #self.HC.split_generation() #TODO REMOVE THIS
             #gen +=1
             while not Stop:
                 #self.HC.split_generation()
-
+                #self.HC.plot_complex()
                 # Split all cells except for those with hgr_d < 0
                 try:
                     Cells_in_gen = self.HC.H[gen]
                 except IndexError:  # No cells in index range
-                    logging.warning("INDEXERROR")
+                    logging.warning("INDEXERROR: list of specified generation")
                     pass
 
                 if self.disp:
                     print('Current complex generation = {}'.format(gen))
 
+                no_hgrd = True  # True at end of loop if no local homology group differential >= 0
+
                 for Cell in Cells_in_gen:
                     #print('gen = {}'.format(gen))
                     Cell.homology_group_rank()
-                    if Cell.homology_group_differential() >= 0:
-                        self.HC.sub_generate_cell(Cell, gen + 1)
+                    if 1:#Cell.homology_group_differential() >= 0:
+                        no_hgrd = False
+                        if self.symmetry:
+                            self.HC.split_simplex_symmetry(Cell, gen + 1)
+                        else:
+                            self.HC.sub_generate_cell(Cell, gen + 1)
 
                 # Find total complex group:
                 self.HC.complex_homology_group_rank()
                 logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
-                if self.HC.hgrd <= 0:
-                    hgr_diff_iter -= 1
-                    if hgr_diff_iter == 0:
-                        Stop = True
+                logging.info('self.HC.hgr = {}'.format(self.HC.hgr))
+                #logging.info('self.HC.hg_n = {}'.format(self.HC.hg_n))
 
                 # Increase generation counter
-                gen +=1
+                gen += 1
+
+                force_split = False
+                if self.HC.hgrd <= 0:
+                    hgr_diff_iter -= 1
+                    print('hgr_diff_iter = {}'.format(hgr_diff_iter))
+                    #if hgr_diff_iter == 0:
+                    if hgr_diff_iter <= 0 :
+                        if self.HC.hgr > 0:
+                            Stop = True
+                        else:
+                            force_split = True
+
+                if force_split:
+                    generating = True
+                    while generating:
+                        generating = self.HC.split_generation()
+
+                        gen += 1
+                    force_split = False
 
                 # Homology group iterations with no tolerance:
         #self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
@@ -567,6 +584,95 @@ class SHGO(object):
 
         # Cell.p_hgr_h = Cell.p_hgr_h + Cell.hgd
 
+        # Algorithm updates
+        # Count the number of vertices and add to function evaluations:
+        self.res.nfev += len(self.HC.V.cache)
+        return
+
+    def construct_complex_simplicial_2(self):
+        if self.disp:
+            print('Building initial complex')
+
+        self.HC = Complex(self.dim, self.func, self.args,
+                          self.symmetry, self.bounds, self.g_cons, self.g_args)
+
+        if self.disp:
+            print('Splitting first generation')
+
+        self.HC.C0.hgr = self.HC.C0.homology_group_rank()#split_generation()
+        print('self.HC.C0.hg_ns = {}'.format(self.HC.C0.hg_n))
+
+
+
+        #TODO: We can also implement a maximum tolerance to ensure the algorithm
+        #      terminates in finite time for a function with infinite minima
+        self.HC.C0.homology_group_rank()
+        Stop = False
+        hgr_diff_iter = 1  # USER INPUT?
+
+        # Split first generation
+        self.HC.split_generation()
+        gen = 1
+
+        if 0:
+            self.HC.split_generation()
+            gen += 1
+
+        while not Stop:
+            # Split all cells except for those with hgr_d < 0
+            try:
+                Cells_in_gen = self.HC.H[gen]
+            except IndexError:  # No cells in index range
+                logging.warning("INDEXERROR: list of specified generation")
+                pass
+
+            if self.disp:
+                print('Current complex generation = {}'.format(gen))
+
+            no_hgrd = True  # True at end of loop if no local homology group differential >= 0
+
+            for Cell in Cells_in_gen:
+                #print('gen = {}'.format(gen))
+                Cell.homology_group_rank()
+                if 1:#Cell.homology_group_differential() >= 0:
+                    no_hgrd = False
+                    if self.symmetry:
+                        self.HC.split_simplex_symmetry(Cell, gen + 1)
+                    else:
+                        self.HC.sub_generate_cell(Cell, gen + 1)
+
+            # Find total complex group:
+            self.HC.complex_homology_group_rank()
+            logging.info('self.HC.hgrd = {}'.format(self.HC.hgrd))
+            logging.info('self.HC.hgr = {}'.format(self.HC.hgr))
+            #logging.info('self.HC.hg_n = {}'.format(self.HC.hg_n))
+
+            # Increase generation counter
+            gen += 1
+
+            force_split = False
+            if self.HC.hgrd <= 0:
+                hgr_diff_iter -= 1
+                print('hgr_diff_iter = {}'.format(hgr_diff_iter))
+                #if hgr_diff_iter == 0:
+                if hgr_diff_iter <= 0 :
+                    if self.HC.hgr > 0:
+                        Stop = True
+                    else:
+                        force_split = True
+
+            if force_split:
+                generating = True
+                while generating:
+                    generating = self.HC.split_generation()
+
+                    gen += 1
+                force_split = False
+
+            # Homology group iterations with no tolerance:
+        #self.max_hgr_h = -1 # TODO: THIS WILL BE AN OPTIONAL INPUT
+
+        self.res.nfev += len(self.HC.V.cache)
         return
 
     def simplex_minimizers(self):
@@ -575,28 +681,34 @@ class SHGO(object):
         """
         self.minimizer_pool = []
         # TODO: Can easily be parralized
+        for x in self.HC.V.cache:
+            if self.HC.V[x].minimiser():
+                if 0: pass
+                    #logging.info('=' * 60)
+                    #logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x))
+                    #logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                    #logging.info('=' * 30)
+                if self.HC.V[x] not in self.minimizer_pool:
+                    self.minimizer_pool.append(self.HC.V[x])
 
-        # TODO: We revisit the same vertex serveral times
-        for Cell_gen in self.HC.H:
-            for Cell in Cell_gen:
-                for v in Cell():
-                    if v.minimiser():
-                        logging.info('v.x = {} is minimiser'.format(v.x))
-                        if v not in self.minimizer_pool:
-                            self.minimizer_pool.append(v)
+                if 0:
+                    #TODO: DELETE THIS DEBUG ROUTINE
+                    logging.info('Neighbours:')
+                    logging.info('='*30)
+                    for vn in self.HC.V[x].nn:
+                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
 
-        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        for v in self.minimizer_pool:
-            logging.info('v.x = {}'.format(v.x))
-        #for ind in range(self.fn):
-        #    Min_bool = self.sample_simplex_topo(ind)
-        #    if Min_bool:
-        #        self.minimizer_pool.append(ind)
+                    logging.info('=' * 60)
+
+        #logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
+        #for v in self.minimizer_pool:
+        #    logging.info('v.x = {}'.format(v.x))
 
         self.minimizer_pool_F = []#self.F[self.minimizer_pool]
         self.X_min = []
         for v in self.minimizer_pool:
-            self.X_min.append(v.x)
+            #self.X_min.append(v.x)
+            self.X_min.append(v.x_a)
             self.minimizer_pool_F.append(v.f)
 
         # Sort to find minimum func value in min_pool
@@ -723,6 +835,19 @@ class SHGO(object):
             print('Starting '
                   'minimization at {}...'.format(x_min))
 
+
+        #TODO: Optionally construct bounds if minimizer_kwargs is a
+        #      solver that accepts bounds
+        if 1:
+            pass
+            print(f'x_min = {x_min}')
+            x_min_t = tuple(x_min[0])
+            print(f'x_min_t = {x_min_t}')
+            self.minimizer_kwargs['bounds'] = \
+                self.contstruct_lcb(self.HC.V[x_min_t])
+
+        print('bounds in kwarg:')
+        print(self.minimizer_kwargs['bounds'])
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
 
@@ -737,6 +862,44 @@ class SHGO(object):
             self.fun_min_glob.append(lres.fun)
 
         return lres
+
+    def contstruct_lcb(self, v_min):
+        """
+        Contstruct locally (approximately) convex bounds
+
+        Parameters
+        ----------
+        v_min : Vertex object
+                The minimiser vertex
+        Returns
+        -------
+        bounds : List of size dim with tuple of bounds for each dimension
+        """
+        cbounds = []
+        #for x_i in v_min.x:
+        #    bounds.append([x_i, x_i])
+        for x_i in self.bounds:
+            cbounds.append([x_i[0], x_i[1]])
+
+        # Loop over all bounds
+        for vn in v_min.nn:
+            #for i, x_i in enumerate(vn.x):
+            for i, x_i in enumerate(vn.x_a):
+                # Lower bound
+                #if x_i > cbounds[i][0] and (x_i < self.bounds[i][0]):
+                if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
+                #if x_i < bounds[i][0]:
+                    cbounds[i][0] = x_i
+
+                # Upper bound
+                #if x_i < cbounds[i][1] and (x_i > self.bounds[i][1]):
+                if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
+                #if x_i > bounds[i][1]:
+                    cbounds[i][1] = x_i
+
+
+
+        return cbounds
 
     # Post local minimisation processing
     def sort_result(self):
@@ -774,13 +937,66 @@ if __name__ == '__main__':
     '''
     Temporary dev work:
     '''
-    # Eggholder
-    if 1:
+    if 1:  # "Churchill's problem"
+        Voc = 32.9
+        Isc = 8.21
+        Vmp = 26.3
+        Imp = 7.61
+
+        Ns = 54
+        q = 1.602e-19
+        k = 1.381e-23
+        T = 298  # K
+        Vt = k * T / q
+
+
+        def f(variables):
+            (Rs, Rsh, a) = variables
+            x = (Imp / Vmp) - (1 / (a * Vt)) * (1 - Rs * (Imp / Vmp)) * ((-Voc + (Rs + Rsh) * Isc) / Rsh) * numpy.exp(
+                (Vmp - Voc + Rs * Imp) / (a * Vt)) - (1 / Rsh) * (1 - Rs * (Imp / Vmp))
+            y = -Imp * (1 + (Rs / Rsh)) + ((-Voc + (Rs + Rsh) * Isc) / Rsh) * (
+            1 - numpy.exp((Vmp - Voc + Rs * Imp) / (a * Vt))) + (Voc - Vmp) / Rsh
+            z = (-Rs / Rsh) + (Rsh - Rs) / (a * Vt) + ((-Voc + (Rs + Rsh) * Isc) / Rsh) * numpy.exp(
+                (Rs * Isc - Voc) / (a * Vt))
+            #return x, y, z
+            return numpy.sum([numpy.abs(x), numpy.abs(y), numpy.abs(z)])
+            #return numpy.sum([x**2, y**2, z**2])
+
+        bounds = [(1e-5, 100), (1e-5, 10000), (1e-5, 10000)]
+        bounds = [(1e-3, 2), (1e-1, 10000), (1e-1, 1000)]
+
+        if 0:
+            print(shgo(f, bounds))
+        if 1:
+            from _tgo import tgo
+            print(tgo(f, bounds, n=5000))
+        if 0:
+            scipy.optimize.fsolve(f, [0.217 * 1e-1, 952* 1e-1, 76* 1e-1])
+
+
+
+
+
+
+
+
+
+
+
+
+    # Eggcrate
+    if 0:
         N = 2
         def fun(x, *args):
             return x[0] ** 2 + x[1] ** 2 + 25 * (sin(x[0]) ** 2 + sin(x[1]) ** 2)
 
+        def g_cons1(x):
+            return x[0] # -x[0] ** 2 - x[1] ** 2 + 2.5
 
+        def g_cons2(x):
+            return x[0] # -x[0] ** 2 - x[1] ** 2 + 2.5
+
+        g_cons = (g_cons1, g_cons2)
         bounds = list(zip([-5.0] * N, [5.0] * N))
 
         if 0:
@@ -792,7 +1008,8 @@ if __name__ == '__main__':
             SHGOc3.sort_result()
             print('SHGOc3.res = {}'.format(SHGOc3.res))
 
-        print(shgo(fun, bounds))
+        print(shgo(fun, bounds, g_cons=g_cons))
+        #print(shgo(fun, bounds))#, g_cons=g_cons))
 
 
         #SHGOc3.HC.plot_complex()
@@ -819,8 +1036,9 @@ if __name__ == '__main__':
 
         SHGOc1 = SHGO(f, bounds)
         SHGOc1.construct_complex_simplicial()
-
+        print(shgo(f, bounds))
         SHGOc1.HC.plot_complex()
+
 
     if 0:
         N = 2
@@ -841,6 +1059,7 @@ if __name__ == '__main__':
 
         SHGOc2 = SHGO(fun, bounds)
         SHGOc2.construct_complex_simplicial()
+        print(shgo(fun, bounds))
 
 
     if 0:
@@ -850,7 +1069,7 @@ if __name__ == '__main__':
 
         SHGOc2 = SHGO(f, bounds)
         SHGOc2.construct_complex_simplicial()
-
+        print(shgo(f, bounds))
 
     #print(SHGOc1.disp)
 
@@ -858,6 +1077,24 @@ if __name__ == '__main__':
     #              crystal_mode=True, sampling_method='simplicial')
     #SHGOc2.construct_complex_simplicial()
 
+    # Ursem01
+    if 0:
+        def f(x):
+            return -numpy.sin(2 * x[0] - 0.5 * math.pi) - 3 * numpy.cos(x[0]) - 0.5 * x[0]
+
+        def f2(x):
+            return x[0]**2 + x[1]**2
+
+        bounds = [(-1, 1), (-1, 2)]
+        bounds = [(0, 9), (-2.5, 2.5)]
+        bounds = [(0, 9), (-18, 2.5)]
+        bounds = [(0, 1), (0, 1)]
+        #bounds = [(-15, 1), (-1, 1)]
+
+        #SHGOc2 = SHGO(f, bounds)
+        #SHGOc2.construct_complex_simplicial()
+        print(shgo(f, bounds))
+        #SHGOc2.HC.plot_complex()
 
     if 0:
         print(shgo(f, bounds,

@@ -15,9 +15,12 @@ except ImportError:
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class Complex:
-    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None, g_cons=None, g_args=None):
+    def __init__(self, dim, func, func_args=(), symmetry=False, bounds=None,
+                 g_cons=None, g_args=()):
         self.dim = dim
         self.bounds = bounds
+        self.symmetry = symmetry #TODO: Define the functions to be used
+                                  #      here in init to avoid if checks
         self.gen = 0
         self.perm_cycle = 0
 
@@ -27,11 +30,20 @@ class Complex:
         # When a cell is subgenerated it is removed from this list
 
         self.H = []  # Storage structure of cells
-        self.V = VertexCache(func, func_args, bounds)  # Cache of all vertices
+        self.V = VertexCache(func, func_args, bounds, g_cons, g_args)  # Cache of all vertices
 
         # Generate n-cube here:
-        self.n_cube(dim, symmetry=symmetry, printout=True)
-        self.add_centroid()
+        self.n_cube(dim, symmetry=symmetry)
+
+        # TODO: Assign functions to a the complex instead
+        if symmetry:
+            pass
+            self.generation_cycle = 1
+            #self.centroid = self.C0()[-1].x
+            #self.C0.centroid = self.centroid
+        else:
+            self.add_centroid()
+
         self.H.append([])
         self.H[0].append(self.C0)
         self.hgr = self.C0.homology_group_rank()
@@ -59,19 +71,27 @@ class Complex:
         self.origin = origin
         supremum = list(numpy.ones(dim, dtype=int))
         self.suprenum = supremum
-        self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
-        self.C0.add_vertex(self.V[tuple(origin)])
-        self.C0.add_vertex(self.V[tuple(supremum)])
-
 
         x_parents = []
         x_parents.append(tuple(self.origin))
+
         if symmetry:
+            #self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
+            self.C0 = Simplex(0, 0, 0, 0, self.dim)  # Initial cell object
+            self.C0.add_vertex(self.V[tuple(origin)])
+
+
             i_s = 0
             self.perm_symmetry(i_s, x_parents, origin)
+            self.C0.add_vertex(self.V[tuple(supremum)])
         else:
+            self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)  # Initial cell object
+            self.C0.add_vertex(self.V[tuple(origin)])
+            self.C0.add_vertex(self.V[tuple(supremum)])
+
             i_parents = []
             self.perm(i_parents, x_parents, origin)
+
 
         if printout:
             print("Initial hyper cube:")
@@ -169,6 +189,7 @@ class Complex:
         self.centroid_added = True
         return
 
+
     # Construct incidence array:
     def incidence(self):
         if self.centroid_added:
@@ -207,12 +228,7 @@ class Complex:
         """Subgenerate a cell `C_i` of generation `gen` and
         homology group rank `hgr`."""
         origin_new = tuple(C_i.centroid)
-        #origin_new = tuple(-numpy.array(C_i.centroid))
         centroid_index = len(C_i()) - 1
-
-
-        # NNEN
-        self.even_or_odd = self.dim - 1#1
 
         # If not gen append
         try:
@@ -220,23 +236,15 @@ class Complex:
         except IndexError:
             self.H.append([])
 
-        # Generate subcubes using every extreme verex in C_i as a suprenum
+        # Generate subcubes using every extreme vertex in C_i as a suprenum
         # and the centroid of C_i as the origin
         H_new = []  # list storing all the new cubes split from C_i
-        for i, v in enumerate(C_i()):
-            #origin = tuple(C_i.centroid)
-            if i is not centroid_index:
-                suprenum = tuple(v.x)
-                #suprenum = numpy.array(v.x) - numpy.array(origin_new)
+        for i, v in enumerate(C_i()[:-1]):
+            suprenum = tuple(v.x)
+            H_new.append(
+                self.construct_hypercube(origin_new, suprenum,
+                                         gen, C_i.hg_n, C_i.p_hgr_h))
 
-                suprenum = tuple(suprenum)
-
-                print('suprenum = {}'.format(suprenum))
-                H_new.append(
-                    self.construct_hypercube(origin_new, suprenum,
-                                             gen, C_i.hg_n, C_i.p_hgr_h))
-
-        # Disconnected all edges of parent cells (except origin to sup)
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             if i == centroid_index:  # Break out of centroid
@@ -252,17 +260,24 @@ class Complex:
         #TODO: Recalculate all the homology group ranks of each cell
         return H_new
 
+
     def split_generation(self):
         """
         Run sub_generate_cell for every cell in the current complex self.gen
         """
+        no_splits = False  # USED IN SHGO
         try:
             for c in self.H[self.gen]:
-                self.sub_generate_cell(c, self.gen + 1)
+                if self.symmetry:
+                    #self.sub_generate_cell_symmetry(c, self.gen + 1)
+                    self.split_simplex_symmetry(c, self.gen + 1)
+                else:
+                    self.sub_generate_cell(c, self.gen + 1)
         except IndexError:
-            pass
+            no_splits = True  # USED IN SHGO
 
         self.gen += 1
+        return no_splits  # USED IN SHGO
 
     #@lru_cache(maxsize=None)
     def construct_hypercube(self, origin, suprenum, gen, hgr, p_hgr_h, printout=False):
@@ -282,27 +297,14 @@ class Complex:
         C_new.centroid = tuple((numpy.array(origin) + numpy.array(suprenum))/2.0)
         #C_new.centroid =
 
-        centroid_index = len(self.C0()) - 1
+        #centroid_index = len(self.C0()) - 1
         # Build new indexed vertex list
         V_new = []
 
         # Cached calculation
         for i, v in enumerate(self.C0()[:-1]):
-            if 1:
-                if self.even_or_odd:
-                    v_perm = numpy.ones(self.dim) - v.x
-                    v_perm = tuple(v_perm)
-                    #even_or_odd = 0
-                else:
-                    v_perm = tuple(v.x)
-                    #even_or_odd = 1
-
-                t1 = self.generate_sub_cell_t1(origin, v_perm )
-                t2 = self.generate_sub_cell_t2(suprenum, v_perm )
-
-            if 0:
-                t1 = self.generate_sub_cell_t1(origin, v.x)
-                t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            t1 = self.generate_sub_cell_t1(origin, v.x)
+            t2 = self.generate_sub_cell_t2(suprenum, v.x)
 
             vec = t1 + t2
 
@@ -310,52 +312,15 @@ class Complex:
             C_new.add_vertex(self.V[vec])
             V_new.append(vec)
 
-        if 1:
-            #if self.even_or_odd:
-            #    self.even_or_odd = 0
-            #else:
-            #    self.even_or_odd = 1
-
-            #  x % y
-            eoo_new = (self.even_or_odd + 1) % (self.dim + 0)
-            eoo = eoo_new
-            self.even_or_odd = eoo
-            print('self.even_or_odd = {}'.format(self.even_or_odd))
-
         # Add new centroid
         C_new.add_vertex(self.V[C_new.centroid])
         V_new.append(C_new.centroid)
-
-        ## Uncached methods:
-        if 0:
-            v_o = numpy.array(origin)  # Only needed for array method
-            v_s_min_o = numpy.array(suprenum) - v_o
-
-            for i, v in enumerate(self.C0()):
-                if i == centroid_index:  # (This should be the last index of HC.C0()
-                    C_new.add_vertex(self.V(C_new.centroid))
-                    V_new.append(C_new.centroid)
-                    break
-
-                if 0:  # Array method
-                    vec = v_o + v_s_min_o * numpy.array(v.x)
-
-                if 1:  # For loop method
-                    vec = list(origin)  # set a vec equal to origin tuple
-                    for j, x_i in enumerate(v.x):
-                        if x_i:  # (if x_i = 1, else leave x_i = 0 at origin
-                            vec[j] = suprenum[j]
-
-                C_new.add_vertex(self.V(tuple(vec)))
-                V_new.append(vec)
 
         # Connect new vertices #TODO: Thread into other loop; no need for V_new
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
             for j in connections:
                 self.V[V_new[i]].connect(self.V[V_new[j]])
-
-        #print('V_new = {}'.format(V_new))
 
         if printout:
             print("A sub hyper cube with:")
@@ -374,6 +339,83 @@ class Complex:
         self.H[gen].append(C_new)
 
         return C_new
+
+
+    def split_simplex_symmetry(self, S, gen):
+        """
+        Split a hypersimplex S into two sub simplcies by building a hyperplane which connects
+        to a new vertex on an edge (the longest edge in dim = {2, 3})
+        and every other vertex in the simplex that is not connected to
+        the edge being split.
+
+        This function utilizes the knowledge that the problem is specified
+        with symmetric constraints
+
+        The longest edge is tracked by an ordering of the
+        vertices in every simplices, the edge between first and second
+        vertex is the longest edge to be split in the next iteration.
+        """
+        # If not gen append
+        try:
+            self.H[gen]
+        except IndexError:
+            self.H.append([])
+        # gen, hgr, p_hgr_h,
+        # gen, C_i.hg_n, C_i.p_hgr_h
+
+        # Find new vertex.
+        #V_new_x = tuple((numpy.array(C()[0].x) + numpy.array(C()[1].x)) / 2.0)
+        V_new = self.V[tuple((numpy.array(S()[0].x) + numpy.array(S()[-1].x)) / 2.0)]
+
+        # Disconnect old longest edge
+        self.V[S()[0].x].disconnect(self.V[S()[-1].x])
+
+        # Connect new vertices to all other vertices
+        for v in S()[:]:
+            v.connect(self.V[V_new.x])
+
+        # New "lower" simplex
+        S_new_l = Simplex(gen, S.hg_n, S.p_hgr_h, self.generation_cycle, self.dim)
+        S_new_l.add_vertex(S()[0])
+        S_new_l.add_vertex(V_new)  # Add new vertex
+        for v in S()[1:-1]:  # Add all other vertices
+            S_new_l.add_vertex(v)
+
+
+        # New "upper" simplex
+        S_new_u = Simplex(gen, S.hg_n, S.p_hgr_h, S.generation_cycle, self.dim)
+        #print('S_new_l.generation_cycle = {}'.format(S_new_l.generation_cycle))
+        #print('S_new_l.generation_cycle + 1 = {}'.format(S_new_l.generation_cycle + 1))
+        S_new_u.add_vertex(S()[S_new_u.generation_cycle + 1])  # First vertex on new long edge
+
+
+        for v in S()[1:-1]:  # Remaining vertices
+            S_new_u.add_vertex(v)
+
+        for k, v in enumerate(S()[1:-1]):  # iterate through inner vertices
+            #for easier k / gci tracking
+            k += 1
+            #if k == 0:
+            #    continue  # We do this rather than S[1:-1]
+                          # for easier k / gci tracking
+            if k == (S.generation_cycle + 1):
+                S_new_u.add_vertex(V_new)
+            else:
+                S_new_u.add_vertex(v)
+
+        S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
+
+        for i, v in enumerate(S_new_u()):
+            print(f'S_new_u()[{i}].x = {v.x}')
+
+        self.H[gen].append(S_new_l)
+        if 1:
+            self.H[gen].append(S_new_u)
+
+        return
+
+
+
 
     @lru_cache(maxsize=None)
     def generate_sub_cell(self, origin, suprenum):  # No hits
@@ -426,60 +468,25 @@ class Complex:
         p_hgr = self.hgr
         self.hgr = 0
         cells = 0
-        for Cell in self.H[self.gen]:
-            self.hgr += Cell.homology_group_rank()
-            cells += 1
+
+        for x in self.V.cache:
+            #print(self.V[x].minimiser())
+            #print('self.V[{}].f = {}'.format(x, self.V[x].f))
+            if self.V[x].minimiser():
+                #print(f'self.V[{x}].minimiser() is a minimiser')
+                #print('self.V[x].f = {}'.format(self.V[x].f))
+                self.hgr += 1
+        if 0:
+            for Cell_gen in self.H:
+                #for Cell in self.H[self.gen]:
+                for Cell in Cell_gen:
+                    self.hgr += Cell.homology_group_rank()
+                    cells += 1
 
         #self.hgr = self.hgr/cells * 100
-
+        logging.info('self.hgr = {}'.format(self.hgr))
         self.hgrd = self.hgr - p_hgr  # Complex group rank differential
         return self.hgr
-
-    # Not completed zone:
-    ## Symmetry group topological transformation methods
-    def generate_gen(self):
-        """Generate all cells in the next generation of subdivisions"""
-        self.gen += 1
-        self.C_new = []
-        for cell in self.C:
-            self.C_new_cells = self.generate_sub(cell, self.gen, self.hg0)
-            for c_new in self.C_new_cells:
-                self.C_new.append(c_new)
-
-        # Set new complex
-        self.C = self.C_new
-        return
-
-    def generate_sub(self, cell, gen, hg0=0):
-        """Generate the subdivision of a specified cell"""
-        # Shrink the initial cell
-        factor = float(1/(gen))
-        print(factor)
-
-        return [None]
-
-    def stretch(self, cell, factor):
-        """
-        Stretch transformation of all vertices in a cell.
-        """
-        # TODO: Optimize with numpy arrays and matrix operations
-        C1 = Cell(1, 0)
-        for v in cell.C:
-            print(tuple(numpy.array(v.x) * factor))
-
-        # (loop through all neighbours and stretch
-        return
-
-    def translate(self, cell, v_start, v_end):
-        """
-        translate the cell from a vector starting at v_start pointing at v_end
-        """
-
-        return
-
-    def rotation(self, cell):
-        # Return all SO(n) group rotations of input cell
-        return
 
     # Plots
     def plot_complex(self):
@@ -496,9 +503,9 @@ class Complex:
                 for c in C:
                     for v in c():
                         if self.bounds is None:
-                            x_a = numpy.array(v.x)
+                            x_a = numpy.array(v.x, dtype=float)
                         else:
-                            x_a = numpy.array(v.x)
+                            x_a = numpy.array(v.x, dtype=float)
                             for i in range(len(self.bounds)):
                                 x_a[i] = (x_a[i] * (self.bounds[i][1]
                                               - self. bounds[i][0])
@@ -512,9 +519,9 @@ class Complex:
                         ylines = []
                         for vn in v.nn:
                             if self.bounds is None:
-                                xn_a = numpy.array(vn.x)
+                                xn_a = numpy.array(vn.x, dtype=float)
                             else:
-                                xn_a = numpy.array(vn.x)
+                                xn_a = numpy.array(vn.x, dtype=float)
                                 for i in range(len(self.bounds)):
                                     xn_a[i] = (xn_a[i] * (self.bounds[i][1]
                                                   - self.bounds[i][0])
@@ -645,22 +652,121 @@ class Cell:
             print('Order = {}'.format(v.order))
 
 
+class Simplex:
+    """
+    Contains a simplex that is symmetric to the initial symmetry constrained
+    hypersimplex triangulation
+    """
+    def __init__(self, p_gen, p_hgr, p_hgr_h, generation_cycle, dim):
+        self.p_gen = p_gen  # parent generation
+        self.p_hgr = p_hgr  # parent homology group rank
+        self.p_hgr_h = p_hgr_h  #
+        self.hg_n = None
+        self.hg_d = None
+
+        gci_n = (generation_cycle + 1) % (dim - 1)
+        gci = gci_n
+        self.generation_cycle = gci
+
+        # Maybe add parent homology group rank total history
+        # This is the sum off all previously split cells
+        # cumulatively throughout its entire history
+        self.C = []
+
+    def __call__(self):
+        return self.C
+
+
+    def add_vertex(self, V):
+        if V not in self.C:
+            self.C.append(V)
+
+    def homology_group_rank(self):
+        """
+        Returns the homology group order of the current cell
+        """
+        if self.hg_n is not None:
+            return self.hg_n
+        else:
+            hg_n = 0
+            for v in self.C:
+                if v.minimiser():
+                    hg_n += 1
+
+            self.hg_n = hg_n
+            return hg_n
+
+    def homology_group_differential(self):
+        """
+        Returns the difference between the current homology group of the
+        cell and it's parent group
+        """
+        if self.hg_d is not None:
+            return self.hg_d
+        else:
+            self.hgd = self.hg_n - self.p_hgr
+            return self.hgd
+
+    def polytopial_sperner_lemma(self):
+        """
+        Returns the number of stationary points theoretically contained in the
+        cell based information currently known about the cell
+        """
+        pass
+
+    def print_out(self):
+        """
+        Print the current cell to console
+        """
+        for v in self():
+            print("Vertex: {}".format(v.x))
+            constr = 'Connections: '
+            for vc in v.nn:
+                constr += '{} '.format(vc.x)
+
+            print(constr)
+            print('Order = {}'.format(v.order))
+
+#TODO: Different classes to init when not using bounds etc.
 class Vertex:
-    def __init__(self, x, bounds=None, func=None, func_args=(), nn=None, I=None):
+    def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
+                 g_cons_args=(), nn=None, I=None):
         import numpy
         self.x = x
         self.order = sum(x)
         if bounds is None:
-            x_a = numpy.array(x)
+            x_a = numpy.array(x, dtype=float)
         else:
-            x_a = numpy.array(x)
+            x_a = numpy.array(x, dtype=float)
             for i in range(len(bounds)):
                 x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
                                 + bounds[i][0])
+
+            #print(f'x = {x}; x_a = {x_a}')
+        if 1:  #TODO: Make saving the array structure optional
+            self.x_a = x_a
+
         # Note Vertex is only initiate once for all x so only
         # evaluated once
-        if func is not None:
+        if g_cons is not None:
+            eval = True
+            for g in g_cons:
+                #if g(self.x_a, *g_cons_args) >= 0.0:
+                if g(self.x_a, *g_cons_args) > 0.0:
+                    #print(self.x_a)
+                    #print((self.x_a, *g_cons_args))
+                    self.f = numpy.inf
+                    #print("Constraints found")
+                    eval = False
+            if eval:
+                #print(f"EVAL x.a = {self.x_a}")
+                self.f = func(x_a, *func_args)
+            #print(f"self.x_a = {x_a}")
+            #print(f"self.f = {self.f}")
+
+        elif func is not None:
             self.f = func(x_a, *func_args)
+            #print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
 
         if nn is not None:
             self.nn = nn
@@ -693,28 +799,46 @@ class Vertex:
                 v.min = False
                 v.check_min = False
 
+            #TEMPORARY
+            self.check_min = True
+            v.check_min = True
+
+
     def disconnect(self, v):
         if v in self.nn:
             self.nn.remove(v)
             v.nn.remove(self)
             self.check_min = True
+            v.check_min = True
 
     def minimiser(self):
         # NOTE: This works pretty well, never call self.min,
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            self.min = all(self.f <= v.f for v in self.nn)
+            #self.min = all(self.f <= v.f for v in self.nn)
+            self.min = True
+            for v in self.nn:
+                #if self.f <= v.f:
+                #if self.f > v.f: #TODO: LAST STABLE
+                if self.f >= v.f:
+                    #if self.f >= v.f:
+                    self.min = False
+                    break
+
             self.check_min = False
 
         return self.min
 
 class VertexCache:
-    def __init__(self, func, func_args=(), bounds=None, indexed=True):
+    def __init__(self, func, func_args=(), bounds=None, g_cons=None,
+                 g_cons_args=(), indexed=True):
 
         self.cache = {}
         # self.cache = set()
         self.func = func
+        self.g_cons = g_cons
+        self.g_cons_args = g_cons_args
         self.func_args = func_args
         self.bounds = bounds
 
@@ -730,10 +854,14 @@ class VertexCache:
                 self.Index += 1
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args,
+                              g_cons=self.g_cons,
+                              g_cons_args=self.g_cons_args,
                               I=self.Index)
             else:
                 xval = Vertex(x, bounds=self.bounds,
-                              func=self.func, func_args=self.func_args)
+                              func=self.func, func_args=self.func_args,
+                              g_cons=self.g_cons,
+                              g_cons_args=self.g_cons_args)
 
             #logging.info("New generated vertex at x = {}".format(x))
             #NOTE: Surprisingly high performance increase if logging is commented out
@@ -746,15 +874,32 @@ if __name__ == '__main__':
         import numpy
         return numpy.sum(x ** 2) + 2.0 * x[0]
 
+    def test_g_cons(x): #(Requires n > 2)
+        import numpy
+        #return x[0] - 0.5 * x[2] + 0.5
+        return x[0] + x[2] #+ 0.5
+    g_cons = [test_g_cons]
     tr = []
     nr = list(range(9))
-    HC = Complex(2, test_func, symmetry=1)
+    HC = Complex(3, test_func, symmetry=1, g_cons=g_cons)
+    #HC = Complex(13, test_func, symmetry=1)
     if 0:
-        for n in range(9):
+        nr = []
+        times = []
+        for n in range(1, 200):
             import time
             ts = time.time()
-            HC = Complex(n, test_func)
-            logging.info('Total time at n = {}: {}'.format(n, time.time() - ts))
+            HC = Complex(n, test_func, symmetry=1)
+            timet = time.time() - ts
+            times.append(timet)
+            nr.append(n)
+            logging.info('Total time at n = {}: {}'.format(n, timet))
+
+        from matplotlib import pyplot
+
+        pyplot.figure()
+        pyplot.plot(nr, times)
+        pyplot.show()
 
 
     if 0:
@@ -766,7 +911,9 @@ if __name__ == '__main__':
 
     import time
     start = time.time()
-    for i in range(6):
+    print("HC.C0() ======")
+    HC.C0.print_out()
+    for i in range(0):
         HC.split_generation()
         logging.info('Done splitting gen = {}'.format(i+1))
 
@@ -779,6 +926,12 @@ if __name__ == '__main__':
     if 1:
         HC.plot_complex()
 
+    if 1:
+        for i in range(7):
+            HC.split_generation()
+            logging.info('Done splitting gen = {}'.format(i+1))
+
+            HC.plot_complex()
     if 0:
         print(HC.H)
         print(len(HC.H[1]))

@@ -15,14 +15,14 @@ try:
 except ImportError:
     from multiprocessing import Pool
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
          multiproc=False, crystal_mode=False, sampling_method='sobol'):
     #TODO: Update documentation
 
     # sampling_method: str, options = 'sobol', 'simplicial'
     """
-    Finds the global minima of a function using topograhphical global
+    Finds the global minima of a function using simplicial homology global
     optimisation.
 
     Parameters
