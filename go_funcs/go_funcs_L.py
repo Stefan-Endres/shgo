@@ -158,6 +158,130 @@ class LennardJones(Benchmark):
 
         return s
 
+class LennardJones02(Benchmark):
+
+    r"""
+    LennardJones objective function evaluated for a BiLennardJones cluster
+    composed of two types of particles, namely A and B.
+
+    This class defines a BiLennard-Jones global optimization problem. This
+    is a multimodal minimization problem defined as follows:
+
+    .. math::
+
+        f_{\text{BiLennardJones}}(\mathbf{x}) = \sum_{i=0}^{n-2}\sum_{j>1}^{n-1}
+        \epsilon_{ij}\frac{\sigma_{ij}}{r_{ij}^{12}} - \frac{\sigma_{ij}}{r_{ij}^{6}}
+
+
+    Where, in this exercise:
+
+    .. math::
+
+        r_{ij} = \sqrt{(x_{3i}-x_{3j})^2 + (x_{3i+1}-x_{3j+1})^2)
+        + (x_{3i+2}-x_{3j+2})^2}
+
+
+    Valid for any dimension, :math:`n = 3 * (k_A + k_B}, n = 6, 9, 12, ..., 60`. :math:`k_i`
+    is the number of i-type particles in 3-D space constraints: unconstrained type:
+    multi-modal with one global minimum; non-separable
+
+    Value-to-reach: Should be given as an input for the system at hand
+
+    *Global optimum*: Should be given as an input for the system at hand
+
+    References:
+    Chill, S.T., Stevenson, J., Ruehle, V., Shang, C.,  Xiao, P., Farrell, J.D., Wales, D.J., and Henkelman, G. (2014)
+    "Benchmarks for Characterization of Minima, Transition States, and Pathways in Atomic, Molecular, and Condensed Matter Systems"
+    J. Chem. Theory Comput., 2014, 10 (12), 5476–5482.
+    """
+
+    def __init__(self, k_A=42, k_B=58, epsilon=[1,1,1], sigma=[1, 1.3, 1.15], fglob = -604.7963065717, global_optimum=[[]]):
+        """Initialises Class
+	
+	Parameters
+	----------
+	k_A : int
+		Number of paricles of type A
+	k_B : int
+		Number of paricles of type B
+	elsilon : [float]
+		:math:`[\epsilon_{AA}, \epsilon_{BB}, \epsilon_{AB}]`
+		It is assumed that :math:`\epsilon_{AB} == \epsilon_{BA}`
+	sigma : [float]
+		:math:`[\sigma_{AA}, \sigma_{BB}, \sigma_{AB}]`
+		It is assumed that :math:`\sigma_{AB} == \sigma_{BA}`
+	fglob : float
+		value of the global minimum
+	global_optimum : [[float]]
+		List of x_lists, containing coordinates at which the
+		objective function evaluates to fglob
+	default values are from Chill et. al. (2014)
+	"""
+        k_A, k_B = int(k_A), int(k_B)
+        if k_A<1 or k_B<1:
+            raise ValueError("BLJ must have at least one of each atom type")
+
+        self.k_A, self.k_B = k_A, k_B
+        dimensions = 3 * (k_A + k_B)
+
+        Benchmark.__init__(self, dimensions)
+
+        self.epsilon = epsilon
+        self.sigma = sigma        
+        self._bounds = list(zip([-4.0] * self.N, [4.0] * self.N))
+
+        self.global_optimum = global_optimum
+
+        self.fglob = fglob
+	
+        self.change_dimensionality = False
+
+    def fun(self, x, *args):
+        """Objective function
+	
+	Parameters
+	----------
+	x : [float]
+		Coordinates at which to evaluate objective function
+		The values are semantically grouped into groups of three
+		where each group represent the Euclidian coordinates of a
+		particle. The first k_A groups are assumed to represent
+		the locations of the k_A type-A particles of the system.
+		The remaining k_B groups thus represent the locations
+		of the k_B type-B particles of the system
+
+	Returns
+	-------
+	t : float
+		Value of the LJ potential
+	"""
+        self.nfev += 1
+
+        k = int(self.N / 3)
+        t = 0.0
+	
+        for i in range(k - 1):
+            for j in range(i + 1, k):
+		
+		#check whether the two particles are AA, BB or AB
+                if i < self.k_A:
+                        if j < self.k_A:
+                                ij = 0	# AA
+                        else:
+                                ij = 2	# AB
+                else:
+                        ij = 1 # BB
+                a = 3 * i
+                b = 3 * j
+                xd = x[a] - x[b]
+                yd = x[a + 1] - x[b + 1]
+                zd = x[a + 2] - x[b + 2]
+                r2 = xd**2 + yd**2 + zd**2
+                e = self.epsilon[ij]
+                s = self.sigma[ij]
+                t +=  e * ( s**12 / r2**6 - s**6 / r2**3 ) 
+
+        return 4 * t
 
 class Leon(Benchmark):
 
