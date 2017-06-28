@@ -158,18 +158,18 @@ class LennardJones(Benchmark):
 
         return s
 
-class LennardJones02(Benchmark):
+class LennardJonesN(Benchmark):
 
     r"""
-    LennardJones objective function evaluated for a BiLennardJones cluster
-    composed of two types of particles, namely A and B.
+    LennardJones objective function evaluated for a LennardJones cluster
+    composed of P types of particles, namely A, B, ... Z.
 
-    This class defines a BiLennard-Jones global optimization problem. This
+    This class defines a Lennard-Jones global optimization problem. This
     is a multimodal minimization problem defined as follows:
 
     .. math::
 
-        f_{\text{BiLennardJones}}(\mathbf{x}) = \sum_{i=0}^{n-2}\sum_{j>1}^{n-1}
+        f_{\text{LennardJones}}(\mathbf{x}) = \sum_{i=0}^{n-2}\sum_{j>1}^{n-1}
         \epsilon_{ij}\frac{\sigma_{ij}}{r_{ij}^{12}} - \frac{\sigma_{ij}}{r_{ij}^{6}}
 
 
@@ -181,9 +181,8 @@ class LennardJones02(Benchmark):
         + (x_{3i+2}-x_{3j+2})^2}
 
 
-    Valid for any dimension, :math:`n = 3 * (k_A + k_B}, n = 6, 9, 12, ..., 60`. :math:`k_i`
-    is the number of i-type particles in 3-D space constraints: unconstrained type:
-    multi-modal with one global minimum; non-separable
+    Valid for any dimension, :math:`n = 3 * \sum p_i, k_i = 1, 2, 3, ....`. :math:`p_i`
+    is the number of particles of the p-th type.
 
     Value-to-reach: Should be given as an input for the system at hand
 
@@ -195,44 +194,83 @@ class LennardJones02(Benchmark):
     J. Chem. Theory Comput., 2014, 10 (12), 5476–5482.
     """
 
-    def __init__(self, k_A=42, k_B=58, epsilon=[1,1,1], sigma=[1, 1.3, 1.15], fglob = -604.7963065717, global_optimum=[[]]):
+    def __init__(self, p, fglob=None, global_optimum=[[]], epsilon=[[]], sigma=[[]], bounds = [()]):
         """Initialises Class
 	
 	Parameters
 	----------
-	k_A : int
-		Number of paricles of type A
-	k_B : int
-		Number of paricles of type B
-	elsilon : [float]
-		:math:`[\epsilon_{AA}, \epsilon_{BB}, \epsilon_{AB}]`
-		It is assumed that :math:`\epsilon_{AB} == \epsilon_{BA}`
-	sigma : [float]
-		:math:`[\sigma_{AA}, \sigma_{BB}, \sigma_{AB}]`
-		It is assumed that :math:`\sigma_{AB} == \sigma_{BA}`
-	fglob : float
+	p : [int]
+		Array of the number of particles of each particle type.
+        P = len(p)
+    fglob : float
 		value of the global minimum
 	global_optimum : [[float]]
 		List of x_lists, containing coordinates at which the
 		objective function evaluates to fglob
-	default values are from Chill et. al. (2014)
-	"""
-        k_A, k_B = int(k_A), int(k_B)
-        if k_A<1 or k_B<1:
-            raise ValueError("BLJ must have at least one of each atom type")
+	Either fglob or global_optimum must be specified. 
+	elsilon : [[float]]
+        A PxP 2D array of binary epsilon values between two types of particles.
+        Please note that behaviour is not defined if the matrix is not symmetric.
+        Takes the form:
+		.. math::
 
-        self.k_A, self.k_B = k_A, k_B
-        dimensions = 3 * (k_A + k_B)
+        [   [\epsilon_{AA}, \epsilon_{AB} ... \epsilon_{AZ}]
+            [\epsilon_{BA}, \epsilon_{BB} ... \epsilon_{BZ}]
+            .
+            .
+            .
+            [\epsilon_{ZA}, \epsilon_{ZB} ... \epsilon_{ZZ}]
+        ]
+        Defaults to all 1's.
+	sigma : [[float]]
+		A PxP 2D array of binary sigma values between two types of particles.
+        Please note that behaviour is not defined if the matrix is not symmetric.
+        Takes the form:
+		.. math::
+
+        [   [\sigma_{AA}, \sigma_{AB} ... \sigma_{AZ}]
+            [\sigma_{BA}, \sigma_{BB} ... \sigma_{BZ}]
+            .
+            .
+            .
+            [\sigma_{ZA}, \sigma_{ZB} ... \sigma_{ZZ}]
+        ]
+        Defaults to all 1's.
+	bounds : [(float, float)]
+    List of bounds for each dimension. Defaults to all lower bounds = -10 and all upper bounds = 10.
+	"""
+        self.p = [int(p_i) for p_i in p]
+        if 0 in p:
+            raise ValueError("LJ must have at least one of each atom type specified")
+
+        dimensions = 3 * sum(p)
 
         Benchmark.__init__(self, dimensions)
 
-        self.epsilon = epsilon
-        self.sigma = sigma        
-        self._bounds = list(zip([-4.0] * self.N, [4.0] * self.N))
+        if epsilon == [[]]:
+            self.epsilon = [ [1 for i in range(len(p))] for j in range(len(p)) ]
+        else:
+            self.epsilon = epsilon
 
-        self.global_optimum = global_optimum
+        if sigma == [[]]:
+            self.sigma = [ [1 for i in range(len(p))] for j in range(len(p)) ]
+        else:
+            self.sigma = sigma 
 
-        self.fglob = fglob
+        if bounds == [()]:
+            self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
+        else:
+            self._bounds = bounds
+
+        if global_optimum != [[]]:
+            self.global_optimum = global_optimum
+            self.fglob = self.fun(global_optimum[0])
+            if fglob !=None and abs(self.fglob - fglob) > 1e-5:
+                raise ValueError("Global optimum does not correspond to supposed global minimum. {0} != {1}".format(self.fglob, fglob))
+        elif fglob != None:
+            self.fglob = fglob
+        else:
+            raise ValueError("Either fglob or global_optimim must be specified")
 	
         self.change_dimensionality = False
 
@@ -245,10 +283,9 @@ class LennardJones02(Benchmark):
 		Coordinates at which to evaluate objective function
 		The values are semantically grouped into groups of three
 		where each group represent the Euclidian coordinates of a
-		particle. The first k_A groups are assumed to represent
-		the locations of the k_A type-A particles of the system.
-		The remaining k_B groups thus represent the locations
-		of the k_B type-B particles of the system
+		particle. From the list p which has the form: [p_1, p_2 ... ]
+        the first p_1 particles are of type 1, the next p_2 particles
+        are of type 2, etc.
 
 	Returns
 	-------
@@ -256,32 +293,26 @@ class LennardJones02(Benchmark):
 		Value of the LJ potential
 	"""
         self.nfev += 1
-
         k = int(self.N / 3)
         t = 0.0
-	
-        for i in range(k - 1):
-            for j in range(i + 1, k):
-		
-		#check whether the two particles are AA, BB or AB
-                if i < self.k_A:
-                        if j < self.k_A:
-                                ij = 0	# AA
-                        else:
-                                ij = 2	# AB
-                else:
-                        ij = 1 # BB
+        ij = [count for p_i, count in zip(self.p,range(len(self.p))) for q in range(p_i)]
+        for i, A in zip( range(k), ij ):
+            for j,B in zip( range(k), ij ):
+                if(i>=j):
+                    continue
+
                 a = 3 * i
                 b = 3 * j
                 xd = x[a] - x[b]
                 yd = x[a + 1] - x[b + 1]
                 zd = x[a + 2] - x[b + 2]
                 r2 = xd**2 + yd**2 + zd**2
-                e = self.epsilon[ij]
-                s = self.sigma[ij]
+                e = self.epsilon[A][B]
+                s = self.sigma[A][B]
                 t +=  e * ( s**12 / r2**6 - s**6 / r2**3 ) 
 
         return 4 * t
+
 
 class Leon(Benchmark):
 
