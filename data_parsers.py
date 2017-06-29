@@ -39,8 +39,8 @@ def LJ_parser(path):
     global_optimum = [[coord for atom in atoms for coord in atom]]
     epsilon = [[]]
     sigma = [[]]
-    bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ]
-    return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds)
+    bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ] * len(atoms)
+    return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds, path)
 
 
 def BLJ_parser(path):
@@ -86,5 +86,5 @@ def BLJ_parser(path):
     sigma_AB = (sigma_AA + sigma_BB)/2
     sigma = [ [sigma_AA, sigma_AB], [sigma_AB, sigma_BB] ]
 
-    bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ]
-    return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds)
+    bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ] * len(atoms)
+    return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds, path)

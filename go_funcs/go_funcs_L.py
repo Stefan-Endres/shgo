@@ -194,7 +194,7 @@ class LennardJonesN(Benchmark):
     J. Chem. Theory Comput., 2014, 10 (12), 5476–5482.
     """
 
-    def __init__(self, p, fglob=None, global_optimum=[[]], epsilon=[[]], sigma=[[]], bounds = [()]):
+    def __init__(self, p, fglob=None, global_optimum=[[]], epsilon=[[]], sigma=[[]], bounds = [()], name =""):
         """Initialises Class
 	
 	Parameters
@@ -238,6 +238,9 @@ class LennardJonesN(Benchmark):
         Defaults to all 1's.
 	bounds : [(float, float)]
     List of bounds for each dimension. Defaults to all lower bounds = -10 and all upper bounds = 10.
+
+    name : String
+    optional name for benchmark.
 	"""
         self.p = [int(p_i) for p_i in p]
         if 0 in p:
@@ -273,6 +276,10 @@ class LennardJonesN(Benchmark):
             raise ValueError("Either fglob or global_optimim must be specified")
 	
         self.change_dimensionality = False
+        if name == "":
+            self._name = str(id(self))
+        else:
+            self._name = name
 
     def fun(self, x, *args):
         """Objective function
@@ -309,7 +316,8 @@ class LennardJonesN(Benchmark):
                 r2 = xd**2 + yd**2 + zd**2
                 e = self.epsilon[A][B]
                 s = self.sigma[A][B]
-                t +=  e * ( s**12 / r2**6 - s**6 / r2**3 ) 
+                if r2 > 0.0:
+                    t +=  e * ( s**12 / r2**6 - s**6 / r2**3 ) 
 
         return 4 * t
 
