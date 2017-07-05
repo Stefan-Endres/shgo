@@ -1,4 +1,4 @@
-import data_parsers, _tgo, time, scipy.optimize, numpy
+import data_parsers, _tgo, time, scipy.optimize, numpy, datetime
 
 class Benchmarker():
     """
@@ -66,7 +66,7 @@ class Benchmarker():
                     else:
                         print("Unsuccessful Lowest value found {0} at\n{1}\nIn {2} evaluations".format(result.fun, result.x, result.nfev) )
                     if timer:
-                        print("Time taken was {0} seconds".format(t) )
+                        print("Time taken was {0}".format(datetime.timedelta(seconds=int(t))) )
                 if timer:
                     self.results[algorithm.__name__]["time"] = t
 
@@ -79,19 +79,18 @@ def tgo_wo(fun, bounds):
     options = {'symmetry': True,
            'disp': False,
            'crystal_iter': 1}
-    return _tgo.tgo(fun, bounds, options=options)
+    return _tgo.tgo(fun, bounds, options=options, n=2000)
 
-def BasinHoping(fun, bounds):
-    x0 = numpy.random.randn(len(bounds))
-    return scipy.optimize.basinhopping(fun, x0)  
 
-benchmarks = [data_parsers.BLJ_parser("Data/BLJ_5-100/1.3/5"), data_parsers.LJ_parser("Data/LJ_3-150/3")]
+benchmarks = [ data_parsers.LJ_parser("Data/LJ_3-150/" + str(i)) for i in range(3,18)] #data_parsers.BLJ_parser("Data/BLJ_5-100/1.3/13"),
 """
 Please note that the data for this run should be downloaded from:
 https://bitbucket.org/darrenroos/shgo_data
 All of the source folder should be placed within a folder called Data for the above code to run.
 """
-algorithms = [BasinHoping, tgo_wo]
+algorithms = [tgo_wo]
 
 B = Benchmarker(algorithms, benchmarks)
-print (B.run(True, True) )     
+r = B.run(True, True)
+print("\n\nData Dump\n")
+print(r)
