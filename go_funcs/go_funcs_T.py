@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
                    arange, pi, sign, sin, sqrt, sum,
-                   tan, tanh, atleast_2d)
+                   tan, tanh, atleast_2d, matrix, array, linalg)
+import  scipy.spatial.distance
 from .go_benchmark import Benchmark
 
 
@@ -217,6 +218,130 @@ class ThreeHumpCamel(Benchmark):
         return (2.0 * x[0] ** 2.0 - 1.05 * x[0] ** 4.0 + x[0] ** 6 / 6.0
                 + x[0] * x[1] + x[1] ** 2.0)
 
+class TIP4P(Benchmark):
+    r"""
+    TIP4P objective function evaluated for a water molecule cluster.
+
+    This class defines a TIP4P global optimization problem. This
+    is a multimodal minimization problem defined as follows:
+
+    .. math::
+
+        f_{\text{TIP4P}}(\mathbf{x}) = \sum_{n<m} [ \frac {A} { r_{OO}^{12} }
+        - \frac {B} { r_{OO}^{6} } + \sum_{i}^{on m} \sum_{j}^{on n} \frac{ k_c q_i q_j }{ r_{ij} }]
+
+    References:
+    Chill, S.T., Stevenson, J., Ruehle, V., Shang, C.,  Xiao, P., Farrell, J.D., Wales, D.J., and Henkelman, G. (2014)
+    "Benchmarks for Characterization of Minima, Transition States, and Pathways in Atomic, Molecular, and Condensed Matter Systems"
+    J. Chem. Theory Comput., 2014, 10 (12), 5476–5482.
+    """
+
+    def __init__(self, W, fglob=None, global_optimum=[[]], bounds = [()], name =""):
+        """Initialises Class
+	
+	Parameters
+	----------
+    W : int
+        Number of water molecules
+    fglob : float
+		Value of the global minimum
+
+	global_optimum : [[float]]
+		List of x_lists, containing coordinates at which the
+		objective function evaluates to fglob
+
+	Either fglob or global_optimum must be specified.
+ 
+	bounds : [(float, float)]
+        List of bounds for each dimension.
+        Defaults to all lower bounds = -10 and all upper bounds = 10.
+
+    name : String
+        Optional name for benchmark. """
+
+        dimensions = 6 * W
+
+        Benchmark.__init__(self, dimensions)
+
+        if bounds == [()]:
+            self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
+        else:
+            self._bounds = bounds
+
+        if global_optimum != [[]]:
+            self.global_optimum = global_optimum
+            self.fglob = self.fun(global_optimum[0])
+            if fglob !=None and abs(self.fglob - fglob) > 1e-5:
+                raise ValueError("Global optimum does not correspond to supposed global minimum. {0} != {1}".format(self.fglob, fglob))
+        elif fglob != None:
+            self.fglob = fglob
+        else:
+            raise ValueError("Either fglob or global_optimim must be specified")
+	
+        self.change_dimensionality = False
+
+        if name == "":
+            self._name = str(id(self))
+        else:
+            self._name = name
+
+    def fun(self, x):
+        """Objective function
+	
+	Parameters
+	----------
+	x : [float]
+    Coordinates at which to evaluate objective function
+    The values are semantically grouped into sets of nine, and then
+    into groups of three where each group represent the Euclidian
+    coordinates of an atom of a water molecule. The first group in
+    every set represents the oxygen atom.
+
+	Returns
+	-------
+	t : float
+		Value of the TIP4P potential"""
+        A = 6e5
+        B = 6.1e2
+        k_c = 332.1
+        q_O = -1.04
+        q_H = 0.52
+        
+        self.nfev += 1
+        k = int(self.N / 6)
+        t = 0.0
+
+        molecules = [ [ x[9*mol + index:9*mol + index + 3] for index in range(0,9,3) ] for mol in range(k)]
+        for molecule in molecules:
+            O, H1, H2 = molecule
+            O, H1, H2 = matrix(O), matrix(H1), matrix(H2)
+
+            avg = (H1+H2)/2 - O
+            avg = avg / linalg.norm(avg)
+            charge_site = avg * 0.15 + O
+            charge_site = array(charge_site)[0].tolist()
+            molecule.append(charge_site)
+
+        for n in range(k-1):
+            for m in range(n+1, k):
+                M = molecules[m] 
+                N = molecules[n]
+                       
+                dist = scipy.spatial.distance.cdist(M, N)
+                t += A/dist[0][0]**12 - B/dist[0][0]**6
+                for i in range(1,4):
+                    for j in range(1,4):
+                        d = dist[i][j]
+                        if d==0:
+                            continue
+                        if i==3 and j==3:                   
+                            t += (k_c * q_O * q_O)/d
+                        elif i==3 or j==3:
+                            t += (k_c * q_O * q_H)/d
+                        else:
+                            t += (k_c * q_H * q_H)/d
+
+        return t
 
 class Trid(Benchmark):
 
