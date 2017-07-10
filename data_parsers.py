@@ -31,16 +31,18 @@ def LJ_parser(path):
     f = open(path, 'r')
     lines = f.readlines()
     atoms = numpy.array([ numpy.array([float(num) for num in line.split()]) for line in lines ])
-
-    tol = 1e-5
     
     p = [len(atoms)]
+
     fglob = None
     global_optimum = [[coord for atom in atoms for coord in atom]]
+    
     epsilon = [[]]
     sigma = [[]]
-    #bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ] * len(atoms)
+    
+    tol = 1e-5
     bounds = [ ( atoms.min() - tol, atoms.max() + tol ) ] * len(atoms) * 3
+    
     return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds, path)
 
 
@@ -73,11 +75,11 @@ def BLJ_parser(path):
 
     f = open(path, 'r')
     lines = f.readlines()
+    
     N = int(lines[0].split()[0])
     fglob, p_A, sigma_BB = [float(value) for value, i in zip( lines[1].split(), range(9999) ) if i in [4,11,12] ]
     
     atoms = numpy.array([ numpy.array([float(num) for num in line.split()[1:] ]) for line in lines[2:] ])
-    tol = 1e-5
     
     p = [int(p_A), N - int(p_A)]
     global_optimum = [[coord for atom in atoms for coord in atom]]
@@ -87,9 +89,47 @@ def BLJ_parser(path):
     sigma_AB = (sigma_AA + sigma_BB)/2
     sigma = [ [sigma_AA, sigma_AB], [sigma_AB, sigma_BB] ]
 
-    #bounds = [ ( min(atoms[:,i]) - tol, max(atoms[:,i]) + tol ) for i in range(3) ] * len(atoms)
+    tol = 1e-5
     bounds = [ ( atoms.min() - tol, atoms.max() + tol ) ] * len(atoms) * 3
+    
     return go_funcs.go_funcs_L.LennardJonesN(p, fglob, global_optimum, epsilon, sigma, bounds, path)
 
+def TIP4P_parser(path):
+    """
+    Parameters
+    ----------
+    path : string
+        path to file containing data for a TIP4P benchmark
+        The name of the file must be of the form "TIP4P-N.xyz"
+        with N indicating the number of water molecules in
+        the TIP4P cluster. The format of the file is as follows:
+        Line 1 contains a single number N being the total number of
+        atoms in the system.
+        Line 2 contains a string of the form:
+        <value1>   Energy =     <value2>  kJ/mol
+            Where <value1> is a number with an unknown meanign,
+            and <value2> is the energy of the cluster. 
+        The following N lines contain information about each atom
+        in the system. Every three lines describe one water molecule.
+        The first atom being the O atom.
+    
+    Returns
+    -------
+    A go_funcs.go_funcs_T.TIP4P object.
+    """
+    f = open(path, 'r')
+    lines = f.readlines()
+
+    atoms = numpy.array([ numpy.array([float(num) for num in line.split()[1:] ]) for line in lines[2:] ])
+    
+    W = len(atoms) / 3
+
+    global_optimum = [[coord for atom in atoms for coord in atom]]
+
+    tol = 1e-5
+    bounds = [ ( atoms.min() - tol, atoms.max() + tol ) ] * len(atoms) * 3
+    
+    return go_funcs.go_funcs_T.TIP4P(W, None, global_optimum, bounds, path)
+
 if __name__ == "__main__":
-    BLJ, LJ = BLJ_parser("Data/BLJ_5-100/1.3/5"), LJ_parser("Data/LJ_3-150/3")
+    BLJ, LJ, TIP = BLJ_parser("Data/BLJ_5-100/1.3/5"), LJ_parser("Data/LJ_3-150/3"), TIP4P_parser("Data/TIP4P_2-21/TIP4P-2.xyz")
