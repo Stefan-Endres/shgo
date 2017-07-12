@@ -133,5 +133,29 @@ def TIP4P_parser(path):
     
     return go_funcs.go_funcs_T.TIP4P(W, None, global_optimum, True, bounds, path)
 
+def LJ38_start_bounds_parser(path):
+    """
+    Parameters
+    ----------
+    path : string
+        path to file containing data for a LJ starting structure
+        The name of the file must be of the form "cluster_<X>.xyz"
+        with X being a 4 digit integer. The format of the file is as follows: 
+        Line 1 and Line 2 contain fairly useless information.
+        The next 38 lines each contain information about a particle
+        in the system.
+    
+    Returns
+    -------
+    bounds : [(float, float)]
+        A list of bounds for each dimension.
+        len(bounds) should be equal to 38 * 3
+    """
+    f = open(path, 'r')
+    lines = f.readlines()
+    atoms = [ numpy.array([float(coord) for coord in line.split()[1:] ]) for line in lines[2:]]
+    return list( zip( numpy.minimum.reduce(atoms), numpy.maximum.reduce(atoms) ) ) * 38
+
 if __name__ == "__main__":
     BLJ, LJ, TIP = BLJ_parser("Data/BLJ_5-100/1.3/5"), LJ_parser("Data/LJ_3-150/3"), TIP4P_parser("Data/TIP4P_2-21/TIP4P-2.xyz")
+    LJ_bounds = LJ38_start_bounds_parser("Data/lj38_starting_clusters/cluster_0000.xyz")
