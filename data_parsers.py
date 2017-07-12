@@ -122,14 +122,16 @@ def TIP4P_parser(path):
 
     atoms = numpy.array([ numpy.array([float(num) for num in line.split()[1:] ]) for line in lines[2:] ])
     
-    W = len(atoms) / 3
+    W = int( len(atoms) / 3)
 
     global_optimum = [[coord for atom in atoms for coord in atom]]
 
     tol = 1e-5
-    bounds = [ ( atoms.min() - tol, atoms.max() + tol ) ] * len(atoms) * 3
+    bounds = [ ( atoms.min() - tol, atoms.max() + tol ) ] * 3 
+    bounds+= [(0.0, numpy.pi), (0.0, 2 * numpy.pi), (0.0, 2 * numpy.pi)]
+    bounds*= W
     
-    return go_funcs.go_funcs_T.TIP4P(W, None, global_optimum, bounds, path)
+    return go_funcs.go_funcs_T.TIP4P(W, None, global_optimum, True, bounds, path)
 
 if __name__ == "__main__":
     BLJ, LJ, TIP = BLJ_parser("Data/BLJ_5-100/1.3/5"), LJ_parser("Data/LJ_3-150/3"), TIP4P_parser("Data/TIP4P_2-21/TIP4P-2.xyz")

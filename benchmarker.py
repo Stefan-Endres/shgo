@@ -61,10 +61,11 @@ class Benchmarker():
 
                 self.results[algorithm.__name__][benchmark._name] = result
                 if disp:
-                    if benchmark.success(result.x):
+                    if benchmark.success(result.x, 1e-3):
                         print("Found global minimum {0} at \n{1}\nIn {2} evaluations".format(result.fun, result.x, result.nfev) )
                     else:
                         print("Unsuccessful Lowest value found {0} at\n{1}\nIn {2} evaluations".format(result.fun, result.x, result.nfev) )
+                        print("Global Minimum is {0}".format(benchmark.fglob) )
                     if timer:
                         print("Time taken was {0}".format(datetime.timedelta(seconds=int(t))) )
                 if timer:
@@ -79,10 +80,12 @@ def tgo_wo(fun, bounds):
     options = {'symmetry': True,
            'disp': False,
            'crystal_iter': 1}
-    return _tgo.tgo(fun, bounds, options=options, n=2000)
+    return _tgo.tgo(fun, bounds, options=options, n=5000)
 
 
-benchmarks = [ data_parsers.LJ_parser("Data/LJ_3-150/" + str(i)) for i in range(3,18)] #data_parsers.BLJ_parser("Data/BLJ_5-100/1.3/13"),
+#benchmarks = [ data_parsers.LJ_parser("Data/LJ_3-150/" + str(i)) for i in range(3,18)] #data_parsers.BLJ_parser("Data/BLJ_5-100/1.3/13"),
+benchmarks = [ data_parsers.TIP4P_parser("Data/TIP4P_2-21/TIP4P-4.xyz") ]
+
 """
 Please note that the data for this run should be downloaded from:
 https://bitbucket.org/darrenroos/shgo_data

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
-from numpy import (abs, arctan2, asarray, cos, exp, floor, log, log10,
-                   arange, pi, sign, sin, sqrt, sum,
-                   tan, tanh, atleast_2d, matrix, array, linalg)
+from numpy import (abs, arctan2, array, asarray, cos, exp,
+                   floor, identity, linalg, log, log10,
+                   matrix, arange, pi, sign, sin, sqrt, sum,
+                   tan, tanh, tensordot, atleast_2d)
 import  scipy.spatial.distance
 from .go_benchmark import Benchmark
 
@@ -236,7 +237,7 @@ class TIP4P(Benchmark):
     J. Chem. Theory Comput., 2014, 10 (12), 5476–5482.
     """
 
-    def __init__(self, W, fglob=None, global_optimum=[[]], bounds = [()], name =""):
+    def __init__(self, W, fglob=None, global_optimum=[[]], xyz = True, bounds = [()], name =""):
         """Initialises Class
 	
 	Parameters
@@ -250,11 +251,17 @@ class TIP4P(Benchmark):
 		List of x_lists, containing coordinates at which the
 		objective function evaluates to fglob
 
+    xyz : bool
+        If true then it implies that global_optimum lists
+        are given in terms of xyz coordinates.
+        If false then it implies that global_optimum lists
+        are given in terms of parametrised coordinates.
 	Either fglob or global_optimum must be specified.
  
 	bounds : [(float, float)]
         List of bounds for each dimension.
-        Defaults to all lower bounds = -10 and all upper bounds = 10.
+        Defaults to: [ (-10.0, 10.0), (-10.0, 10.0), (-10.0, 10.0),
+            (0.0, numpy.pi), (0.0, 2 * numpy.pi), (0.0, 2 * numpy.pi)] * W
 
     name : String
         Optional name for benchmark. """
@@ -264,13 +271,17 @@ class TIP4P(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         if bounds == [()]:
-            self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
+            self._bounds = [ (-10.0, 10.0), (-10.0, 10.0), (-10.0, 10.0),
+                            (0.0, numpy.pi), (0.0, 2 * numpy.pi), (0.0, 2 * numpy.pi)] * W
         else:
             self._bounds = bounds
 
         if global_optimum != [[]]:
             self.global_optimum = global_optimum
-            self.fglob = self.fun(global_optimum[0])
+            if xyz:
+                self.fglob = self.xyz_fun(global_optimum[0])
+            else:
+                self.fglob = self.fun(global_optimum[0])
             if fglob !=None and abs(self.fglob - fglob) > 1e-5:
                 raise ValueError("Global optimum does not correspond to supposed global minimum. {0} != {1}".format(self.fglob, fglob))
         elif fglob != None:
@@ -285,7 +296,7 @@ class TIP4P(Benchmark):
         else:
             self._name = name
 
-    def fun(self, x):
+    def xyz_fun(self, x):
         """Objective function
 	
 	Parameters
@@ -328,11 +339,15 @@ class TIP4P(Benchmark):
                 N = molecules[n]
                        
                 dist = scipy.spatial.distance.cdist(M, N)
-                t += A/dist[0][0]**12 - B/dist[0][0]**6
+                if dist[0][0] != 0:
+                    t += A/dist[0][0]**12 - B/dist[0][0]**6
+                else:
+                    t += 1e9
                 for i in range(1,4):
                     for j in range(1,4):
                         d = dist[i][j]
                         if d==0:
+                            t += 1e9
                             continue
                         if i==3 and j==3:                   
                             t += (k_c * q_O * q_O)/d
@@ -342,6 +357,164 @@ class TIP4P(Benchmark):
                             t += (k_c * q_H * q_H)/d
 
         return t
+
+    def fun(self, p):
+        """Objective function
+	
+	Parameters
+	----------
+	x : [float]
+    Parametrised coordinates at which to evaluate objective function
+    The values are semantically grouped into sets of six, where each
+    group represents that parametrised form of a water molecule.
+
+	Returns
+	-------
+	t : float
+		Value of the TIP4P potential"""
+
+        k = int(self.N / 6)
+        molecules_param = [ p[6*mol:6*mol + 6] for mol in range(k)]
+        molecules_coord = [ coord for molecule in molecules_param for coord in self.param2coord(molecule)]
+        return self.xyz_fun(molecules_coord)
+       
+
+    def rotationMatrix(self, theta, u):
+        """
+    See https://en.wikipedia.org/wiki/Rotation_matrix
+
+    Parameters
+    ----------
+    theta : float
+        An angle in radians
+    u : [float, float, float]
+        A unit normal vector, that defines the axis of rotation
+    
+    Returns
+    -------
+    M : [[float]]
+        A 3x3 rotation matrix
+    """
+        u1, u2, u3 = u
+        u_cross = matrix( [  [0   , -u3 , u2  ],
+                                   [u3  , 0   , -u1 ],
+                                   [-u2 , u1  , 0   ] ] )
+
+        
+        M = cos(theta) * identity(3) + sin(theta) * u_cross + (1 - cos(theta) ) * tensordot(u, u, axes=0)
+        return M
+
+    def param2coord(self, p):
+        """
+    This function takes a parametrised coordinate set for a water
+    molecule, and returns a set of 3 (x,y,z) coordinates for each atom.
+    The parametrisation is as follows:
+    p = [ x, y, z, theta, phi, gamma ]
+    where x,y,z give the coordinates of the oxygen atom. The three
+    angles describe rotations that are applied to the molecule.
+    The initial configuration has the oxygen atom at (0,0,0),
+    one hydrogen atom at (d*cos(alpha/2), d*sin(alpha/2), 0)
+    and the other at (d*cos(alpha/2), -d*sin(alpha/2), 0),
+    where d is the distance from the oxygen atom to a hydrogen atom,
+    and alpha is the angle between the two hydrogen atoms.
+
+    Parameters
+    ----------
+    p : [float]
+        An array of the form:
+        [ x, y, z, theta, phi, gamma ]
+        where theta is in [0, pi], phi is in [0, 2*pi], and
+        gamma is in [0, 2*pi].
+        See above for information on what each parameter means.
+
+    Returns
+    -------
+    xyz : [float]
+        An array of the form:
+        [ x1, y1, z1, x2, y2, z2, x3, y3, z3 ]
+        Where (x1, y1, z1) is the coordinate of the oxygen atom
+        (x2, y2, z2) is the coordinate of the first hydrogen atom and
+        (x3, y3, z3) is the coordinate of the second hydrogen atom.
+    """
+
+        x, y, z, theta, phi, gamma = p
+
+        d = 0.9572
+        alpha = 104.52 / 180 * pi
+
+        H1 = matrix( [ [d * cos(alpha/2),  d * sin(alpha/2), 0] ] )
+        H2 = matrix( [ [d * cos(alpha/2), -d * sin(alpha/2), 0] ] )
+        O  = array( [x, y, z] )
+
+        rx = self.rotationMatrix(theta, [1,0,0])
+        ry = self.rotationMatrix(phi, [0,1,0])
+        rz = self.rotationMatrix(gamma, [0,0,1])
+        r = rz * ry * rx
+
+        H1 = (r * H1.T).T
+        H2 = (r * H2.T).T
+        
+        H1 += O
+        H2 += O
+        
+        H1 = array(H1)[0]
+        H2 = array(H2)[0]
+
+        return [ coord for atom in [O, H1, H2] for coord in atom]
+
+    def coord2param(self, xyz):
+        """
+    This function takes the (x,y,z) coordinates of the atoms of a water molecule,
+    and returns a parametrised coordinate set for the water molecule.
+    The parametrisation is as follows:
+    p = [ x, y, z, theta, phi, gamma ]
+    where x,y,z give the coordinates of the oxygen atom. The three
+    angles describe rotations that are applied to the molecule.
+    The initial configuration has the oxygen atom at (0,0,0),
+    one hydrogen atom at (d*cos(alpha/2), d*sin(alpha/2), 0)
+    and the other at (d*cos(alpha/2), -d*sin(alpha/2), 0),
+    where d is the distance from the oxygen atom to a hydrogen atom,
+    and alpha is the angle between the two hydrogen atoms.
+
+    Parameters
+    ----------
+    xyz : [float]
+        An array of the form:
+        [ x1, y1, z1, x2, y2, z2, x3, y3, z3 ]
+        Where (x1, y1, z1) is the coordinate of the oxygen atom
+        (x2, y2, z2) is the coordinate of the first hydrogen atom and
+        (x3, y3, z3) is the coordinate of the second hydrogen atom.
+
+    Returns
+    -------
+    p : [float]
+        An array of the form:
+        [ x, y, z, theta, phi, gamma ]
+        where theta is in [0, pi], phi is in [0, 2*pi], and
+        gamma is in [0, 2*pi].
+        See above for information on what each parameter means.
+    """
+
+        O = matrix(xyz[:3])
+        H1 = matrix(xyz[3:6]) - O
+        H2 = matrix(xyz[6:9]) - O
+
+        u = (H1+H2)/2
+        u = u / linalg.norm(u) 
+        v  = array(u)[0]
+
+        gamma = arctan2( -v[1], v[0] )
+        phi = arctan2( -v[2], ( v[1] * sin(gamma) - v[0] * cos(gamma) ) ) + pi
+
+        rz = self.rotationMatrix(gamma, [0,0,1])
+        ry = self.rotationMatrix(phi, [0,1,0])
+        r = ry * rz
+
+        H1 = (r * H1.T).T
+        H1 = array(H1)[0]
+        theta = arctan2(-H1[2],H1[1])
+
+        return( [value for s in [array(O)[0], [-theta, -phi, -gamma] ] for value in s]  )
 
 class Trid(Benchmark):
 
