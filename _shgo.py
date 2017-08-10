@@ -485,6 +485,141 @@ class SHGO(object):
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
+    # Minimiser pool processing
+    def minimise_pool(self, force_iter=False):
+        """
+        This processing method can optionally minimise only the best candidate
+        solutions in the minimiser pool
+
+        Parameters
+        ----------
+
+        force_iter : int
+                     Number of starting minimisers to process (can be sepcified
+                     globally or locally)
+
+        """
+
+        # Find first local minimum
+        # NOTE: Since we always minimize this value regardless it is a waste to
+        # build the topograph first before minimizing
+        lres_f_min = self.minimize(self.X_min[[0]])
+
+        # Trim minimised point from current minimiser set
+        self.trim_min_pool(0)
+
+        # Force processing to only
+        if force_iter:
+            self.iter = force_iter
+
+        while not self.stopiter:
+            if self.iter is not None:  # Note first iteration is outside loop
+                logging.info('SHGO.iter = {}'.format(self.iter))
+                self.iter -= 1
+                if __name__ == '__main__':
+                    if self.iter == 0:
+                        self.stopiter = True
+                        break
+                    #TODO: Test usage of iterative features
+
+            if numpy.shape(self.X_min)[0] == 0:
+                self.stopiter = True
+                break
+
+            # Construct topograph from current minimiser set
+            # (NOTE: This is a very small topograph using only the miniser pool
+            #        , it might be worth using some graph theory tools instead.
+            self.g_topograph(lres_f_min.x, self.X_min)
+
+            # Find local minimum at the miniser with the greatest euclidean
+            # distance from the current solution
+            ind_xmin_l = self.Z[:, -1]
+            lres_f_min = self.minimize(self.Ss[:, -1])
+
+            # Trim minimised point from current minimiser set
+            self.trim_min_pool(ind_xmin_l)
+        return
+
+    # Minimize a starting point locally
+    def minimize(self, x_min):
+        """
+        This function is used to calculate the local minima using the specified
+        sampling point as a starting value.
+
+        Parameters
+        ----------
+        x_min : vector of floats
+            Current starting point to minimise.
+
+        Returns
+        -------
+        lres : OptimizeResult
+            The local optimization result represented as a `OptimizeResult`
+            object.
+        """
+        if self.callback is not None:
+            print('Callback for '
+                  'minimizer starting at {}:'.format(x_min))
+
+        if self.disp:
+            print('Starting '
+                  'minimization at {}...'.format(x_min))
+
+        # TODO: Optionally construct bounds if minimizer_kwargs is a
+        #      solver that accepts bounds
+        if 0:
+            pass
+            print(f'x_min = {x_min}')
+            x_min_t = tuple(x_min[0])
+            print(f'x_min_t = {x_min_t}')
+            self.minimizer_kwargs['bounds'] = \
+                self.contstruct_lcb(self.HC.V[x_min_t])
+
+            print('bounds in kwarg:')
+            print(self.minimizer_kwargs['bounds'])
+
+        lres = scipy.optimize.minimize(self.func, x_min,
+                                       **self.minimizer_kwargs)
+
+        if self.disp:
+            print('lres = {}'.format(lres))
+        # Local function evals for all minimisers
+        self.res.nlfev += lres.nfev
+        self.x_min_glob.append(lres.x)
+        try:  # Needed because of the brain dead 1x1 numpy arrays
+            self.fun_min_glob.append(lres.fun[0])
+        except (IndexError, TypeError):
+            self.fun_min_glob.append(lres.fun)
+
+        return lres
+
+    # Post local minimisation processing
+    def sort_result(self):
+        """
+        Sort results and build the global return object
+        """
+        import numpy
+        # Sort results and save
+        self.x_min_glob = numpy.array(self.x_min_glob)
+        self.fun_min_glob = numpy.array(self.fun_min_glob)
+
+        # Sorted indexes in Func_min
+        ind_sorted = numpy.argsort(self.fun_min_glob)
+
+        # Save ordered list of minima
+        self.res.xl = self.x_min_glob[ind_sorted]  # Ordered x vals #TODO: Check
+        self.fun_min_glob = numpy.array(self.fun_min_glob)
+        self.res.funl = self.fun_min_glob[ind_sorted]
+        self.res.funl = self.res.funl.T
+
+        # Find global of all minimisers
+        self.res.x = self.x_min_glob[ind_sorted[0]]  # Save global minima
+        self.res.fun = self.fun_min_glob[ind_sorted[0]] # Save global fun value
+
+        # Add local func evals to sampling func evals
+        self.res.nfev += self.res.nlfev
+        return
+
 # %% Define shgo class using simplicial hypercube sampling
 class SHGOh(SHGO):
     """
@@ -798,113 +933,6 @@ class SHGOh(SHGO):
         self.Ss = X_min[self.Z]
         return self.Ss
 
-    def minimise_pool(self, force_iter=False):
-        """
-        This processing method can optionally minimise only the best candidate
-        solutions in the minimiser pool
-
-        Parameters
-        ----------
-
-        force_iter : int
-                     Number of starting minimisers to process (can be sepcified
-                     globally or locally)
-
-        """
-
-        # Find first local minimum
-        # NOTE: Since we always minimize this value regardless it is a waste to
-        # build the topograph first before minimizing
-        lres_f_min = self.minimize(self.X_min[[0]])
-
-        # Trim minimised point from current minimiser set
-        self.trim_min_pool(0)
-
-        # Force processing to only
-        if force_iter:
-            self.iter = force_iter
-
-        while not self.stopiter:
-            if self.iter is not None:  # Note first iteration is outside loop
-                logging.info('SHGO.iter = {}'.format(self.iter))
-                self.iter -= 1
-                if __name__ == '__main__':
-                    if self.iter == 0:
-                        self.stopiter = True
-                        break
-                    #TODO: Test usage of iterative features
-
-            if numpy.shape(self.X_min)[0] == 0:
-                self.stopiter = True
-                break
-
-            #TODO: OLD code, repleace
-            # Construct topograph from current minimiser set
-            # (NOTE: This is a very small topograph using only the miniser pool
-            #        , it might be worth using some graph theory tools instead.
-            self.g_topograph(lres_f_min.x, self.X_min)
-
-            # Find local minimum at the miniser with the greatest euclidean
-            # distance from the current solution
-            ind_xmin_l = self.Z[:, -1]
-            lres_f_min = self.minimize(self.Ss[:, -1])
-
-            # Trim minimised point from current minimiser set
-            self.trim_min_pool(ind_xmin_l)
-        return
-
-    def minimize(self, x_min):
-        """
-        This function is used to calculate the local minima using the specified
-        sampling point as a starting value.
-
-        Parameters
-        ----------
-        x_min : vector of floats
-            Current starting point to minimise.
-
-        Returns
-        -------
-        lres : OptimizeResult
-            The local optimization result represented as a `OptimizeResult`
-            object.
-        """
-        if self.callback is not None:
-            print('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
-
-        if self.disp:
-            print('Starting '
-                  'minimization at {}...'.format(x_min))
-
-
-        #TODO: Optionally construct bounds if minimizer_kwargs is a
-        #      solver that accepts bounds
-        if 1:
-            pass
-            print(f'x_min = {x_min}')
-            x_min_t = tuple(x_min[0])
-            print(f'x_min_t = {x_min_t}')
-            self.minimizer_kwargs['bounds'] = \
-                self.contstruct_lcb(self.HC.V[x_min_t])
-
-        print('bounds in kwarg:')
-        print(self.minimizer_kwargs['bounds'])
-        lres = scipy.optimize.minimize(self.func, x_min,
-                                       **self.minimizer_kwargs)
-
-        if self.disp:
-            print('lres = {}'.format(lres))
-        # Local function evals for all minimisers
-        self.res.nlfev += lres.nfev
-        self.x_min_glob.append(lres.x)
-        try:  # Needed because of the brain dead 1x1 numpy arrays
-            self.fun_min_glob.append(lres.fun[0])
-        except (IndexError, TypeError):
-            self.fun_min_glob.append(lres.fun)
-
-        return lres
-
     def contstruct_lcb(self, v_min):
         """
         Contstruct locally (approximately) convex bounds
@@ -943,33 +971,6 @@ class SHGOh(SHGO):
 
         return cbounds
 
-    # Post local minimisation processing
-    def sort_result(self):
-        """
-        Sort results and build the global return object
-        """
-        import numpy
-        # Sort results and save
-        self.x_min_glob = numpy.array(self.x_min_glob)
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
-
-        # Sorted indexes in Func_min
-        ind_sorted = numpy.argsort(self.fun_min_glob)
-
-        # Save ordered list of minima
-        self.res.xl = self.x_min_glob[ind_sorted]  # Ordered x vals #TODO: Check
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
-        self.res.funl = self.fun_min_glob[ind_sorted]
-        self.res.funl = self.res.funl.T
-
-        # Find global of all minimisers
-        self.res.x = self.x_min_glob[ind_sorted[0]]  # Save global minima
-        self.res.fun = self.fun_min_glob[ind_sorted[0]] # Save global fun value
-
-        # Add local func evals to sampling func evals
-        self.res.nfev += self.res.nlfev
-        return
-
 
 # %% Define shgo class using arbitrary (ex Sobol) sampling
 class SHGOs(SHGO):
@@ -986,7 +987,8 @@ class SHGOs(SHGO):
                     options=options, multiproc=multiproc, iterative_mode=iterative_mode,
                         sampling_method=sampling_method)
 
-    def construct_complex_simplicial(self):
+    def construct_complex_simplicial_dep(self):
+        # NOTE: This function is different from hypercube and should be removed
         from triangulation_simplices import Complex
 
         # Initiate complex
@@ -1159,7 +1161,6 @@ class SHGOs(SHGO):
                 self.res.nfev = self.fn
                 sample = False
         pass
-
 
     def construct_complex_sobol_iter(self, n_growth_init=30):
         """
@@ -1589,60 +1590,7 @@ class SHGOs(SHGO):
         return
 
 
-    # Minimiser pool processing
-    def minimise_pool(self, force_iter=False):
-        """
-        This processing method can optionally minimise only the best candidate
-        solutions in the minimiser pool
 
-        Parameters
-        ----------
-
-        force_iter : int
-                     Number of starting minimisers to process (can be sepcified
-                     globally or locally)
-
-        """
-
-        # Find first local minimum
-        # NOTE: Since we always minimize this value regardless it is a waste to
-        # build the topograph first before minimizing
-        lres_f_min = self.minimize(self.X_min[[0]])
-
-        # Trim minimised point from current minimiser set
-        self.trim_min_pool(0)
-
-        # Force processing to only
-        if force_iter:
-            self.iter = force_iter
-
-        while not self.stopiter:
-            if self.iter is not None:  # Note first iteration is outside loop
-                logging.info('SHGO.iter = {}'.format(self.iter))
-                self.iter -= 1
-                if __name__ == '__main__':
-                    if self.iter == 0:
-                        self.stopiter = True
-                        break
-                    #TODO: Test usage of iterative features
-
-            if numpy.shape(self.X_min)[0] == 0:
-                self.stopiter = True
-                break
-
-            # Construct topograph from current minimiser set
-            # (NOTE: This is a very small topograph using only the miniser pool
-            #        , it might be worth using some graph theory tools instead.
-            self.g_topograph(lres_f_min.x, self.X_min)
-
-            # Find local minimum at the miniser with the greatest euclidean
-            # distance from the current solution
-            ind_xmin_l = self.Z[:, -1]
-            lres_f_min = self.minimize(self.Ss[:, -1])
-
-            # Trim minimised point from current minimiser set
-            self.trim_min_pool(ind_xmin_l)
-        return
 
     def g_topograph(self, x_min, X_min):
         """
@@ -1660,46 +1608,6 @@ class SHGOs(SHGO):
 
         self.Ss = X_min[self.Z]
         return self.Ss
-
-
-    def minimize(self, x_min):
-        """
-        This function is used to calculate the local minima using the specified
-        sampling point as a starting value.
-
-        Parameters
-        ----------
-        x_min : vector of floats
-            Current starting point to minimise.
-
-        Returns
-        -------
-        lres : OptimizeResult
-            The local optimization result represented as a `OptimizeResult`
-            object.
-        """
-        if self.callback is not None:
-            print('Callback for '
-                  'minimizer starting at {}:'.format(x_min))
-
-        if self.disp:
-            print('Starting '
-                  'minimization at {}...'.format(x_min))
-
-        lres = scipy.optimize.minimize(self.func, x_min,
-                                       **self.minimizer_kwargs)
-
-        if self.disp:
-            print('lres = {}'.format(lres))
-        # Local function evals for all minimisers
-        self.res.nlfev += lres.nfev
-        self.x_min_glob.append(lres.x)
-        try:  # Needed because of the brain dead 1x1 numpy arrays
-            self.fun_min_glob.append(lres.fun[0])
-        except (IndexError, TypeError):
-            self.fun_min_glob.append(lres.fun)
-
-        return lres
 
     def delaunay_triangulation(self, grow=False, n_prc=0):
         from scipy.spatial import Delaunay
@@ -1818,34 +1726,6 @@ class SHGOs(SHGO):
             self.X_min = []
 
         return self.X_min
-
-    # Post local minimisation processing
-    def sort_result(self):
-        """
-        Sort results and build the global return object
-        """
-        import numpy
-        # Sort results and save
-        self.x_min_glob = numpy.array(self.x_min_glob)
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
-
-        # Sorted indexes in Func_min
-        ind_sorted = numpy.argsort(self.fun_min_glob)
-
-        # Save ordered list of minima
-        self.res.xl = self.x_min_glob[ind_sorted]  # Ordered x vals #TODO: Check
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
-        self.res.funl = self.fun_min_glob[ind_sorted]
-        self.res.funl = self.res.funl.T
-
-        # Find global of all minimisers
-        self.res.x = self.x_min_glob[ind_sorted[0]]  # Save global minima
-        self.res.fun = self.fun_min_glob[ind_sorted[0]] # Save global fun value
-
-        # Add local func evals to sampling func evals
-        self.res.nfev += self.res.nlfev
-        return
-
 
 
 if __name__ == '__main__':
