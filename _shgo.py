@@ -8,7 +8,6 @@ import scipy.spatial
 import scipy.optimize
 import logging
 from triangulation import *
-#from . import __file__
 
 try:
     pass
@@ -279,15 +278,16 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     """
     # Initiate SHGO class
     if sampling_method == 'simplicial':
-        SHc= SHGOh(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-                  iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                  options=options, multiproc=multiproc)
+        SHc = SHGOh(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
+                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                        sampling_method=sampling_method)
 
     elif sampling_method == 'sobol':
         SHc = SHGOs(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
                     options=options, multiproc=multiproc, iterative_mode=iterative_mode,
-                    sampling_method='sobol')
+                        sampling_method=sampling_method)
 
     else:
         raise IOError("""Unkown sampling_method specified, use either 
@@ -336,20 +336,16 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 
     return SHc.res
 
-
-# %% Define shgo class using simplicial hypercube sampling
-class SHGOh(object):
-    """
-    This class implements the shgo routine
-    """
-
+# %% Define the base SHGO class inherited by the different methods
+class SHGO(object):
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False):
+                 options=None, multiproc=False, iterative_mode=False,
+                    sampling_method='sobol'):
 
         self.func = func
-        self.bounds = bounds
         #  TODO Assert if func output matches dims. found from bounds
+        self.bounds = bounds
         self.m = len(self.bounds)  # Dimensions
         self.args = args
         self.g_cons = g_cons
@@ -363,7 +359,6 @@ class SHGOh(object):
         self.n_sampled = 0  # To track sampling points already evaluated
         self.fn = n  # Number of feasible samples remaining
         self.iter = iter
-
         self.callback = callback
         self.maxfev = None
         self.disp = False
@@ -376,13 +371,14 @@ class SHGOh(object):
                 self.symmetry = True
             else:
                 self.symmetry = False
+            if 'crystal_iter' in options:
+                self.crystal_iter = options['crystal_iter']
             if 'min_iter' in options:
                 self.min_iter = options['min_iter']
             if 'min_hgrd' in options:
                 self.min_hgrd = options['min_hgrd']
             else:
                 self.min_hgrd = 0
-
 
             self.options = None
 
@@ -411,6 +407,7 @@ class SHGOh(object):
             for g in self.g_func:
                 self.min_cons.append({'type': 'ineq',
                                       'fun': g})
+
 
         # Define local minimization keyword arguments
         if minimizer_kwargs is not None:
@@ -448,11 +445,9 @@ class SHGOh(object):
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
-                                     #'method': 'COBYLA',
-                                     #'method': 'L-BFGS-B',
                                      'bounds': self.bounds,
                                      'options': {'ftol': 1e-12
-                                                 #,'eps': 1e-15
+                                                 # ,'eps': 1e-15
                                                  },
                                      'callback': self.callback
                                      }
@@ -460,20 +455,25 @@ class SHGOh(object):
             if g_cons is not None:
                 self.minimizer_kwargs['constraints'] = self.min_cons
 
-            if options is not None:
-                if 'ftol' in options:
-                    self.minimizer_kwargs['options']['ftol'] = \
-                        options['ftol']
-                if 'maxfev' in options:
-                    self.minimizer_kwargs['options']['maxfev'] = \
-                        options['maxfev']
-                if 'disp' in options:
-                    self.minimizer_kwargs['options']['disp'] = options['disp']
+        if options is not None:
+            if 'ftol' in options:
+                self.minimizer_kwargs['options']['ftol'] = \
+                    options['ftol']
+            if 'maxfev' in options:
+                self.minimizer_kwargs['options']['maxfev'] = \
+                    options['maxfev']
+            if 'disp' in options:
+                self.minimizer_kwargs['options']['disp'] = options['disp']
 
         # Algorithm controls
         self.stopiter = False
         self.break_routine = False
         self.multiproc = multiproc
+
+        # SOBOL SAMPLING v SIMPLICIAL
+        self.iterative_mode = iterative_mode
+        # self.sampling = sampling
+        self.sampling_method = sampling_method
 
         # Initiate storate objects used in alorithm classes
         self.x_min_glob = []
@@ -484,6 +484,21 @@ class SHGOh(object):
         self.res.nfev = 0  # Include each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
+
+# %% Define shgo class using simplicial hypercube sampling
+class SHGOh(SHGO):
+    """
+    This class implements the shgo routine
+    """
+    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
+                 iter=None, callback=None, minimizer_kwargs=None,
+                 options=None, multiproc=False, iterative_mode=False,
+                    sampling_method='sobol'):
+
+        SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
+                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                        sampling_method=sampling_method)
 
     def construct_complex_simplicial(self):
         if self.disp:
@@ -957,143 +972,19 @@ class SHGOh(object):
 
 
 # %% Define shgo class using arbitrary (ex Sobol) sampling
-class SHGOs(object):
+class SHGOs(SHGO):
     """
     This class implements the shgo routine
     """
-
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, multiproc=False, iterative_mode=False,
-                 sampling_method='sobol'):
+                    sampling_method='sobol'):
 
-        self.iterative_mode = iterative_mode
-        #self.sampling = sampling
-        self.sampling_method = sampling_method
-        self.func = func
-        self.bounds = bounds
-        self.args = args
-        self.g_cons = g_cons
-        if type(g_cons) is not tuple and type(g_cons) is not list:
-            self.g_func = (g_cons,)
-        else:
-            self.g_func = g_cons
-
-        self.g_args = g_args
-        self.n = n
-        self.n_sampled = 0  # To track sampling points already evaluated
-        self.fn = n  # Number of feasible samples remaining
-        self.iter = iter
-
-        self.callback = callback
-        self.maxfev = None
-        self.disp = False
-        if options is not None:
-            if 'maxfev' in options:
-                self.maxfev = options['maxfev']
-            if 'disp' in options:
-                self.disp = options['disp']
-            if 'symmetry' in options:
-                self.symmetry = True
-            if 'crystal_iter' in options:
-                self.crystal_iter = options['crystal_iter']
-
-            self.options = None
-
-        else:
-            self.symmetry = False
-            self.crystal_iter = 1
-
-        # set bounds
-        abound = numpy.array(bounds, float)
-        self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
-        # Check if bounds are correctly specified
-        bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
-        # Set none finite values to large floats
-        infind = ~numpy.isfinite(abound)
-        abound[infind[:, 0], 0] = -1e50  # e308
-        abound[infind[:, 1], 1] = 1e50  # e308
-        if bnderr.any():
-            raise ValueError('Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
-
-        self.bounds = abound
-
-        # Define constraint function used in local minimisation
-        if g_cons is not None:
-            self.min_cons = []
-            for g in self.g_func:
-                self.min_cons.append({'type': 'ineq',
-                                      'fun': g})
-
-        # Define local minimization keyword arguments
-        if minimizer_kwargs is not None:
-            self.minimizer_kwargs = minimizer_kwargs
-            if 'args' not in minimizer_kwargs:
-                self.minimizer_kwargs['args'] = self.args
-
-            if 'method' not in minimizer_kwargs:
-                self.minimizer_kwargs['method'] = 'SLSQP'
-
-            if 'bounds' not in minimizer_kwargs:
-                self.minimizer_kwargs['bounds'] = self.bounds
-
-            if 'options' not in minimizer_kwargs:
-                minimizer_kwargs['options'] = {'ftol': 1e-12}
-
-                if options is not None:
-                    if 'ftol' in options:
-                        self.minimizer_kwargs['options']['ftol'] = \
-                            options['ftol']
-                    if 'maxfev' in options:
-                        self.minimizer_kwargs['options']['maxfev'] = \
-                            options['maxfev']
-                    if 'disp' in options:
-                        self.minimizer_kwargs['options']['disp'] = \
-                            options['disp']
-
-            if 'callback' not in minimizer_kwargs:
-                minimizer_kwargs['callback'] = self.callback
-
-            if self.minimizer_kwargs['method'] == 'SLSQP' or \
-                            self.minimizer_kwargs['method'] == 'COBYLA':
-                if 'constraints' not in minimizer_kwargs:
-                    minimizer_kwargs['constraints'] = self.min_cons
-        else:
-            self.minimizer_kwargs = {'args': self.args,
-                                     'method': 'SLSQP',
-                                     'bounds': self.bounds,
-                                     'options': {'ftol': 1e-12},
-                                     'callback': self.callback
-                                     }
-
-            if g_cons is not None:
-                self.minimizer_kwargs['constraints'] = self.min_cons
-
-            if options is not None:
-                if 'ftol' in options:
-                    self.minimizer_kwargs['options']['ftol'] = \
-                        options['ftol']
-                if 'maxfev' in options:
-                    self.minimizer_kwargs['options']['maxfev'] = \
-                        options['maxfev']
-                if 'disp' in options:
-                    self.minimizer_kwargs['options']['disp'] = options['disp']
-
-        # Algorithm controls
-        self.stopiter = False
-        self.break_routine = False
-        self.multiproc = multiproc
-
-        # Initiate storate objects used in alorithm classes
-        self.x_min_glob = []
-        self.fun_min_glob = []
-
-        # Initialize return object
-        self.res = scipy.optimize.OptimizeResult()
-        self.res.nfev = 0  # Include each sampling point as func evaluation
-        self.res.nlfev = 0  # Local function evals for all minimisers
-        self.res.nljev = 0  # Local jacobian evals for all minimisers
+        SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
+                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                        sampling_method=sampling_method)
 
     def construct_complex_simplicial(self):
         from triangulation_simplices import Complex
