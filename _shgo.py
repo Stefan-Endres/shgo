@@ -349,10 +349,13 @@ class SHGO(object):
         self.m = len(self.bounds)  # Dimensions
         self.args = args
         self.g_cons = g_cons
-        if type(g_cons) is not tuple and type(g_cons) is not list:
-            self.g_func = (g_cons,)
+        if g_cons is not None:
+            if (type(g_cons) is not tuple) and (type(g_cons) is not list):
+                self.g_func = (g_cons,)
+            else:
+                self.g_func = g_cons
         else:
-            self.g_func = g_cons
+            self.g_func = None
 
         self.g_args = g_args
         self.n = n
@@ -640,7 +643,7 @@ class SHGOh(SHGO):
             print('Building initial complex')
 
         self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.bounds, self.g_cons, self.g_args)
+                          self.symmetry, self.bounds, self.g_func, self.g_args)
 
         if self.disp:
             print('Splitting first generation')
