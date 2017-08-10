@@ -17,7 +17,7 @@ except ImportError:
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
-         multiproc=False, crystal_mode=False, sampling_method='sobol'):
+         multiproc=False, iterative_mode=False, sampling_method='sobol'):
     #TODO: Update documentation
 
     # sampling_method: str, options = 'sobol', 'simplicial'
@@ -276,11 +276,11 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
     """
-    # Initiate TGO class
-    SHc= SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-              iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-              options=options, multiproc=multiproc, crystal_mode=crystal_mode,
-              sampling_method='sobol')
+    # Initiate SHGO class
+    SHc= SHGOs(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+               iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
+               options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+               sampling_method='sobol')
 
     # Generate sampling points
     if SHc.disp:
@@ -319,18 +319,18 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
     return SHc.res
 
 
-# %% Define tgo class
-class SHGO(object):
+# %% Define shgo class using arbitrary sampling
+class SHGOs(object):
     """
     This class implements the shgo routine
     """
 
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False, crystal_mode=False,
+                 options=None, multiproc=False, iterative_mode=False,
                  sampling_method='sobol'):
 
-        self.crystal_mode = crystal_mode
+        self.crystal_mode = iterative_mode
         #self.sampling = sampling
         self.sampling_method = sampling_method
         self.func = func
@@ -1346,7 +1346,7 @@ if __name__ == '__main__':
     #SHGOc2.construct_complex_simplicial()
 
     print(shgo(f, bounds,
-               crystal_mode=True,
+               iterative_mode=True,
                sampling_method='simplicial'))
     print('='*100)
     print('Sobol shgo:')

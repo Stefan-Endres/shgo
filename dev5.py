@@ -1,4 +1,4 @@
-from _shgo_sobol import *
+# Local minimisation dev
 
 bounds = [(-1, 1), (-1, 1)]
 n = 10

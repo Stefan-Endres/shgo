@@ -7,7 +7,8 @@ NOTE: For TestTgoFuncs test_f1 and test_f2 adequately test the
 """
 import unittest
 import numpy
-from _shgo_sobol import *
+#from _shgo_sobol import *
+from _shgo import *
 from _tgo import *
 # from scipy.optimize import _tgo
 # from scipy.optimize._tgo import tgo
@@ -323,8 +324,20 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=100)
 
+        #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+        #            g_args=g_args, n=100, iter=None, iterative_mode=True)
+
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=None, crystal_mode=True)
+                    g_args=g_args, n=100, iter=None,
+                    iterative_mode=False, sampling_method='sobol')
+
+        ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+                    g_args=g_args, n=100, iter=None,
+                    iterative_mode=True, sampling_method='simplicial')
+
+        #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+        #            g_args=g_args, n=100, iter=None,
+        #            iterative_mode=True, sampling_method='simplicial')
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -343,7 +356,8 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000)#, crystal_mode=True)
+                    g_args=g_args, n=1000,
+                    iterative_mode=False, sampling_method='sobol')#, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -354,7 +368,7 @@ def run_test(test, args=(), g_args=()):
     #if test == test11_1:
     #    res = a(test.f, test.bounds, g_cons=test.g, n=10)
 
-    if True:
+    if False:
         logging.info("=" * 100)
         logging.info("=" * 100)
         logging.info("Topographical Global Optimization: ")
