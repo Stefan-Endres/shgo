@@ -17,7 +17,7 @@ except ImportError:
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
-         multiproc=False, iterative_mode=True, sampling_method='simplicial'):
+         multiproc=False, sampling_method='simplicial'):
     #TODO: Update documentation
 
     # sampling_method: str, options = 'sobol', 'simplicial'
@@ -280,13 +280,13 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     if sampling_method == 'simplicial':
         SHc = SHGOh(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                    options=options, multiproc=multiproc,
                         sampling_method=sampling_method)
 
     elif sampling_method == 'sobol':
         SHc = SHGOs(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                    options=options, multiproc=multiproc,
                         sampling_method=sampling_method)
 
     else:
@@ -302,7 +302,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 
     # Construct directed complex.
 
-    if iterative_mode and not SHc.break_routine:
+    if (iter is not None) and not SHc.break_routine:
         logging.info('Attempting to grow crystal complex')
         if sampling_method == 'sobol':
             SHc.construct_complex_sobol_iter()
@@ -340,7 +340,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 class SHGO(object):
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False, iterative_mode=False,
+                 options=None, multiproc=False,
                     sampling_method='sobol'):
 
         self.func = func
@@ -474,7 +474,6 @@ class SHGO(object):
         self.multiproc = multiproc
 
         # SOBOL SAMPLING v SIMPLICIAL
-        self.iterative_mode = iterative_mode
         # self.sampling = sampling
         self.sampling_method = sampling_method
 
@@ -630,12 +629,12 @@ class SHGOh(SHGO):
     """
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False, iterative_mode=False,
+                 options=None, multiproc=False,
                     sampling_method='sobol'):
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                    options=options, multiproc=multiproc,
                         sampling_method=sampling_method)
 
     def construct_complex_simplicial(self):
@@ -680,16 +679,6 @@ class SHGOh(SHGO):
             self.HC.split_generation()
             gen = 1
 
-            if 0:
-                #self.HC.c[].homology_group_rank()
-                self.HC.split_generation()
-                gen += 1
-                #self.HC.split_generation()
-                #gen += 1
-         #   self.HC.split_generation()
-         #   gen = 2
-            #self.HC.split_generation() #TODO REMOVE THIS
-            #gen +=1
             while not Stop:
                 #self.HC.split_generation()
                 #self.HC.plot_complex()
@@ -768,6 +757,16 @@ class SHGOh(SHGO):
         # Count the number of vertices and add to function evaluations:
         self.res.nfev += len(self.HC.V.cache)
         return
+
+    def construct_complex_finite_simplicial(self):
+        """
+        Stop iterations when stopping criteria (sampling points or
+        processing time) have been met.
+
+        Returns
+        -------
+
+        """
 
     def construct_complex_simplicial_2(self):
         if self.disp:
@@ -982,12 +981,12 @@ class SHGOs(SHGO):
     """
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False, iterative_mode=False,
+                 options=None, multiproc=False,
                     sampling_method='sobol'):
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc, iterative_mode=iterative_mode,
+                    options=options, multiproc=multiproc,
                         sampling_method=sampling_method)
 
     def construct_complex_simplicial_dep(self):
@@ -1592,9 +1591,6 @@ class SHGOs(SHGO):
         self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
         return
 
-
-
-
     def g_topograph(self, x_min, X_min):
         """
         Returns the topographical vector stemming from the specified value
@@ -1888,8 +1884,7 @@ if __name__ == '__main__':
         #SHGOc2.HC.plot_complex()
 
     if 0:
-        print(shgo(f, bounds,
-                   iterative_mode=True,
+        print(shgo(f, bounds, iter=1,
                    sampling_method='simplicial'))
         print('='*100)
         print('Sobol shgo:')
