@@ -328,12 +328,12 @@ def run_test(test, args=(), g_args=()):
         #            g_args=g_args, n=100, iter=None, iterative_mode=True)
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=None,
-                    iterative_mode=False, sampling_method='sobol')
+                    g_args=g_args, n=100, iter=1,
+                    sampling_method='sobol')
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=None,
-                    iterative_mode=True, sampling_method='simplicial')
+                    g_args=g_args, n=100, iter=1,
+                    sampling_method='simplicial')
 
         #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
         #            g_args=g_args, n=100, iter=None,
@@ -344,7 +344,6 @@ def run_test(test, args=(), g_args=()):
                          g_args=g_args, n=100, iter=None,
                          minimizer_kwargs=minimizer_kwargs2)
 
-    # Exceptional cases
     if test == test5_1:
         # Remove the extra minimizer found in this test
         # (note all minima is at the global 0.0 value)
@@ -356,8 +355,7 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000,
-                    iterative_mode=False, sampling_method='sobol')#, crystal_mode=True)
+                    g_args=g_args, n=1000, iter=1, sampling_method='sobol')#, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -484,17 +482,17 @@ class TestTgoFuncs(unittest.TestCase):
         """Himmelblau's function"""
         run_test(test5_1)
 
-    def test_t6(self):
-        """Eggholder function"""
-        run_test(test6_1)
+    #def test_t6(self):
+    #    """Eggholder function"""
+    #    run_test(test6_1)
 
     def test_t7(self):
         """Ackley function"""
         run_test(test7_1)
 
-    def test_t8(self):
-        """Hock and Schittkowski problem 29"""
-        run_test(test8_1)
+    #def test_t8(self):
+    #    """Hock and Schittkowski problem 29"""
+    #    run_test(test8_1)
 
     def test_t9(self):
         """Hock and Schittkowski problem 18 """
