@@ -379,6 +379,8 @@ class SHGO(object):
                 self.crystal_iter = options['crystal_iter']
             if 'min_iter' in options:
                 self.min_iter = options['min_iter']
+            if 'max_iter' in options:
+                self.min_iter = options['max_iter']
             if 'min_hgrd' in options:
                 self.min_hgrd = options['min_hgrd']
             else:
@@ -474,6 +476,8 @@ class SHGO(object):
         self.break_routine = False
         self.multiproc = multiproc
 
+        self.stop_evaluation = None  #TODO Assign a function based on inputs ex. maxeval or max n
+
         # SOBOL SAMPLING v SIMPLICIAL
         # self.sampling = sampling
         self.sampling_method = sampling_method
@@ -543,6 +547,45 @@ class SHGO(object):
             self.trim_min_pool(ind_xmin_l)
         return
 
+    # Local bound functions
+    def contstruct_lcb(self, v_min):
+        """
+        Contstruct locally (approximately) convex bounds
+
+        Parameters
+        ----------
+        v_min : Vertex object
+                The minimiser vertex
+        Returns
+        -------
+        bounds : List of size dim with tuple of bounds for each dimension
+        """
+        cbounds = []
+        #for x_i in v_min.x:
+        #    bounds.append([x_i, x_i])
+        for x_i in self.bounds:
+            cbounds.append([x_i[0], x_i[1]])
+
+        # Loop over all bounds
+        for vn in v_min.nn:
+            #for i, x_i in enumerate(vn.x):
+            for i, x_i in enumerate(vn.x_a):
+                # Lower bound
+                #if x_i > cbounds[i][0] and (x_i < self.bounds[i][0]):
+                if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
+                #if x_i < bounds[i][0]:
+                    cbounds[i][0] = x_i
+
+                # Upper bound
+                #if x_i < cbounds[i][1] and (x_i > self.bounds[i][1]):
+                if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
+                #if x_i > bounds[i][1]:
+                    cbounds[i][1] = x_i
+
+
+
+        return cbounds
+
     # Minimize a starting point locally
     def minimize(self, x_min):
         """
@@ -570,8 +613,7 @@ class SHGO(object):
 
         # TODO: Optionally construct bounds if minimizer_kwargs is a
         #      solver that accepts bounds
-        if 0:
-            pass
+        if self.sampling_method == 'simplicial': #TODO: Arbitrary sampling input
             print(f'x_min = {x_min}')
             x_min_t = tuple(x_min[0])
             print(f'x_min_t = {x_min_t}')
@@ -638,6 +680,15 @@ class SHGOh(SHGO):
                     options=options, multiproc=multiproc,
                         sampling_method=sampling_method)
 
+
+    def construct_initial_complex(self):
+        if self.disp:
+            print('Building initial complex')
+
+        self.HC = Complex(self.dim, self.func, self.args,
+                          self.symmetry, self.bounds, self.g_func, self.g_args)
+        return
+
     def construct_complex_iteratively(self):
         """
         Stop iterations when stopping criteria (sampling points or
@@ -648,11 +699,7 @@ class SHGOh(SHGO):
         -------
 
         """
-        if self.disp:
-            print('Building initial complex')
-
-        self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.bounds, self.g_func, self.g_args)
+        self.construct_initial_complex()
 
         if self.disp:
             print('Splitting first generation')
@@ -671,11 +718,7 @@ class SHGOh(SHGO):
         pass
 
     def construct_complex_simplicial(self):
-        if self.disp:
-            print('Building initial complex')
-
-        self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.bounds, self.g_func, self.g_args)
+        self.construct_initial_complex()
 
         if self.disp:
             print('Splitting first generation')
@@ -872,43 +915,7 @@ class SHGOh(SHGO):
         self.Ss = X_min[self.Z]
         return self.Ss
 
-    def contstruct_lcb(self, v_min):
-        """
-        Contstruct locally (approximately) convex bounds
 
-        Parameters
-        ----------
-        v_min : Vertex object
-                The minimiser vertex
-        Returns
-        -------
-        bounds : List of size dim with tuple of bounds for each dimension
-        """
-        cbounds = []
-        #for x_i in v_min.x:
-        #    bounds.append([x_i, x_i])
-        for x_i in self.bounds:
-            cbounds.append([x_i[0], x_i[1]])
-
-        # Loop over all bounds
-        for vn in v_min.nn:
-            #for i, x_i in enumerate(vn.x):
-            for i, x_i in enumerate(vn.x_a):
-                # Lower bound
-                #if x_i > cbounds[i][0] and (x_i < self.bounds[i][0]):
-                if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
-                #if x_i < bounds[i][0]:
-                    cbounds[i][0] = x_i
-
-                # Upper bound
-                #if x_i < cbounds[i][1] and (x_i > self.bounds[i][1]):
-                if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
-                #if x_i > bounds[i][1]:
-                    cbounds[i][1] = x_i
-
-
-
-        return cbounds
 
 
 # %% Define shgo class using arbitrary (ex Sobol) sampling
