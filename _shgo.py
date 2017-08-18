@@ -290,8 +290,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
                     sampling_method=sampling_method)
 
     else:
-        raise IOError("""Unkown sampling_method specified, use either 
-                         'sobol' or 'simplicial""")
+        raise IOError("""Unknown sampling_method specified, use either 
+                         'sobol' or 'simplicial' """)
 
     # Generate sampling points
     if SHc.disp:
@@ -303,16 +303,19 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
     # Construct directed complex.
 
     if (iter is not None) and not SHc.break_routine:
-        logging.info('Attempting to grow crystal complex')
         if sampling_method == 'sobol':
+            logging.info('Attempting to iteratively refine Sobol sampled complex')
             SHc.construct_complex_sobol_iter()
         elif sampling_method == 'simplicial':
-            SHc.construct_complex_simplicial()
-    else:
-        logging.info('Attempting to build sobol sampled crystal')
+            logging.info('Attempting to iteratively refine triangulated complex')
+            SHc.construct_complex_iteratively()
+            #SHc.construct_complex_simplicial()
+    else:  # Finite sampling points
+
         if sampling_method == 'sobol':
             SHc.construct_complex_sobol()
         elif sampling_method == 'simplicial':
+            #SHc.construct_complex_iteratively()
             raise IOError('Not implemented yet')
 
     if not SHc.break_routine:
@@ -324,7 +327,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
             SHc.simplex_minimizers()
 
         # Minimise the pool of minisers with local minimisation methods
-        SHc.minimise_pool()
+        # Note that if Options['local_iter'] is an `int` instead of default
+        # value False then only that number of candidates will be minimised
+        SHc.minimise_pool(SHc.local_iter)
 
     # Sort results and build the global return object
     SHc.sort_result()
@@ -359,13 +364,13 @@ class SHGO(object):
             self.g_func = None
 
         self.g_args = g_args
-        self.n = n
-        self.n_sampled = 0  # To track sampling points already evaluated
-        self.fn = n  # Number of feasible samples remaining
-        self.iter = iter
+
         self.callback = callback
         self.maxfev = None
         self.disp = False
+        self.symmetry = False
+        self.crystal_iter = 1
+        self.local_iter = False
         if options is not None:
             if 'maxfev' in options:
                 self.maxfev = options['maxfev']
@@ -377,6 +382,10 @@ class SHGO(object):
                 self.symmetry = False
             if 'crystal_iter' in options:
                 self.crystal_iter = options['crystal_iter']
+            if 'local_iter' in options:  # Only evaluate a few of the best candiates
+                self.local_iter = options['local_iter']
+            else:  # Evaluate all minimisers
+                self.local_iter = False
             if 'min_iter' in options:
                 self.min_iter = options['min_iter']
             if 'max_iter' in options:
@@ -387,10 +396,6 @@ class SHGO(object):
                 self.min_hgrd = 0
 
             self.options = None
-
-        else:
-            self.symmetry = False
-            self.crystal_iter = 1
 
         # set bounds
         abound = numpy.array(bounds, float)
@@ -471,8 +476,25 @@ class SHGO(object):
             if 'disp' in options:
                 self.minimizer_kwargs['options']['disp'] = options['disp']
 
-        # Algorithm controls
-        self.stopiter = False
+        ## Algorithm controls
+        # Global controls
+        self.iter = iter
+        self.n = n
+        self.n_sampled = 0  # To track sampling points already evaluated
+        self.fn = n  # Number of feasible samples remaining
+
+        if (self.iter is not None) and (self.n is not None):
+            self.stop_global = False
+            # Define stop iteration method
+            self.stop_iter_m = self.finite_iterations
+        elif (self.n is not None) and (self.iter is not None):
+            pass
+        else:
+            IOError('SPECIFY ONLY ONE OF iter FINITE ITERATIONS OR n FINITE SAMPLING POINTS')
+
+        # Local controls
+        self.stop_l_iter = False  # Local minimisation iterations
+        self.stop_complex_iter = False  # Sampling iterations
         self.break_routine = False
         self.multiproc = multiproc
 
@@ -491,6 +513,11 @@ class SHGO(object):
         self.res.nfev = 0  # Include each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
+
+    # Iteration properties
+    def stop_iter_m(self):
+        #TODO This method will define different stopping criteria
+        return self.stop_complex_iter
 
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
@@ -517,20 +544,20 @@ class SHGO(object):
 
         # Force processing to only
         if force_iter:
-            self.iter = force_iter
+            self.local_iter = force_iter
 
-        while not self.stopiter:
-            if self.iter is not None:  # Note first iteration is outside loop
-                logging.info('SHGO.iter = {}'.format(self.iter))
-                self.iter -= 1
+        while not self.stop_l_iter:
+            if self.local_iter is not None:  # Note first iteration is outside loop
+                logging.info('SHGO.iter = {}'.format(self.local_iter))
+                self.local_iter -= 1
                 if __name__ == '__main__':
-                    if self.iter == 0:
-                        self.stopiter = True
+                    if self.local_iter == 0:
+                        self.stop_l_iter = True
                         break
                     #TODO: Test usage of iterative features
 
             if numpy.shape(self.X_min)[0] == 0:
-                self.stopiter = True
+                self.stop_l_iter = True
                 break
 
             # Construct topograph from current minimiser set
@@ -665,6 +692,13 @@ class SHGO(object):
         self.res.nfev += self.res.nlfev
         return
 
+    # Stopping criteria functions:
+    def finite_iterations(self):
+        self.iter -= 1
+        if self.iter <= 0:
+            self.stop_global = True
+        return self.stop_global
+
 # %% Define shgo class using simplicial hypercube sampling
 class SHGOh(SHGO):
     """
@@ -694,28 +728,50 @@ class SHGOh(SHGO):
         Stop iterations when stopping criteria (sampling points or
         processing time) have been met.
 
-
-        Returns
-        -------
-
         """
         self.construct_initial_complex()
 
         if self.disp:
             print('Splitting first generation')
 
-        self.HC.C0.hgr = self.HC.C0.homology_group_rank()#split_generation()
-        print('self.HC.C0.hg_ns = {}'.format(self.HC.C0.hg_n))
+        self.HC.split_generation()
+        #dev_counter = 3
+
+        if 1: #TODO: IF CERTAIN METHOD TO EVAL every iter
+            self.minimize_locally = True
+
+        while not self.stop_iter_m():
+            self.iterate()
+            #dev_counter -= 1
+            #if dev_counter == 0:
+            #    self.stop_complex_iter = True
+
+        # Algorithm updates
+        # Count the number of vertices and add to function evaluations:
+        self.res.nfev += len(self.HC.V.cache)
+        print(f'self.res.nfev = {self.res.nfev}')
+        return
 
     def iterate(self):
         """
         Iterate a subdivision of the complex
+         (globally biased)
+
+        """
+        self.HC.split_generation()
+        return
+
+    def iterate_diff(self):
+        """
+        Iterate a subdivision of the complex, but skip
+        unpromising cells (locally biased)
 
         Returns
         -------
 
         """
-        pass
+        self.HC.split_generation()
+        return
 
     def construct_complex_simplicial(self):
         self.construct_initial_complex()
