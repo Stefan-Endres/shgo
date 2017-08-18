@@ -515,10 +515,16 @@ class SHGO(object):
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
     # Iteration properties
-    def stop_iter_m(self):
-        #TODO This method will define different stopping criteria
-        return self.stop_complex_iter
+    # Stopping criteria functions:
+    def finite_iterations(self):
+        self.iter -= 1
+        if self.iter <= 0:
+            self.stop_global = True
+        return self.stop_global
 
+    def finite_sampling(self):
+        raise IOError('NOT IMPLEMENTED YET')
+    
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
         """
@@ -691,13 +697,6 @@ class SHGO(object):
         # Add local func evals to sampling func evals
         self.res.nfev += self.res.nlfev
         return
-
-    # Stopping criteria functions:
-    def finite_iterations(self):
-        self.iter -= 1
-        if self.iter <= 0:
-            self.stop_global = True
-        return self.stop_global
 
 # %% Define shgo class using simplicial hypercube sampling
 class SHGOh(SHGO):
