@@ -523,8 +523,9 @@ class SHGO(object):
         return self.stop_global
 
     def finite_sampling(self):
+        # This is for the simplicial complex since Sobol has it's own finite generation
         raise IOError('NOT IMPLEMENTED YET')
-    
+
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
         """
@@ -734,16 +735,12 @@ class SHGOh(SHGO):
             print('Splitting first generation')
 
         self.HC.split_generation()
-        #dev_counter = 3
 
         if 1: #TODO: IF CERTAIN METHOD TO EVAL every iter
             self.minimize_locally = True
 
         while not self.stop_iter_m():
             self.iterate()
-            #dev_counter -= 1
-            #if dev_counter == 0:
-            #    self.stop_complex_iter = True
 
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
