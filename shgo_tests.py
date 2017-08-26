@@ -328,11 +328,11 @@ def run_test(test, args=(), g_args=()):
         #            g_args=g_args, n=100, iter=None, iterative_mode=True)
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=1,
+                    g_args=g_args, n=100, 
                     sampling_method='sobol')
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, iter=1,
+                    g_args=g_args, n=100,
                     sampling_method='simplicial')
 
         #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -355,7 +355,7 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000, iter=1, sampling_method='sobol')#, crystal_mode=True)
+                    g_args=g_args, n=1000, iter=None, sampling_method='sobol')#, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,

@@ -15,7 +15,7 @@ try:
 except ImportError:
     from multiprocessing import Pool
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
          multiproc=False, sampling_method='simplicial'):
     #TODO: Update documentation
@@ -315,8 +315,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
         if sampling_method == 'sobol':
             SHc.construct_complex_sobol()
         elif sampling_method == 'simplicial':
-            #SHc.construct_complex_iteratively()
-            raise IOError('Not implemented yet')
+            SHc.construct_complex_iteratively()
+            #raise IOError('Not implemented yet')
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -343,7 +343,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=30, iter=None,
 
 # %% Define the base SHGO class inherited by the different methods
 class SHGO(object):
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
+    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, multiproc=False,
                     sampling_method='sobol'):
@@ -483,14 +483,17 @@ class SHGO(object):
         self.n_sampled = 0  # To track sampling points already evaluated
         self.fn = n  # Number of feasible samples remaining
 
-        if (self.iter is not None) and (self.n is not None):
+        if (self.iter is not None) and (self.n is None):
             self.stop_global = False
             # Define stop iteration method
             self.stop_iter_m = self.finite_iterations
-        elif (self.n is not None) and (self.iter is not None):
-            pass
+        elif (self.n is not None) and (self.iter is None):
+            self.stop_global = False
+            # Define stop iteration method
+            self.stop_iter_m = self.finite_sampling
         else:
-            IOError('SPECIFY ONLY ONE OF iter FINITE ITERATIONS OR n FINITE SAMPLING POINTS')
+            IOError("""Ambiguous input: specify either 
+            `iter` finite iterations or `n` finite sampling points""")
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -524,7 +527,12 @@ class SHGO(object):
 
     def finite_sampling(self):
         # This is for the simplicial complex since Sobol has it's own finite generation
-        raise IOError('NOT IMPLEMENTED YET')
+        #self.fn -= 1
+        #print(f'self.fn = {self.fn}')
+        print(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
+        if len(self.HC.V.cache) >= self.n:
+            self.stop_global = True
+        return self.stop_global
 
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
@@ -704,7 +712,7 @@ class SHGOh(SHGO):
     """
     This class implements the shgo routine
     """
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
+    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, multiproc=False,
                     sampling_method='sobol'):
@@ -979,6 +987,9 @@ class SHGOs(SHGO):
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, multiproc=False,
                     sampling_method='sobol'):
+
+        if n is None:
+            n = 100  # Define arbitrary sampling if user provided none
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
@@ -1696,7 +1707,6 @@ class SHGOs(SHGO):
             self.Xi_ind_topo = False
 
         return self.Xi_ind_topo
-
 
     def simplex_minimizers(self):
         """
