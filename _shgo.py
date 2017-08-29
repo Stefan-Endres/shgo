@@ -17,7 +17,7 @@ except ImportError:
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
          callback=None, minimizer_kwargs=None, options=None,
-         multiproc=False, sampling_method='simplicial'):
+         sampling_method='simplicial'):
     #TODO: Update documentation
 
     # sampling_method: str, options = 'sobol', 'simplicial'
@@ -280,14 +280,12 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
     if sampling_method == 'simplicial':
         SHc = SHGOh(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc,
-                    sampling_method=sampling_method)
+                    options=options, sampling_method=sampling_method)
 
     elif sampling_method == 'sobol':
         SHc = SHGOs(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc,
-                    sampling_method=sampling_method)
+                    options=options, sampling_method=sampling_method)
 
     else:
         raise IOError("""Unknown sampling_method specified, use either 
@@ -395,6 +393,9 @@ class SHGO(object):
             else:
                 self.min_hgrd = 0
 
+            if 'multiproc' in options:
+                self.multiproc = options['multiproc']
+
             self.options = None
 
         # set bounds
@@ -499,7 +500,6 @@ class SHGO(object):
         self.stop_l_iter = False  # Local minimisation iterations
         self.stop_complex_iter = False  # Sampling iterations
         self.break_routine = False
-        self.multiproc = multiproc
 
         self.stop_evaluation = None  #TODO Assign a function based on inputs ex. maxeval or max n
 
@@ -533,6 +533,8 @@ class SHGO(object):
         if len(self.HC.V.cache) >= self.n:
             self.stop_global = True
         return self.stop_global
+
+
 
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
@@ -714,13 +716,11 @@ class SHGOh(SHGO):
     """
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False,
-                    sampling_method='sobol'):
+                 options=None, sampling_method='sobol'):
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc,
-                        sampling_method=sampling_method)
+                    options=options, sampling_method=sampling_method)
 
 
     def construct_initial_complex(self):
@@ -985,16 +985,14 @@ class SHGOs(SHGO):
     """
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False,
-                    sampling_method='sobol'):
+                 options=None, sampling_method='sobol'):
 
         if n is None:
             n = 100  # Define arbitrary sampling if user provided none
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, multiproc=multiproc,
-                        sampling_method=sampling_method)
+                    options=options, sampling_method=sampling_method)
 
     def construct_complex_simplicial_dep(self):
         # NOTE: This function is different from hypercube and should be removed
