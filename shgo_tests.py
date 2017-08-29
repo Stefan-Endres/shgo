@@ -9,9 +9,6 @@ import unittest
 import numpy
 #from _shgo_sobol import *
 from _shgo import *
-from _tgo import *
-# from scipy.optimize import _tgo
-# from scipy.optimize._tgo import tgo
 import logging
 import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -297,19 +294,6 @@ test10_1 = Test10(bounds=[(-10, 10),]*7,
                    expected_fun=[680.6300573]
                   )
 
-#class Test11(TestFunction):
-#    def f(self, x):
-#        if (x > 5.01) and (x < 5.05):
-#            return 100 * (x - 5.02) ** 2
-#        return 100.0  # numpy.nan
-
-#    def g(self, x):
-#       return -(numpy.sum(x, axis=0) - 9.0)
-
-#test11_1 = Test11(bounds=[(0, 10)],
-#                  expected_x=[5.02])
-
-
 def run_test(test, args=(), g_args=()):
     ThirdDev = False
     if ThirdDev:
@@ -320,24 +304,14 @@ def run_test(test, args=(), g_args=()):
         # minimizer_kwargs2 = {'method': 'TNC'}
         minimizer_kwargs2 = {'method': 'SLSQP'}
 
-    if test is not test10_1:# or test11_1:
-        res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
-                  g_args=g_args, n=100)
-
-        #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-        #            g_args=g_args, n=100, iter=None, iterative_mode=True)
-
-        ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100, 
+    if test is not test10_1:
+        res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+                    g_args=g_args, n=100,
                     sampling_method='sobol')
 
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
                     g_args=g_args, n=100,
                     sampling_method='simplicial')
-
-        #ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-        #            g_args=g_args, n=100, iter=None,
-        #            iterative_mode=True, sampling_method='simplicial')
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
@@ -352,9 +326,7 @@ def run_test(test, args=(), g_args=()):
         res.funl = res.funl[:4]
 
     if test == test10_1:
-        res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
-                  g_args=g_args, n=1000)
-        ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+        res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
                     g_args=g_args, n=1000, iter=None, sampling_method='sobol')#, crystal_mode=True)
 
         if ThirdDev:
@@ -362,76 +334,6 @@ def run_test(test, args=(), g_args=()):
                          g_args=g_args, n=100, iter=None,
                          minimizer_kwargs=minimizer_kwargs2)
 
-    #TODO: Create 2d test for a
-    #if test == test11_1:
-    #    res = a(test.f, test.bounds, g_cons=test.g, n=10)
-
-    if False:
-        logging.info("=" * 100)
-        logging.info("=" * 100)
-        logging.info("Topographical Global Optimization: ")
-        logging.info("-" * 34)
-        logging.info('nlfev = {}'.format(res.nlfev))
-        logging.info('nfev = {}'.format(res.nfev))
-        logging.info('len(res.xl)= {}'.format(len(res.xl)))
-        tol = 5
-        res.funl = numpy.around(res.funl, tol)
-        Uniq = numpy.unique(res.funl)
-        #Uniq = numpy.unique(res.xl)
-        logging.info('Number of unique local minima = {}'.format(len(Uniq)))
-        logging.info('res.x= {}'.format(res.x))
-        logging.info('res.xl= {}'.format(res.xl))
-
-        logging.info("=" * 100)
-        #print("Axial TGO: ")
-        logging.info("Simplicial Homology Global Optimization: ")
-        logging.info("-" * 44)
-        logging.info('nlfev = {}'.format(ares.nlfev))
-        logging.info('nfev = {}'.format(ares.nfev))
-        logging.info('len(res.xl)= {}'.format(len(ares.xl)))
-        ares.funl = numpy.around(ares.funl, tol)
-        Uniq = numpy.unique(ares.funl)
-        #Uniq = numpy.unique(ares.xl)
-        logging.info('Number of unique local minima = {}'.format(len(Uniq)))
-        logging.info('res.x= {}'.format(ares.x))
-        logging.info('res.xl= {}'.format(ares.xl))
-        logging.info('res.funl= {}'.format(ares.funl))
-        #print('ares= {}'.format(ares))
-
-        if ThirdDev:
-            logging.info("=" * 100)
-            #print("Axial TGO: ")
-            logging.info("Delaunay TGO w {}: ".format(minimizer_kwargs2['method']))
-            logging.info("-" * 44)
-            logging.info('nlfev = {}'.format(ares2.nlfev))
-            logging.info('len(res.xl)= {}'.format(len(ares2.xl)))
-            ares.funl = numpy.around(ares2.funl, tol)
-            Uniq = numpy.unique(ares2.funl)
-            #Uniq = numpy.unique(ares.xl)
-            logging.info('Number of unique local minima = {}'.format(len(Uniq)))
-            logging.info('res.x= {}'.format(ares2.x))
-            logging.info('res.xl= {}'.format(ares2.xl))
-            logging.info('res.funl= {}'.format(ares2.funl))
-
-        logging.info("=" * 100)
-        logging.info("=" * 100)
-
-
-    # from scipy.optimize import differential_evolution, basinhopping
-    # res2 = differential_evolution(test.f, test.bounds, args=args)
-    # print("=" * 100)
-    # print("Differential Evolution: ")
-    # print("-" * 23)
-    # print(res2)
-    #
-    # print("=" * 100)
-    # print("Basinhopping : (x_0 = numpy.mean(bounds,axis=1)) ")
-    # x_0 = numpy.mean(test.bounds, axis=1)
-    # minimizer_kwargs = {'args': args}
-    # res3 = basinhopping(test.f, x_0, minimizer_kwargs=minimizer_kwargs)
-    # print("-" * 49)
-    # print(res3)
-    # Global minima
     if test.expected_x is not None:
         numpy.testing.assert_allclose(res.x, test.expected_x,
                                       rtol=test_atol,
@@ -455,7 +357,7 @@ def run_test(test, args=(), g_args=()):
                                       atol=test_atol)
 
 # $ python2 -m unittest -v tgo_tests.TestTgoFuncs
-class TestTgoFuncs(unittest.TestCase):
+class TestShgoFuncs(unittest.TestCase):
     """
     Global optimisation tests:
     """
@@ -506,88 +408,17 @@ class TestTgoFuncs(unittest.TestCase):
     #    """1D tabletop function"""
     #    run_test(test11_1)
 
-# $ python2 -m unittest -v tgo_tests.TestTgoSubFuncs
-class TestTgoSubFuncs(unittest.TestCase):
+
+def shgo_suite():
     """
-    TGO subfunction tests using known solution (test_f1)
+    Gather all the shgo tests from this module in a test suite.
     """
-    # Init tgo class
-    # Note: Using ints for irrelevant class inits like func
-    TGOc = TGO(1, (0, 1))
-    # int bool solution for known sampling points
-    T_Ans = numpy.array([[0, 0, 0, 0, 0],
-                         [0, 1, 1, 1, 1],
-                         [1, 0, 0, 0, 0],
-                         [1, 1, 1, 1, 1],
-                         [0, 0, 0, 0, 1],
-                         [1, 1, 0, 1, 0]])
-
-    T_Ans = T_Ans.astype(bool)
-
-    # Known order of sampling points
-    A = numpy.array([[2, 1, 5, 3, 4],
-                     [3, 2, 5, 0, 4],
-                     [0, 5, 1, 3, 4],
-                     [1, 5, 2, 0, 4],
-                     [5, 1, 2, 3, 0],
-                     [2, 4, 1, 0, 3]])
-
-    # function values at test points
-    F = numpy.array([29, 5, 25.81, 1, 25, 20])
-
-    # Sampling points used in Henderson example
-    TGOc.C = numpy.array([[2, 5],  # P1
-                          [1, 2],  # P2
-                          [3, 4],  # P3
-                          [0, 1],  # P4
-                          [5, 0],  # P5
-                          [4, 2]   # P6
-                          ])
-
-    # func used
-    def f_sub(x):
-        return x[0]**2 + x[1]**2
-
-    TGOc.func = f_sub
-
-    T, H, _ = TGOc.topograph()
-
-    def test_t1(self):
-        """t-matrix construction:"""
-        numpy.testing.assert_array_equal(self.T, self.T_Ans)
-
-    def test_t2(self):
-        """k-1 topograph"""
-        K_1 = self.TGOc.k_t_matrix(self.T, 1).T[0] #
-        numpy.testing.assert_array_equal(K_1 , self.T_Ans[:,0])
-
-    def test_t3(self):
-        """k-3 topograph"""
-        K_3 = self.TGOc.k_t_matrix(self.T, 3)
-        Ans = numpy.delete(self.T_Ans, numpy.s_[3:numpy.shape(self.T_Ans)[1]]
-                           , axis=-1)
-        numpy.testing.assert_array_equal(K_3, Ans)
-
-    def test_t4(self):
-        """Minimizer function"""
-        self.assertEqual(numpy.float32(self.TGOc.minimizers(self.T_Ans)), 3)
-
-    def test_t5(self):
-        """K_optimal"""
-        numpy.testing.assert_array_equal(self.TGOc.K_optimal(), self.T_Ans)
-
-def tgo_suite():
-    """
-    Gather all the TGO tests from this module in a test suite.
-    """
-    TestTgo = unittest.TestSuite()
-    tgo_suite1 = unittest.makeSuite(TestTgoFuncs)
-    tgo_suite2 = unittest.makeSuite(TestTgoSubFuncs)
-    TestTgo.addTest(tgo_suite1)
-    TestTgo.addTest(tgo_suite2)
-    return TestTgo
+    TestShgo = unittest.TestSuite()
+    tgo_suite1 = unittest.makeSuite(TestShgoFuncs)
+    TestShgo.addTest(tgo_suite1)
+    return TestShgo
 
 
 if __name__ == '__main__':
-    TestTgo=tgo_suite()
+    TestShgo=shgo_suite()
     unittest.TextTestRunner(verbosity=2).run(TestTgo)
