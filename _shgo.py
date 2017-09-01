@@ -324,13 +324,21 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
             # Build minimiser pool
             SHc.simplex_minimizers()
 
-        # Minimise the pool of minisers with local minimisation methods
-        # Note that if Options['local_iter'] is an `int` instead of default
-        # value False then only that number of candidates will be minimised
-        SHc.minimise_pool(SHc.local_iter)
+        if len(SHc.X_min) == 0:
+            # If sampling failed to find pool, return lowest sampled point
+            # with a warning
+            #TODO: Implement warning and lowest sampling return
+            SHc.break_routine = True
+
+        if not SHc.break_routine:
+            # Minimise the pool of minisers with local minimisation methods
+            # Note that if Options['local_iter'] is an `int` instead of default
+            # value False then only that number of candidates will be minimised
+            SHc.minimise_pool(SHc.local_iter)
 
     # Sort results and build the global return object
-    SHc.sort_result()
+    if not SHc.break_routine:
+        SHc.sort_result()
 
     # Confirm the routine ran succesfully
     if not SHc.break_routine:
@@ -378,6 +386,10 @@ class SHGO(object):
                 self.symmetry = True
             else:
                 self.symmetry = False
+            if 'minimize_every_iter' in options:
+                self.minimize_every_iter = True
+            else:
+                self.minimize_every_iter = False
             if 'crystal_iter' in options:
                 self.crystal_iter = options['crystal_iter']
             if 'local_iter' in options:  # Only evaluate a few of the best candiates
@@ -393,10 +405,20 @@ class SHGO(object):
             else:
                 self.min_hgrd = 0
 
+            if 'f_min' in options:
+                self.f_min_true = options['f_min']
+                if 'f_tol' in options:
+                    self.f_tol = options['f_tol']
+                else:
+                    self.f_tol = 1e-4
+
             if 'multiproc' in options:
                 self.multiproc = options['multiproc']
 
             self.options = None
+        else:
+            self.f_min_true = None
+            self.minimize_every_iter = False
 
         # set bounds
         abound = numpy.array(bounds, float)
@@ -484,17 +506,25 @@ class SHGO(object):
         self.n_sampled = 0  # To track sampling points already evaluated
         self.fn = n  # Number of feasible samples remaining
 
-        if (self.iter is not None) and (self.n is None):
-            self.stop_global = False
-            # Define stop iteration method
-            self.stop_iter_m = self.finite_iterations
-        elif (self.n is not None) and (self.iter is None):
-            self.stop_global = False
-            # Define stop iteration method
-            self.stop_iter_m = self.finite_sampling
-        else:
+        # Stop the algorithm if multiple stopping criteria are specified
+        if (self.n is not None) and (self.iter is not None) and (self.f_min_true is not None):
             IOError("""Ambiguous input: specify either 
-            `iter` finite iterations or `n` finite sampling points""")
+                    `iter` finite iterations or `n` finite sampling points""")
+        else:  # else only for collapse-able syntax
+            if (self.iter is not None):
+                self.stop_global = False
+                # Define stop iteration method
+                self.stop_iter_m = self.finite_iterations
+            elif (self.n is not None):
+                self.stop_global = False
+                # Define stop iteration method
+                self.stop_iter_m = self.finite_sampling
+            elif (sampling_method == 'simplicial') and (self.iter is None):
+                self.stop_iter_m = self.finite_iterations
+                self.iter = 1
+            elif 'f_min' in options:
+                self.stop_global = False
+                self.stop_iter_m = self.finite_precision
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -529,12 +559,23 @@ class SHGO(object):
         # This is for the simplicial complex since Sobol has it's own finite generation
         #self.fn -= 1
         #print(f'self.fn = {self.fn}')
-        print(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
+        logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
         if len(self.HC.V.cache) >= self.n:
             self.stop_global = True
         return self.stop_global
 
-
+    def finite_precision(self):
+        # Stop the algorithm if the final function value is known
+        # Specify in options (with self.f_min_true = options['f_min'])
+        #  and the tolerance with f_tol = options['f_tol']
+        if self.f_lowest == 0:
+            if self.f_lowest <= self.f_tol:
+                self.stop_global = True
+        else:
+            pe = (self.f_min_true - self.f_lowest)/abs(self.f_lowest)
+            if pe <= self.f_tol:
+                self.stop_global = True
+        return self.stop_global
 
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
@@ -594,7 +635,7 @@ class SHGO(object):
     # Local bound functions
     def contstruct_lcb(self, v_min):
         """
-        Contstruct locally (approximately) convex bounds
+        Construct locally (approximately) convex bounds
 
         Parameters
         ----------
@@ -602,36 +643,29 @@ class SHGO(object):
                 The minimiser vertex
         Returns
         -------
-        bounds : List of size dim with tuple of bounds for each dimension
+        cbounds : List of size dim with tuple of bounds for each dimension
         """
         cbounds = []
-        #for x_i in v_min.x:
-        #    bounds.append([x_i, x_i])
-        for x_i in self.bounds:
-            cbounds.append([x_i[0], x_i[1]])
-
+        for x_b_i in self.bounds:
+            cbounds.append([x_b_i[0], x_b_i[1]])
         # Loop over all bounds
         for vn in v_min.nn:
             #for i, x_i in enumerate(vn.x):
             for i, x_i in enumerate(vn.x_a):
                 # Lower bound
-                #if x_i > cbounds[i][0] and (x_i < self.bounds[i][0]):
                 if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
-                #if x_i < bounds[i][0]:
                     cbounds[i][0] = x_i
 
                 # Upper bound
-                #if x_i < cbounds[i][1] and (x_i > self.bounds[i][1]):
                 if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
-                #if x_i > bounds[i][1]:
                     cbounds[i][1] = x_i
 
-
-
+        logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
+        logging.info(f'cbounds = {cbounds}')
         return cbounds
 
     # Minimize a starting point locally
-    def minimize(self, x_min):
+    def minimize(self, x_min, cache_position=None):
         """
         This function is used to calculate the local minima using the specified
         sampling point as a starting value.
@@ -658,14 +692,18 @@ class SHGO(object):
         # TODO: Optionally construct bounds if minimizer_kwargs is a
         #      solver that accepts bounds
         if self.sampling_method == 'simplicial': #TODO: Arbitrary sampling input
-            print(f'x_min = {x_min}')
             x_min_t = tuple(x_min[0])
-            print(f'x_min_t = {x_min_t}')
-            self.minimizer_kwargs['bounds'] = \
-                self.contstruct_lcb(self.HC.V[x_min_t])
+            # Find the normalized tuple in the Vertex cache:
+            x_min_t_norm = self.X_min_cache[tuple(x_min_t)]
 
-            print('bounds in kwarg:')
-            print(self.minimizer_kwargs['bounds'])
+            x_min_t_norm = tuple(x_min_t_norm)
+
+            self.minimizer_kwargs['bounds'] = \
+                self.contstruct_lcb(self.HC.V[x_min_t_norm])
+
+            if self.disp:
+                print('bounds in kwarg:')
+                print(self.minimizer_kwargs['bounds'])
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
@@ -731,6 +769,14 @@ class SHGOh(SHGO):
                           self.symmetry, self.bounds, self.g_func, self.g_args)
         return
 
+    def iterate(self):
+        """
+        Iterate a subdivision of the complex
+         (globally biased)
+        """
+        self.HC.split_generation()
+        return
+
     def construct_complex_iteratively(self):
         """
         Stop iterations when stopping criteria (sampling points or
@@ -742,13 +788,19 @@ class SHGOh(SHGO):
         if self.disp:
             print('Splitting first generation')
 
-        self.HC.split_generation()
-
         if 1: #TODO: IF CERTAIN METHOD TO EVAL every iter
             self.minimize_locally = True
 
         while not self.stop_iter_m():
             self.iterate()
+
+            # Specify in options['minimize_every_iter'] = True to use
+            if self.minimize_every_iter: #TODO: TEST THIS ROUTINE
+                self.simplex_minimizers()
+                if len(self.X_min) is not 0:
+                    self.minimise_pool(self.local_iter)
+                    self.sort_result()
+                    self.f_lowest = self.res.fun
 
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
@@ -756,22 +808,13 @@ class SHGOh(SHGO):
         print(f'self.res.nfev = {self.res.nfev}')
         return
 
-    def iterate(self):
-        """
-        Iterate a subdivision of the complex
-         (globally biased)
-
-        """
-        self.HC.split_generation()
-        return
 
     def iterate_diff(self):
         """
         Iterate a subdivision of the complex, but skip
         unpromising cells (locally biased)
 
-        Returns
-        -------
+        (UNFINISHED)
 
         """
         self.HC.split_generation()
@@ -925,18 +968,16 @@ class SHGOh(SHGO):
 
         self.minimizer_pool_F = []#self.F[self.minimizer_pool]
         self.X_min = []
+        if self.sampling_method == 'simplicial':
+            # normalized tuple in the Vertex cache
+            self.X_min_cache = {}  # Cache used in hypercube sampling
+
         for v in self.minimizer_pool:
             #self.X_min.append(v.x)
             self.X_min.append(v.x_a)
             self.minimizer_pool_F.append(v.f)
-
-        # Sort to find minimum func value in min_pool
-        #self.sort_min_pool() # TODO: CHANGE THIS
-
-        #if not len(self.minimizer_pool) == 0:
-        #    self.X_min = self.C[self.minimizer_pool]
-        #else:
-        #    self.X_min = []
+            if self.sampling_method == 'simplicial':
+                self.X_min_cache[tuple(v.x_a)] = v.x
 
         self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
         self.X_min = numpy.array(self.X_min)
@@ -1799,7 +1840,9 @@ if __name__ == '__main__':
             SHGOc3.sort_result()
             print('SHGOc3.res = {}'.format(SHGOc3.res))
 
-        print(shgo(fun, bounds, g_cons=g_cons))
+        #print(shgo(fun, bounds, g_cons=g_cons))
+        #print(shgo(fun, bounds, g_cons=g_cons, iter=4))
+        print(shgo(fun, bounds, iter=4))
         #print(shgo(fun, bounds))#, g_cons=g_cons))
 
 
