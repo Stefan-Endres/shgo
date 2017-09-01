@@ -114,87 +114,6 @@ test3_1 = Test3(bounds=[(13.0, 100.0), (0.0, 100.0)],
                 # Hock and Shittkowski 1981 is outside the specified bounds.
                 #expected_x=[14.095, 0.84296])
 
-
-class Test4(TestFunction):
-    """ Rosenbrock's function  Ans x1 = 1, x2 = 1, f = 0 """
-    g = None
-
-    def f(self, x):
-        return (1.0 - x[0])**2.0 + 100.0*(x[1] - x[0]**2.0)**2.0
-
-
-test4_1 = Test4(bounds=[(-3.0, 3.0), (-3.0, 3.0)],
-                expected_x=[1, 1])
-
-test4_2 = Test4(bounds=[(None, None), (-numpy.inf, numpy.inf)],
-                expected_x=[1, 1])
-
-test_atol = 1e-5
-
-
-class Test5(TestFunction):
-    """
-    Himmelblau's function
-    https://en.wikipedia.org/wiki/Himmelblau's_function
-    """
-    g = None
-
-    def f(self, x):
-        return (x[0]**2 + x[1] - 11)**2 + (x[0] + x[1]**2 - 7)**2
-
-
-test5_1 = Test5(bounds=[(-6, 6),
-                        (-6, 6)],
-                expected_x=None,
-                expected_fun=[0.0],  # Important to test that fun
-                # return is in the correct order
-                expected_xl=numpy.array([[3.0, 2.0],
-                                         [-2.805118, 3.1313212],
-                                         [-3.779310, -3.283186],
-                                         [3.584428, -1.848126]]),
-
-                expected_funl=numpy.array([0.0, 0.0, 0.0, 0.0])
-                )
-
-
-class Test6(TestFunction):
-    """
-    Eggholder function
-    https://en.wikipedia.org/wiki/Test_functions_for_optimization
-    """
-    g = None
-
-    def f(self, x):
-        return (-(x[1] + 47.0)
-                * numpy.sin(numpy.sqrt(abs(x[0]/2.0 + (x[1] + 47.0))))
-                - x[0] * numpy.sin(numpy.sqrt(abs(x[0] - (x[1] + 47.0))))
-                )
-
-
-test6_1 = Test6(bounds=[(-512, 512),
-                        (-512, 512)],
-                expected_x=[512, 404.2319],
-                expected_fun=[-959.6407]
-                )
-
-class Test7(TestFunction):
-    """
-    Ackley function
-    https://en.wikipedia.org/wiki/Test_functions_for_optimization
-    """
-    g = None
-
-    def f(self, x):
-        arg1 = -0.2 * numpy.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
-        arg2 = 0.5 * (numpy.cos(2. * numpy.pi * x[0])
-                      + numpy.cos(2. * numpy.pi * x[1]))
-        return -20. * numpy.exp(arg1) - numpy.exp(arg2) + 20. + numpy.e
-
-test7_1 = Test7(bounds=[(-5, 5), (-5, 5)],
-                expected_x=[0.,  0.],
-                expected_fun=[0.0]
-                )
-
 class Test8(TestFunction):
     """
     Hock and Schittkowski 29 problem (HS29). Hoch and Schittkowski (1981)
@@ -224,7 +143,13 @@ class Test8(TestFunction):
 
 test8_1 = Test8(bounds=[(-5, 5), (-4, 4), (-3, 3)],
                 expected_x=[4.0,  -2 * 2**0.5, -2.0],
-                expected_fun=[-16.0 * 2**0.5]  # For all minimizers
+                expected_fun=[-16.0 * 2**0.5],  # For all minimizers
+                expected_xl = numpy.array([[4.0,  -2 * 2**0.5, -2.0],
+                                           [4.0, 2 * 2 ** 0.5, 2.0],
+                                           [-4.0, 2 * 2 ** 0.5, -2.0],
+                                           [-4.0, -2 * 2 ** 0.5, 2.0]]),
+
+                expected_funl = numpy.array([-16.0 * 2**0.5,]*4)
                 )
 
 class Test9(TestFunction):
@@ -294,45 +219,15 @@ test10_1 = Test10(bounds=[(-10, 10),]*7,
                    expected_fun=[680.6300573]
                   )
 
-def run_test(test, args=(), g_args=()):
-    ThirdDev = False
-    if ThirdDev:
-        # minimizer_kwargs2 = {'method': 'TNC'}
-        # minimizer_kwargs2 = {'method': 'CG'}
-        # minimizer_kwargs2 = {'method': 'BFGS'}
-        # minimizer_kwargs2 = {'method': 'L-BFGS-B'}
-        # minimizer_kwargs2 = {'method': 'TNC'}
-        minimizer_kwargs2 = {'method': 'SLSQP'}
-
-    if test is not test10_1:
-        res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100,
-                    sampling_method='sobol')
-
-        ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=100,
-                    sampling_method='simplicial')
-
-        if ThirdDev:
-            ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                         g_args=g_args, n=100, iter=None,
-                         minimizer_kwargs=minimizer_kwargs2)
-
-    if test == test5_1:
-        # Remove the extra minimizer found in this test
-        # (note all minima is at the global 0.0 value)
-        res.xl = [res.xl[0], res.xl[1],
-                  res.xl[3], res.xl[2]]
-        res.funl = res.funl[:4]
+def run_test(test, args=(), g_args=(), test_atol=1e-5,
+             n=100, iter=None, sampling_method='sobol'):
 
     if test == test10_1:
-        res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000, iter=None, sampling_method='sobol')#, crystal_mode=True)
+        n = 1000
 
-        if ThirdDev:
-            ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                         g_args=g_args, n=100, iter=None,
-                         minimizer_kwargs=minimizer_kwargs2)
+    res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+                g_args=g_args, n=n, iter=iter,
+                sampling_method=sampling_method)
 
     if test.expected_x is not None:
         numpy.testing.assert_allclose(res.x, test.expected_x,
@@ -346,7 +241,6 @@ def run_test(test, args=(), g_args=()):
                                       atol=test_atol)
 
     if test.expected_xl is not None:
-
         numpy.testing.assert_allclose(res.xl,
                                       test.expected_xl,
                                       atol=test_atol)
@@ -355,52 +249,37 @@ def run_test(test, args=(), g_args=()):
         numpy.testing.assert_allclose(res.funl,
                                       test.expected_funl,
                                       atol=test_atol)
+    logging.info(res)
 
 # $ python2 -m unittest -v tgo_tests.TestTgoFuncs
-class TestShgoFuncs(unittest.TestCase):
+class TestShgoSobolTestFunctions(unittest.TestCase):
     """
     Global optimisation tests:
     """
-    def test_f1(self):
+    # Sobol algorithm
+    def test_f1_sobol(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2"""
         run_test(test1_1)
         run_test(test1_2)
 
-    def test_f2(self):
+    def test_f2_sobol(self):
         """Scalar opt test on f(x) = (x - 30) * sin(x)"""
         run_test(test2_1)
         run_test(test2_2)
 
-    def test_f3(self):
+    def test_f3_sobol(self):
         """Hock and Schittkowski problem 19"""
         run_test(test3_1)
 
-    def test_t4(self):
-        """Rosenbrock function"""
-        run_test(test4_1)
-        #run_test(test4_2)
+    def test_t8_sobol(self):
+        """Hock and Schittkowski problem 29"""
+        run_test(test8_1)
 
-    def test_t5(self):
-        """Himmelblau's function"""
-        run_test(test5_1)
-
-    #def test_t6(self):
-    #    """Eggholder function"""
-    #    run_test(test6_1)
-
-    def test_t7(self):
-        """Ackley function"""
-        run_test(test7_1)
-
-    #def test_t8(self):
-    #    """Hock and Schittkowski problem 29"""
-    #    run_test(test8_1)
-
-    def test_t9(self):
+    def test_t9_sobol(self):
         """Hock and Schittkowski problem 18 """
         run_test(test9_1)
 
-    def test_t910(self):
+    def test_t910_sobol(self):
         """ Hock and Schittkowski 11 problem (HS11)"""
         run_test(test10_1)
 
@@ -408,17 +287,41 @@ class TestShgoFuncs(unittest.TestCase):
     #    """1D tabletop function"""
     #    run_test(test11_1)
 
+class TestShgoSimplicialTestFunctions(unittest.TestCase):
+    # Simplicial algorithm
+    def test_f1_simplicial(self):
+        """Multivariate test function 1: x[0]**2 + x[1]**2"""
+        run_test(test1_1,  sampling_method='simplicial')
+        run_test(test1_2,  sampling_method='simplicial')
 
-def shgo_suite():
+    def test_f2_simplicial(self):
+        """Scalar opt test on f(x) = (x - 30) * sin(x)"""
+        run_test(test2_1, sampling_method='simplicial')
+        run_test(test2_2, sampling_method='simplicial')
+
+    def test_f3_simplicial(self):
+        """Hock and Schittkowski problem 19"""
+        run_test(test3_1, sampling_method='simplicial')
+
+    def test_t8_simplicial(self):
+        """Hock and Schittkowski problem 29"""
+        run_test(test8_1, sampling_method='simplicial')
+
+    def test_t9_simplicial(self):
+        """Hock and Schittkowski problem 18 """
+        run_test(test9_1, sampling_method='simplicial')
+
+def tgo_suite():
     """
-    Gather all the shgo tests from this module in a test suite.
+    Gather all the TGO tests from this module in a test suite.
     """
-    TestShgo = unittest.TestSuite()
-    tgo_suite1 = unittest.makeSuite(TestShgoFuncs)
-    TestShgo.addTest(tgo_suite1)
-    return TestShgo
+    TestTgo = unittest.TestSuite()
+    tgo_suite1 = unittest.makeSuite(TestTgoFuncs)
+    #tgo_suite2 = unittest.makeSuite(TestTgoSubFuncs)
+    TestTgo.addTest(tgo_suite1)
+    return TestTgo
 
 
 if __name__ == '__main__':
-    TestShgo=shgo_suite()
+    TestTgo=tgo_suite()
     unittest.TextTestRunner(verbosity=2).run(TestTgo)
