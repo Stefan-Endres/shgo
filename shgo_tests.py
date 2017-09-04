@@ -224,10 +224,17 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5,
 
     if test == test10_1:
         n = 1000
+        if sampling_method =='simplicial':
+            n = 1
+
+    #if test == test9_1:
+    #    n = 50000
 
     res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
                 g_args=g_args, n=n, iter=iter,
                 sampling_method=sampling_method)
+
+    logging.info(res)
 
     if test.expected_x is not None:
         numpy.testing.assert_allclose(res.x, test.expected_x,
@@ -249,7 +256,7 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5,
         numpy.testing.assert_allclose(res.funl,
                                       test.expected_funl,
                                       atol=test_atol)
-    logging.info(res)
+
 
 # $ python2 -m unittest -v tgo_tests.TestTgoFuncs
 class TestShgoSobolTestFunctions(unittest.TestCase):
@@ -289,9 +296,12 @@ class TestShgoSobolTestFunctions(unittest.TestCase):
 
 class TestShgoSimplicialTestFunctions(unittest.TestCase):
     # Simplicial algorithm
-    def test_f1_simplicial(self):
+    def test_f1_1_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2"""
         run_test(test1_1,  sampling_method='simplicial')
+
+    def test_f1_2_simplicial(self):
+        """Scalar opt test on f(x) = (x - 30) * sin(x)"""
         run_test(test1_2,  sampling_method='simplicial')
 
     def test_f2_simplicial(self):
@@ -310,6 +320,10 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
     def test_t9_simplicial(self):
         """Hock and Schittkowski problem 18 """
         run_test(test9_1, sampling_method='simplicial')
+
+    def test_t910_sobol(self):
+        """ Hock and Schittkowski 11 problem (HS11)"""
+        run_test(test10_1, sampling_method='simplicial')
 
 def tgo_suite():
     """
