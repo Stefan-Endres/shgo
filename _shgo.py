@@ -819,7 +819,6 @@ class SHGOh(SHGO):
         print(f'self.res.nfev = {self.res.nfev}')
         return
 
-
     def iterate_diff(self):
         """
         Iterate a subdivision of the complex, but skip
@@ -827,6 +826,11 @@ class SHGOh(SHGO):
 
         (UNFINISHED)
 
+        Ideas: We will search for sub-cells which total rank
+               contains the same number of minimisers ar the
+               the parent cell and then stop searching in
+               this region. For a first attempt, use the
+               heuristic of 2 generations with no change.
         """
         self.HC.split_generation()
         return
@@ -839,16 +843,16 @@ class SHGOh(SHGO):
         # TODO: Can easily be parralized
         for x in self.HC.V.cache:
             if self.HC.V[x].minimiser():
-                if 1:
+                if self.disp:
                     logging.info('=' * 60)
                     logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x_a))
                     logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
                     logging.info('=' * 30)
+
                 if self.HC.V[x] not in self.minimizer_pool:
                     self.minimizer_pool.append(self.HC.V[x])
 
-                if 0:
-                    #TODO: DELETE THIS DEBUG ROUTINE
+                if self.disp:
                     logging.info('Neighbours:')
                     logging.info('='*30)
                     for vn in self.HC.V[x].nn:
@@ -856,18 +860,13 @@ class SHGOh(SHGO):
 
                     logging.info('=' * 60)
 
-        #logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        #for v in self.minimizer_pool:
-        #    logging.info('v.x = {}'.format(v.x))
-
-        self.minimizer_pool_F = []#self.F[self.minimizer_pool]
+        self.minimizer_pool_F = []
         self.X_min = []
         if self.sampling_method == 'simplicial':
             # normalized tuple in the Vertex cache
             self.X_min_cache = {}  # Cache used in hypercube sampling
 
         for v in self.minimizer_pool:
-            #self.X_min.append(v.x)
             self.X_min.append(v.x_a)
             self.minimizer_pool_F.append(v.f)
             if self.sampling_method == 'simplicial':
@@ -909,8 +908,6 @@ class SHGOh(SHGO):
 
         self.Ss = X_min[self.Z]
         return self.Ss
-
-
 
 
 # %% Define shgo class using arbitrary (ex Sobol) sampling
@@ -1515,53 +1512,6 @@ class SHGOs(SHGO):
             self.X_min = self.C[self.minimizer_pool]
 
         return self.X_min
-
-    def sample_simplex_topo(self, ind):
-        self.Xi_ind_topo_i = []
-
-        # Find nearest neighbours
-        G_ind = self.HC.connected_vertices(ind, self.Ci)
-        logging.info('ind = {}'.format(ind))
-        logging.info('G_ind = {}'.format(G_ind))
-
-        # Find finite deference between each point
-        for g_i in G_ind:
-            rel_topo_bool = self.F[ind] < self.F[g_i]
-            self.Xi_ind_topo_i.append(rel_topo_bool)
-
-        logging.info('Xi_ind_topo_i = {}'.format(self.Xi_ind_topo_i))
-        # Check if minimizer
-        if numpy.array(self.Xi_ind_topo_i).all():
-            self.Xi_ind_topo = True
-        else:
-            self.Xi_ind_topo = False
-
-        return self.Xi_ind_topo
-
-    def simplex_minimizers(self):
-        """
-        Returns the indexes of all minimizers
-        """
-        self.minimizer_pool = []
-        # TODO: Can easily be parralized
-
-        for ind in range(self.fn):
-            Min_bool = self.sample_simplex_topo(ind)
-            if Min_bool:
-                self.minimizer_pool.append(ind)
-
-        self.minimizer_pool_F = self.F[self.minimizer_pool]
-
-        # Sort to find minimum func value in min_pool
-        self.sort_min_pool()
-        logging.info('self.minimizer_pool = {}'.format(self.minimizer_pool))
-        if not len(self.minimizer_pool) == 0:
-            self.X_min = self.C[self.minimizer_pool]
-        else:
-            self.X_min = []
-
-        return self.X_min
-
 
 if __name__ == '__main__':
     import doctest
