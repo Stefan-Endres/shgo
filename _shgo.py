@@ -496,6 +496,8 @@ class SHGO(object):
                     options['maxfev']
             if 'disp' in options:
                 self.minimizer_kwargs['options']['disp'] = options['disp']
+            if 'f_min' not in options:
+                self.f_min_true = None
 
         ## Algorithm controls
         # Global controls

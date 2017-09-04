@@ -250,31 +250,40 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
 
 # Optional test functions
 class TestShgoArguments(unittest.TestCase):
-    def test_1_1_iter(self):
+    def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
         run_test(test1_2, n=None, iter=2, sampling_method='simplicial')
 
-    def test_1_2_iter(self):
+    def test_1_2_simpl_iter(self):
         """Iterative simplicial on TestFunction 2 (univariate)"""
         run_test(test2_1, n=None, iter=6, sampling_method='simplicial')
 
-    def test_2_1_iter(self):
+    def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
         run_test(test1_2, n=None, iter=1, sampling_method='sobol')
 
-    def test_2_1_iter(self):
+    def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 2 (univariate)"""
-        run_test(test2_1, n=None, iter=1, sampling_method='sobol')
+        res = shgo(test2_1.f, test2_1.bounds, g_cons=test2_1.g,
+                   n=None, iter=1, sampling_method = 'sobol')
+        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
         """Iterative sampling on TestFunction 2 (univariate)"""
         def callback_func(x):
             print("Local minimization callback test")
 
-        res = shgo(test1_2.f, test1_2.bounds,
+        res = shgo(test1_2.f, test1_2.bounds, sampling_method='simplicial',
                    callback=callback_func, options={'disp': True})
 
+    def test_3_2_disp_sobol(self):
+        """Iterative sampling on TestFunction 2 (univariate)"""
+        def callback_func(x):
+            print("Local minimization callback test")
 
+        res = shgo(test1_2.f, test1_2.bounds, sampling_method='sobol',
+                   callback=callback_func, options={'disp': True})
 
 class TestShgoFailures(unittest.TestCase):
 
