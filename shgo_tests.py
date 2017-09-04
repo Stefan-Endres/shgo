@@ -75,84 +75,7 @@ test2_2 = Test2(bounds=[(0, 4.5)],
                 expected_funl=numpy.array([-28.44677132])
                 )
 
-
 class Test3(TestFunction):
-    """
-    Hock and Schittkowski 19 problem (HS19). Hoch and Schittkowski (1981)
-    http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
-    Minimize: f = (x_1 - 5)**3 + (x_2 - 20)**3
-
-    Subject to: -(x_1 - 5)**2  - (x_2 - 20)**2 + 100 <= 0,
-                -(x_1 - 6)**2  - (x_2 - 20)**2 + 82.81 <= 0,
-                13 <= x_1 <= 100,
-                0 <= x_2 <= 100.
-
-    Approx. Answer:
-        f([14.095, 0.84296]) = -6961.814744487831
-
-    """
-    def f(self, x):     # TODO: Add f bounds from original problem
-        return (x[0] - 10.0)**3.0 + (x[1] - 20.0)**3.0
-
-    # def f2(x):  #
-    #     return (x[0] - 10.0) ** 3.0 + (x[1] - 20.0) ** 3.0
-
-    def g1(x):
-        return -(-(x[0] - 5.0)**2.0 - (x[1] - 5.0)**2.0 + 100.0)
-
-    def g2(x):
-        #return -(-(x[0] - 6.0)**2.0 - (x[1] - 5.0)**2.0 + 82.81)
-        return -(+(x[0] - 6)**2 - (x[1] - 5)**2 - 82.81)
-
-    g = (g1, g2)
-
-test3_1 = Test3(bounds=[(13.0, 100.0), (0.0, 100.0)],
-                expected_x=[13.6602540, 0.])
-                # Note this is a lower value that is still within the bounds
-                # There appears to be a typo in Henderson (2015), but the
-                # original solution in the collection of
-                # Hock and Shittkowski 1981 is outside the specified bounds.
-                #expected_x=[14.095, 0.84296])
-
-class Test8(TestFunction):
-    """
-    Hock and Schittkowski 29 problem (HS29). Hoch and Schittkowski (1981)
-    http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
-    Minimize: f = - x_1 * x_2 * x_3
-
-    Subject to: - (x_1**2 + 2 * x_2**2 + 4 * x_3**2 - 48.0)<= 0,
-                -5 <= x_1 <= 5,
-                -4 <= x_2 <= 4,
-                -3 <= x_3 <= 3.
-
-    Approx. Answer:
-        f([4.0,  -2 * 2**0.5, -2.0]) = -16.0 * 2**0.5
-
-    NOTE: Other minimizers: [4.0,  2 * 2**0.5, 2.0]
-                            [-4.0, 2 * 2**0.5, -2.0]
-                            [-4.0, -2 * 2**0.5, 2.0]
-
-    """
-
-    def f(self, x):
-        return - x[0] * x[1] * x[2]
-
-    def g(self, x):
-        return - (x[0]**2 + 2 * x[1]**2 + 4 * x[2]**2 - 48.0)
-
-
-test8_1 = Test8(bounds=[(-5, 5), (-4, 4), (-3, 3)],
-                expected_x=[4.0,  -2 * 2**0.5, -2.0],
-                expected_fun=[-16.0 * 2**0.5],  # For all minimizers
-                expected_xl = numpy.array([[4.0,  -2 * 2**0.5, -2.0],
-                                           [4.0, 2 * 2 ** 0.5, 2.0],
-                                           [-4.0, 2 * 2 ** 0.5, -2.0],
-                                           [-4.0, -2 * 2 ** 0.5, 2.0]]),
-
-                expected_funl = numpy.array([-16.0 * 2**0.5,]*4)
-                )
-
-class Test9(TestFunction):
     """
     Hock and Schittkowski 18 problem (HS18). Hoch and Schittkowski (1981)
     http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
@@ -179,12 +102,12 @@ class Test9(TestFunction):
 
     g = (g1, g2)
 
-test9_1 = Test9(bounds=[(2, 50), (0, 50)],
+test3_1 = Test3(bounds=[(2, 50), (0, 50)],
                 expected_x=[250**0.5, 2.5**0.5],
                 expected_fun=[5.0]
                 )
 
-class Test10(TestFunction):
+class Test4(TestFunction):
     """
     Hock and Schittkowski 11 problem (HS11). Hoch and Schittkowski (1981)
 
@@ -213,7 +136,7 @@ class Test10(TestFunction):
 
     g = (g1, g2, g3, g4)
 
-test10_1 = Test10(bounds=[(-10, 10),]*7,
+test4_1 = Test4(bounds=[(-10, 10),]*7,
                   expected_x=[2.330499, 1.951372, -0.4775414,
                               4.365726, -0.6244870, 1.038131, 1.594227],
                    expected_fun=[680.6300573]
@@ -222,7 +145,7 @@ test10_1 = Test10(bounds=[(-10, 10),]*7,
 def run_test(test, args=(), g_args=(), test_atol=1e-5,
              n=100, iter=None, sampling_method='sobol'):
 
-    if test == test10_1:
+    if test == test4_1:
         n = 1000
         if sampling_method =='simplicial':
             n = 1
@@ -258,84 +181,98 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5,
                                       atol=test_atol)
 
 
-# $ python2 -m unittest -v tgo_tests.TestTgoFuncs
+# Base test functions:
 class TestShgoSobolTestFunctions(unittest.TestCase):
     """
-    Global optimisation tests:
+    Global optimisation tests with Sobol sampling:
     """
     # Sobol algorithm
-    def test_f1_sobol(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2"""
+    def test_f1_1_sobol(self):
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
         run_test(test1_1)
+
+    def test_f1_2_sobol(self):
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
         run_test(test1_2)
 
-    def test_f2_sobol(self):
-        """Scalar opt test on f(x) = (x - 30) * sin(x)"""
+    def test_f1_3_sobol(self):
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
+        run_test(test1_3)
+
+    def test_f2_1_sobol(self):
+        """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
         run_test(test2_1)
+
+    def test_f2_2_sobol(self):
+        """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
         run_test(test2_2)
 
     def test_f3_sobol(self):
-        """Hock and Schittkowski problem 19"""
+        """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1)
 
-    def test_t8_sobol(self):
-        """Hock and Schittkowski problem 29"""
-        run_test(test8_1)
-
-    def test_t9_sobol(self):
-        """Hock and Schittkowski problem 18 """
-        run_test(test9_1)
-
-    def test_t910_sobol(self):
-        """ Hock and Schittkowski 11 problem (HS11)"""
-        run_test(test10_1)
+    def test_t4_sobol(self):
+        """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
+        run_test(test4_1)
 
     #def test_t911(self):
     #    """1D tabletop function"""
     #    run_test(test11_1)
 
 class TestShgoSimplicialTestFunctions(unittest.TestCase):
-    # Simplicial algorithm
+    """
+    Global optimisation tests with Simplicial sampling:
+    """
     def test_f1_1_simplicial(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2"""
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
         run_test(test1_1,  sampling_method='simplicial')
 
     def test_f1_2_simplicial(self):
-        """Scalar opt test on f(x) = (x - 30) * sin(x)"""
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
         run_test(test1_2,  sampling_method='simplicial')
 
-    def test_f2_simplicial(self):
-        """Scalar opt test on f(x) = (x - 30) * sin(x)"""
+    def test_f1_3_simplicial(self):
+        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
+        run_test(test1_3,  sampling_method='simplicial')
+
+    def test_f2_1_simplicial(self):
+        """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
         run_test(test2_1, sampling_method='simplicial')
+
+    def test_f2_2_simplicial(self):
+        """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
         run_test(test2_2, sampling_method='simplicial')
 
     def test_f3_simplicial(self):
-        """Hock and Schittkowski problem 19"""
+        """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1, sampling_method='simplicial')
 
-    def test_t8_simplicial(self):
-        """Hock and Schittkowski problem 29"""
-        run_test(test8_1, sampling_method='simplicial')
+    def test_t4_simplicial(self):
+        """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
+        run_test(test4_1, sampling_method='simplicial')
 
-    def test_t9_simplicial(self):
-        """Hock and Schittkowski problem 18 """
-        run_test(test9_1, sampling_method='simplicial')
+# Optional test functions
+class TestShgoArguments(unittest.TestCase):
+    def test_1_iter(self):
+        """Iterative sampling on TestFunction 1"""
+        run_test(test1_2, iter=2,  sampling_method='simplicial')
 
-    def test_t910_sobol(self):
-        """ Hock and Schittkowski 11 problem (HS11)"""
-        run_test(test10_1, sampling_method='simplicial')
+    def test_2_iter(self):
+        """Iterative sampling on TestFunction 1"""
+        run_test(test2_1, iter=6,  sampling_method='simplicial')
 
-def tgo_suite():
+def shgo_suite():
     """
     Gather all the TGO tests from this module in a test suite.
     """
-    TestTgo = unittest.TestSuite()
-    tgo_suite1 = unittest.makeSuite(TestTgoFuncs)
-    #tgo_suite2 = unittest.makeSuite(TestTgoSubFuncs)
-    TestTgo.addTest(tgo_suite1)
-    return TestTgo
+    TestShgo = unittest.TestSuite()
+    shgo_suite1 = unittest.makeSuite(TestShgoSimplicialTestFunctions)
+    shgo_suite2 = unittest.makeSuite(TestShgoSobolTestFunctions)
+    TestShgo.addTest(shgo_suite1, shgo_suite2)
+    return TestShgo
 
 
 if __name__ == '__main__':
-    TestTgo=tgo_suite()
-    unittest.TextTestRunner(verbosity=2).run(TestTgo)
+    pass
+    #TestTgo=tgo_suite()
+    #unittest.TextTestRunner(verbosity=2).run(TestTgo)
