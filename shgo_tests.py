@@ -149,9 +149,6 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5,
         if sampling_method =='simplicial':
             n = 1
 
-    #if test == test9_1:
-    #    n = 50000
-
     res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
                 g_args=g_args, n=n, iter=iter,
                 sampling_method=sampling_method)
@@ -253,13 +250,21 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
 
 # Optional test functions
 class TestShgoArguments(unittest.TestCase):
-    def test_1_iter(self):
-        """Iterative sampling on TestFunction 1 (multivariate)"""
+    def test_1_1_iter(self):
+        """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
         run_test(test1_2, n=None, iter=2, sampling_method='simplicial')
 
-    def test_2_iter(self):
-        """Iterative sampling on TestFunction 2 (univariate)"""
+    def test_1_2_iter(self):
+        """Iterative simplicial on TestFunction 2 (univariate)"""
         run_test(test2_1, n=None, iter=6, sampling_method='simplicial')
+
+    def test_2_1_iter(self):
+        """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
+        run_test(test1_2, n=None, iter=1, sampling_method='sobol')
+
+    def test_2_1_iter(self):
+        """Iterative Sobol sampling on TestFunction 2 (univariate)"""
+        run_test(test2_1, n=None, iter=1, sampling_method='sobol')
 
     def test_3_1_disp_simplicial(self):
         """Iterative sampling on TestFunction 2 (univariate)"""
@@ -268,6 +273,9 @@ class TestShgoArguments(unittest.TestCase):
 
         res = shgo(test1_2.f, test1_2.bounds,
                    callback=callback_func, options={'disp': True})
+
+
+
 class TestShgoFailures(unittest.TestCase):
 
     def test_1_arguments(self):
