@@ -916,7 +916,7 @@ class SHGOs(SHGO):
     """
     This class implements the shgo routine
     """
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=100,
+    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
 
