@@ -177,10 +177,22 @@ testLJ = TestLJ(bounds=boundsLJ,
                             -2.50000222e+00,
                             -2.71247337e-08,
                             -2.71247337e-08,
-                            -1.50000222e+00],
-               expected_xl = None,
-               expected_funl =None
+                            -1.50000222e+00]
                   )
+
+class TestTable(TestFunction):
+    def f(self, x):
+        if x[0] == 3.0 and x[1] == 3.0:
+            return 50
+        else:
+            return 100
+
+    g = None
+
+test_table = TestTable(bounds=[(-10, 10), (-10, 10)],
+                       expected_fun=[50],
+                       expected_x=[3.0, 3.0])
+
 
 def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
              callback=None, minimizer_kwargs=None, options=None,
@@ -294,8 +306,7 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
     def test_lj_symmetry(self):
         """LJ: Symmetry constrained test function"""
         options = {'symmetry': True,
-                   'disp': True,
-                   'crystal_iter': 11}
+                   'disp': True}
         args = (6,)  # No. of atoms
         run_test(testLJ, args=args, n=None,
                    options=options, iter=3,
@@ -364,6 +375,15 @@ class TestShgoFailures(unittest.TestCase):
         numpy.testing.assert_raises(IOError,
                                     shgo, test1_1.f, test1_1.bounds,
                                     sampling_method='not_Sobol')
+
+    def test_3_no_min_pool(self):
+        options = {'maxfev': 10}
+        res = shgo(test_table.f, test_table.bounds, n=3, options=options,
+                   sampling_method='sobol')
+        print(res)
+        numpy.testing.assert_equal(False, res.success)
+        numpy.testing.assert_equal(9, res.nfev)
+
 
     def test_6_func_arguments(self):
         args = 1
