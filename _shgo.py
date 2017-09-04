@@ -506,22 +506,33 @@ class SHGO(object):
         self.fn = n  # Number of feasible samples remaining
 
         # Stop the algorithm if multiple stopping criteria are specified
-        if (self.n is not None) and (self.iter is not None) and (self.f_min_true is not None):
-            IOError("""Ambiguous input: specify either 
-                    `iter` finite iterations or `n` finite sampling points""")
-        else:  # else only for collapse-able syntax
-            if (self.iter is not None):
-                self.stop_global = False
-                # Define stop iteration method
-                self.stop_iter_m = self.finite_iterations
-            elif (self.n is not None):
-                self.stop_global = False
-                # Define stop iteration method
-                self.stop_iter_m = self.finite_sampling
-            elif (sampling_method == 'simplicial') and (self.iter is None):
-                self.stop_iter_m = self.finite_iterations
-                self.iter = 1
-            elif 'f_min' in options:
+        if (self.n is not None) and (self.iter is not None):
+            raise IOError('Ambiguous input: specify either' 
+                    """`iter` finite iterations """
+                    """or `n` finite sampling points""")
+        elif (self.n is not None) and (self.f_min_true is not None):
+            raise IOError("""Ambiguous input: specify either """
+                          """`n` finite sampling points"""
+                          """or options['f_min'] known function global minima""")
+        elif (self.iter is not None) and (self.f_min_true is not None):
+            raise IOError("""Ambiguous input: specify either """
+                          """`iter` finite iterations """
+                          """or options['f_min'] known function global minima""")
+
+        #else:  # else only for collapse-able syntax
+        if (self.iter is not None):
+            self.stop_global = False
+            # Define stop iteration method
+            self.stop_iter_m = self.finite_iterations
+        elif (self.n is not None):
+            self.stop_global = False
+            # Define stop iteration method
+            self.stop_iter_m = self.finite_sampling
+        elif (sampling_method == 'simplicial') and (self.iter is None):
+            self.stop_iter_m = self.finite_iterations
+            self.iter = 1
+        elif options is not None:
+            if 'f_min' in options:
                 self.stop_global = False
                 self.stop_iter_m = self.finite_precision
 

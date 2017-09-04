@@ -7,7 +7,6 @@ NOTE: For TestTgoFuncs test_f1 and test_f2 adequately test the
 """
 import unittest
 import numpy
-#from _shgo_sobol import *
 from _shgo import *
 import logging
 import sys
@@ -247,6 +246,7 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
         """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1, sampling_method='simplicial')
 
+    @numpy.testing.decorators.slow
     def test_t4_simplicial(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, sampling_method='simplicial')
@@ -254,12 +254,39 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
 # Optional test functions
 class TestShgoArguments(unittest.TestCase):
     def test_1_iter(self):
-        """Iterative sampling on TestFunction 1"""
-        run_test(test1_2, iter=2,  sampling_method='simplicial')
+        """Iterative sampling on TestFunction 1 (multivariate)"""
+        run_test(test1_2, n=None, iter=2, sampling_method='simplicial')
 
     def test_2_iter(self):
-        """Iterative sampling on TestFunction 1"""
-        run_test(test2_1, iter=6,  sampling_method='simplicial')
+        """Iterative sampling on TestFunction 2 (univariate)"""
+        run_test(test2_1, n=None, iter=6, sampling_method='simplicial')
+
+    def test_3_1_disp_simplicial(self):
+        """Iterative sampling on TestFunction 2 (univariate)"""
+        def callback_func(x):
+            print("Local minimization callback test")
+
+        res = shgo(test1_2.f, test1_2.bounds,
+                   callback=callback_func, options={'disp': True})
+class TestShgoFailures(unittest.TestCase):
+
+    def test_1_arguments(self):
+        """Ambiguous arguments"""
+        numpy.testing.assert_raises(IOError,
+                                    SHGO, test1_1.f, test1_1.bounds,
+                                    n=10, iter=3)
+        numpy.testing.assert_raises(IOError,
+                                    SHGO, test1_1.f, test1_1.bounds,
+                                    n=10, options={'f_min': 1.0})
+        numpy.testing.assert_raises(IOError,
+                                    SHGO, test1_1.f, test1_1.bounds,
+                                    iter=3, options={'f_min': 1.0})
+
+    def test_2_sampling(self):
+        """Unknown sampling method"""
+        numpy.testing.assert_raises(IOError,
+                                    shgo, test1_1.f, test1_1.bounds,
+                                    sampling_method='not_Sobol')
 
 def shgo_suite():
     """
