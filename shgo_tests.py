@@ -22,10 +22,10 @@ class TestFunction(object):
         self.expected_funl = expected_funl
 
 class Test1(TestFunction):
-    def f(self, x, r=0, s=0):
+    def f(self, x):
         return x[0]**2 + x[1]**2
 
-    def g(self, x, r=0, s=0):
+    def g(self, x):
        return -(numpy.sum(x, axis=0) - 6.0)
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
@@ -141,8 +141,50 @@ test4_1 = Test4(bounds=[(-10, 10),]*7,
                    expected_fun=[680.6300573]
                   )
 
-def run_test(test, args=(), g_args=(), test_atol=1e-5,
-             n=100, iter=None, sampling_method='sobol'):
+class TestLJ(TestFunction):
+    """
+    LennardJones objective function. Used to test symmetry constraints settings.
+    """
+
+    def f(self, x, *args):
+        self.N = args[0]
+        k = int(self.N / 3)
+        s = 0.0
+
+        for i in range(k - 1):
+            for j in range(i + 1, k):
+                a = 3 * i
+                b = 3 * j
+                xd = x[a] - x[b]
+                yd = x[a + 1] - x[b + 1]
+                zd = x[a + 2] - x[b + 2]
+                ed = xd * xd + yd * yd + zd * zd
+                ud = ed * ed * ed
+                if ed > 0.0:
+                    s += (1.0 / ud - 2.0) / ud
+
+        return s
+
+    g = None
+
+N = 6
+boundsLJ = list(zip([-4.0] * 6, [4.0] * 6))
+
+testLJ = TestLJ(bounds=boundsLJ,
+               expected_fun=[-1.0],
+               expected_x=[ -2.71247337e-08,
+                            -2.71247337e-08,
+                            -2.50000222e+00,
+                            -2.71247337e-08,
+                            -2.71247337e-08,
+                            -1.50000222e+00],
+               expected_xl = None,
+               expected_funl =None
+                  )
+
+def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
+             callback=None, minimizer_kwargs=None, options=None,
+              sampling_method='sobol'):
 
     if test == test4_1:
         n = 1000
@@ -150,7 +192,8 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5,
             n = 1
 
     res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                g_args=g_args, n=n, iter=iter,
+                g_args=g_args, n=n, iter=iter, callback=callback,
+                minimizer_kwargs=minimizer_kwargs, options=options,
                 sampling_method=sampling_method)
 
     logging.info(res)
@@ -207,7 +250,7 @@ class TestShgoSobolTestFunctions(unittest.TestCase):
         """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1)
 
-    def test_t4_sobol(self):
+    def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1)
 
@@ -244,11 +287,21 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
         run_test(test3_1, sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
-    def test_t4_simplicial(self):
+    def test_f4_simplicial(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, sampling_method='simplicial')
 
-# Optional test functions
+    def test_lj_symmetry(self):
+        """LJ: Symmetry constrained test function"""
+        options = {'symmetry': True,
+                   'disp': True,
+                   'crystal_iter': 11}
+        args = (6,)  # No. of atoms
+        run_test(testLJ, args=args, n=None,
+                   options=options, iter=3,
+                   sampling_method='simplicial')
+
+# Argument test functions
 class TestShgoArguments(unittest.TestCase):
     def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
@@ -274,7 +327,10 @@ class TestShgoArguments(unittest.TestCase):
         def callback_func(x):
             print("Local minimization callback test")
 
-        res = shgo(test1_2.f, test1_2.bounds, sampling_method='simplicial',
+        res = shgo(test1_2.f, test1_2.bounds, iter=1, sampling_method='simplicial',
+                   callback=callback_func, options={'disp': True})
+
+        res = shgo(test1_2.f, test1_2.bounds, n=1, sampling_method='simplicial',
                    callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
@@ -282,9 +338,13 @@ class TestShgoArguments(unittest.TestCase):
         def callback_func(x):
             print("Local minimization callback test")
 
-        res = shgo(test1_2.f, test1_2.bounds, sampling_method='sobol',
+        res = shgo(test1_2.f, test1_2.bounds, iter=1, sampling_method='sobol',
                    callback=callback_func, options={'disp': True})
 
+        res = shgo(test1_2.f, test1_2.bounds, n=1, sampling_method='simplicial',
+                   callback=callback_func, options={'disp': True})
+
+# Failure test functions
 class TestShgoFailures(unittest.TestCase):
 
     def test_1_arguments(self):
@@ -305,15 +365,12 @@ class TestShgoFailures(unittest.TestCase):
                                     shgo, test1_1.f, test1_1.bounds,
                                     sampling_method='not_Sobol')
 
-def shgo_suite():
-    """
-    Gather all the TGO tests from this module in a test suite.
-    """
-    TestShgo = unittest.TestSuite()
-    shgo_suite1 = unittest.makeSuite(TestShgoSimplicialTestFunctions)
-    shgo_suite2 = unittest.makeSuite(TestShgoSobolTestFunctions)
-    TestShgo.addTest(shgo_suite1, shgo_suite2)
-    return TestShgo
+    def test_6_func_arguments(self):
+        args = 1
+        numpy.testing.assert_raises(TypeError,
+                                    shgo, test1_1.f, test1_1.bounds, args=args)
+        #numpy.testing.assert_raises(TypeError,
+        #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
 
 
 if __name__ == '__main__':
