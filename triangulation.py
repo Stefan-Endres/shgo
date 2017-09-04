@@ -414,9 +414,6 @@ class Complex:
 
         return
 
-
-
-
     @lru_cache(maxsize=None)
     def generate_sub_cell(self, origin, suprenum):  # No hits
         V_new = []
@@ -556,7 +553,7 @@ class Complex:
                         x = []
                         y = []
                         z = []
-                        logging.info('v.x = {}'.format(v.x))
+                        #logging.info('v.x = {}'.format(v.x))
                         x.append(v.x[0])
                         y.append(v.x[1])
                         z.append(v.x[2])
@@ -567,7 +564,7 @@ class Complex:
                             x.append(v.x[0])
                             y.append(v.x[1])
                             z.append(v.x[2])
-                            logging.info('vn.x = {}'.format(vn.x))
+                            #logging.info('vn.x = {}'.format(vn.x))
 
                         ax.plot(x, y, z, label='simplex')
 
@@ -743,30 +740,23 @@ class Vertex:
                                 + bounds[i][0])
 
             #print(f'x = {x}; x_a = {x_a}')
-        if 1:  #TODO: Make saving the array structure optional
-            self.x_a = x_a
+        #TODO: Make saving the array structure optional
+        self.x_a = x_a
 
         # Note Vertex is only initiate once for all x so only
         # evaluated once
-        if g_cons is not None:
-            eval = True
-            for g in g_cons:
-                #if g(self.x_a, *g_cons_args) >= 0.0:
-                if g(self.x_a, *g_cons_args) > 0.0:
-                    #print(self.x_a)
-                    #print((self.x_a, *g_cons_args))
-                    self.f = numpy.inf
-                    #print("Constraints found")
-                    eval = False
-            if eval:
-                #print(f"EVAL x.a = {self.x_a}")
-                self.f = func(x_a, *func_args)
-            #print(f"self.x_a = {x_a}")
-            #print(f"self.f = {self.f}")
+        if func is not None:
+            if g_cons is not None:
+                self.feasible = True
+                for g in g_cons:
+                    if g(self.x_a, *g_cons_args) < 0.0:
+                        self.f = numpy.inf
+                        self.feasible = False
+                if self.feasible:
+                    self.f = func(x_a, *func_args)
 
-        elif func is not None:
-            self.f = func(x_a, *func_args)
-            #print(f'x = {x}; x_a = {x_a}; self.f = {self.f}')
+            else:
+                self.f = func(x_a, *func_args)
 
         if nn is not None:
             self.nn = nn
@@ -779,7 +769,6 @@ class Vertex:
         # Index:
         if I is not None:
             self.I = I
-
 
     def __hash__(self):
         #return hash(tuple(self.x))
@@ -821,7 +810,7 @@ class Vertex:
             for v in self.nn:
                 #if self.f <= v.f:
                 #if self.f > v.f: #TODO: LAST STABLE
-                if self.f >= v.f:
+                if self.f >= v.f:  #TODO: AttributeError: 'Vertex' object has no attribute 'f'
                     #if self.f >= v.f:
                     self.min = False
                     break
@@ -841,6 +830,7 @@ class VertexCache:
         self.g_cons_args = g_cons_args
         self.func_args = func_args
         self.bounds = bounds
+        self.nfev = 0
 
         if indexed:
             self.Index = -1
@@ -866,6 +856,14 @@ class VertexCache:
             #logging.info("New generated vertex at x = {}".format(x))
             #NOTE: Surprisingly high performance increase if logging is commented out
             self.cache[x] = xval
+            if self.func is not None:
+                if self.g_cons is not None:
+                    #print(f'xval.feasible = {xval.feasible}')
+                    if xval.feasible:
+                        self.nfev += 1
+                else:
+                    self.nfev += 1
+
             return self.cache[x]
 
 
@@ -877,11 +875,12 @@ if __name__ == '__main__':
     def test_g_cons(x): #(Requires n > 2)
         import numpy
         #return x[0] - 0.5 * x[2] + 0.5
-        return x[0] + x[2] #+ 0.5
+        return x[0] #+ x[2] #+ 0.5
     g_cons = [test_g_cons]
     tr = []
     nr = list(range(9))
-    HC = Complex(3, test_func, symmetry=1, g_cons=g_cons)
+    HC = Complex(8, test_func, symmetry=0, g_cons=g_cons)
+    logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
     #HC = Complex(13, test_func, symmetry=1)
     if 0:
         nr = []
@@ -927,11 +926,12 @@ if __name__ == '__main__':
         HC.plot_complex()
 
     if 1:
-        for i in range(7):
+        for i in range(2):
+            logging.info('Start complex refinement gen = {}'.format(i + 1))
             HC.split_generation()
-            logging.info('Done splitting gen = {}'.format(i+1))
-
-            HC.plot_complex()
+            logging.info('Done with complex refinement gen = {}'.format(i+1))
+            #HC.plot_complex()
+            logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
     if 0:
         print(HC.H)
         print(len(HC.H[1]))
