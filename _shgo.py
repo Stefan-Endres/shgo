@@ -351,8 +351,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
 class SHGO(object):
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, multiproc=False,
-                    sampling_method='sobol'):
+                 options=None, sampling_method='sobol'):
 
         self.func = func
         #  TODO Assert if func output matches dims. found from bounds
@@ -560,7 +559,8 @@ class SHGO(object):
         #self.fn -= 1
         #print(f'self.fn = {self.fn}')
         logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
-        if len(self.HC.V.cache) >= self.n:
+        logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
+        if self.HC.V.nfev >= self.n:
             self.stop_global = True
         return self.stop_global
 
@@ -804,7 +804,7 @@ class SHGOh(SHGO):
 
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
-        self.res.nfev += len(self.HC.V.cache)
+        self.res.nfev += self.HC.V.nfev
         print(f'self.res.nfev = {self.res.nfev}')
         return
 
@@ -934,7 +934,7 @@ class SHGOh(SHGO):
 
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
-        self.res.nfev += len(self.HC.V.cache)
+        self.res.nfev = self.HC.V.nfev
         return
 
     def simplex_minimizers(self):
@@ -945,11 +945,11 @@ class SHGOh(SHGO):
         # TODO: Can easily be parralized
         for x in self.HC.V.cache:
             if self.HC.V[x].minimiser():
-                if 0: pass
-                    #logging.info('=' * 60)
-                    #logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x))
-                    #logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
-                    #logging.info('=' * 30)
+                if 1:
+                    logging.info('=' * 60)
+                    logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x_a))
+                    logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                    logging.info('=' * 30)
                 if self.HC.V[x] not in self.minimizer_pool:
                     self.minimizer_pool.append(self.HC.V[x])
 
