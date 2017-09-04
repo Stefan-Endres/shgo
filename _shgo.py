@@ -374,7 +374,6 @@ class SHGO(object):
         self.maxfev = None
         self.disp = False
         self.symmetry = False
-        self.crystal_iter = 1
         self.local_iter = False
         if options is not None:
             if 'maxfev' in options:
@@ -919,7 +918,7 @@ class SHGOs(SHGO):
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
 
-        if n is None:
+        if (n is None) and (iter is None):
             n = 100  # Define arbitrary sampling if user provided none
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
@@ -1138,27 +1137,6 @@ class SHGOs(SHGO):
             #else:  # If good values are found stop while loop
             self.processed_n = self.fn#self.n
             #self.n += 1
-
-
-
-        # This is not needed since old minima found are less likely to be
-        # unique at higher homology groups anyway.
-        if 0:
-            #for x_min_array in range(len(self.X_min_all)):
-            logging.info('len(self.X_min_all) ='
-                         ' {}'.format(len(self.X_min_all)))
-            #logging.info('self.X_min_all = {}'.format(self.X_min_all))
-            if len(self.X_min_all) == 1:
-                self.X_min = self.X_min_all[0]
-            for i in range(1, len(self.X_min_all)):
-                self.X_min = numpy.concatenate((self.X_min_all[i-1],
-                                                self.X_min_all[i]), axis=0)
-
-                self.minimizer_pool_F = self.minimizer_pool_F_all
-                # need to process?
-
-            #TODO Eliminate duplicates
-
 
         # Break if no final minima found
         #logging.info('self.X_min = {}'.format(self.X_min))
