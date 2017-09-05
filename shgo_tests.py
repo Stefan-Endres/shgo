@@ -193,6 +193,32 @@ test_table = TestTable(bounds=[(-10, 10), (-10, 10)],
                        expected_fun=[50],
                        expected_x=[3.0, 3.0])
 
+class TestInfeasible(TestFunction):
+    """
+    Test function with no feasible domain.
+    """
+    def f(self, x, *args):
+        return x[0] ** 2 + x[1] ** 2
+
+    def g1(x):
+        return x[0] + x[1] - 1
+
+    def g2(x):
+        return -(x[0] + x[1] - 1)
+
+    def g3(x):
+        return (-x[0] + x[1] - 1)
+
+    def g4(x):
+        return -(-x[0] + x[1] - 1)
+
+    g = (g1, g2, g3, g4)
+
+test_infeasible = TestInfeasible(bounds=[(-1, 1), (-1, 1)],
+                                 expected_fun=None,
+                                 expected_x=None
+                                 )
+
 
 def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
              callback=None, minimizer_kwargs=None, options=None,
@@ -230,7 +256,7 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
         numpy.testing.assert_allclose(res.funl,
                                       test.expected_funl,
                                       atol=test_atol)
-
+    return
 
 # Base test functions:
 class TestShgoSobolTestFunctions(unittest.TestCase):
@@ -312,6 +338,8 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
                    options=options, iter=3,
                    sampling_method='simplicial')
 
+
+
 # Argument test functions
 class TestShgoArguments(unittest.TestCase):
     def test_1_1_simpl_iter(self):
@@ -337,53 +365,111 @@ class TestShgoArguments(unittest.TestCase):
         """Iterative sampling on TestFunction 2 (univariate)"""
         def callback_func(x):
             print("Local minimization callback test")
-
-        res = shgo(test1_2.f, test1_2.bounds, iter=1, sampling_method='simplicial',
-                   callback=callback_func, options={'disp': True})
-
-        res = shgo(test1_2.f, test1_2.bounds, n=1, sampling_method='simplicial',
-                   callback=callback_func, options={'disp': True})
+        for test in [test1_1, test2_1]:
+                res = shgo(test.f, test.bounds, iter=1, sampling_method='simplicial',
+                           callback=callback_func, options={'disp': True})
+                res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                           callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
         """Iterative sampling on TestFunction 2 (univariate)"""
         def callback_func(x):
             print("Local minimization callback test")
 
-        res = shgo(test1_2.f, test1_2.bounds, iter=1, sampling_method='sobol',
-                   callback=callback_func, options={'disp': True})
+        for test in [test1_1, test2_1]:
+            res = shgo(test.f, test.bounds, iter=1, sampling_method='sobol',
+                       callback=callback_func, options={'disp': True})
 
-        res = shgo(test1_2.f, test1_2.bounds, n=1, sampling_method='simplicial',
-                   callback=callback_func, options={'disp': True})
+            res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
+                       callback=callback_func, options={'disp': True})
 
 # Failure test functions
 class TestShgoFailures(unittest.TestCase):
-
-    def test_1_arguments(self):
-        """Ambiguous arguments"""
+    def test_1_1_arguments(self):
+        """Ambiguous arguments for stopping criteria,
+        `n` and `iter`"""
         numpy.testing.assert_raises(IOError,
                                     SHGO, test1_1.f, test1_1.bounds,
                                     n=10, iter=3)
+
+    def test_1_2_arguments(self):
+        """Ambiguous arguments for stopping criteria,
+         `n` and options=['f_min']"""
         numpy.testing.assert_raises(IOError,
                                     SHGO, test1_1.f, test1_1.bounds,
                                     n=10, options={'f_min': 1.0})
+
+    def test_1_3_arguments(self):
+        """Ambiguous arguments for stopping criteria,
+        `iter` and options=['f_min']"""
         numpy.testing.assert_raises(IOError,
                                     SHGO, test1_1.f, test1_1.bounds,
                                     iter=3, options={'f_min': 1.0})
 
     def test_2_sampling(self):
-        """Unknown sampling method"""
+        """Rejection of unknown sampling method"""
         numpy.testing.assert_raises(IOError,
                                     shgo, test1_1.f, test1_1.bounds,
                                     sampling_method='not_Sobol')
 
-    def test_3_no_min_pool(self):
-        options = {'maxfev': 10}
+    def test_3_1_no_min_pool_sobol(self):
+        """Check that the routine stops when no minimiser is found
+           after maximum specified function evaluations"""
+        options = {'maxfev': 10,
+                   'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='sobol')
-        print(res)
+        #print(res)
         numpy.testing.assert_equal(False, res.success)
         numpy.testing.assert_equal(9, res.nfev)
 
+    def test_3_2_no_min_pool_simplicial(self):
+        """Check that the routine stops when no minimiser is found
+           after maximum specified function evaluations"""
+        options = {'maxfev': 10,
+                   'disp': True}
+        res = shgo(test_table.f, test_table.bounds, n=3, options=options,
+                   sampling_method='simplicial')
+        #print(res)
+        numpy.testing.assert_equal(False, res.success)
+
+    def test_4_1_bound_err(self):
+        """Specified bounds ub > lb"""
+        bounds = [(6, 3), (3, 5)]
+        numpy.testing.assert_raises(ValueError,
+                                    shgo, test1_1.f, bounds)
+
+
+    def test_4_2_bound_err(self):
+        """Specified bounds are of the form (lb, ub)"""
+        bounds = [(3, 5, 5), (3, 5)]
+        numpy.testing.assert_raises(ValueError,
+                                    shgo, test1_1.f, bounds)
+
+    def test_5_1_infeasible_sobol(self):
+        """Ensures the algorithm terminates on infeasible problems
+           after maxfev is exceeded."""
+        options = {'maxfev': 100,
+                   'disp': True}
+
+        res = shgo(test_infeasible.f, test_infeasible.bounds,
+                   g_cons=test_infeasible.g,  n=100,  options=options,
+                   sampling_method='sobol')
+
+        numpy.testing.assert_equal(False, res.success)
+
+    def test_5_2_infeasible_simplicial(self):
+        """Ensures the algorithm terminates on infeasible problems
+           after maxfev is exceeded."""
+        options = {'maxev': 1000,
+                   'disp': True}
+
+        res = shgo(test_infeasible.f, test_infeasible.bounds,
+                   g_cons=test_infeasible.g, n=100, options=options,
+                   sampling_method='simplicial')
+        print(res)
+
+        numpy.testing.assert_equal(False, res.success)
 
     def test_6_func_arguments(self):
         args = 1

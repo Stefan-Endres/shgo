@@ -296,10 +296,6 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
         print('Generating sampling points')
 
     # Construct directed complex.
-    #SHc.construct_complex_simplicial()
-
-    # Construct directed complex.
-
     if (iter is not None) and not SHc.break_routine:
         if sampling_method == 'sobol':
             logging.info('Attempting to iteratively refine Sobol sampled complex')
@@ -309,12 +305,12 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
             SHc.construct_complex_iteratively()
             #SHc.construct_complex_simplicial()
     else:  # Finite sampling points
-
         if sampling_method == 'sobol':
+            logging.info('Attempting to build finite sample Sobol sampled complex')
             SHc.construct_complex_sobol()
         elif sampling_method == 'simplicial':
+            logging.info('Attempting to refine finite sampled triangulated complex')
             SHc.construct_complex_iteratively()
-            #raise IOError('Not implemented yet')
 
     if not SHc.break_routine:
         if SHc.disp:
@@ -329,6 +325,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
         # with a warning
         #TODO: Implement warning and lowest sampling return
         SHc.break_routine = True
+        SHc.fail_routine(mes="Failed to find a feasible minimiser point. "
+                             "Lowest sampling point =")
 
     if not SHc.break_routine:
         # Minimise the pool of minisers with local minimisation methods
@@ -380,7 +378,17 @@ class SHGO(object):
         self.local_iter = False
         if options is not None:
             if 'maxfev' in options:
+                # Maximum number of function evaluations in the feasible domain
                 self.maxfev = options['maxfev']
+            else:
+                self.maxfev = None
+            if 'maxev' in options:
+                # Maximum number of sampling evaluations (includes searching in
+                # infeasible points
+                self.maxev = options['maxev']
+            else:
+                self.maxev = None
+
             if 'disp' in options:
                 self.disp = options['disp']
             if 'symmetry' in options:
@@ -417,13 +425,16 @@ class SHGO(object):
             #self.options = None
         else:
             self.f_min_true = None
+            self.maxev = None
+            self.maxfev = None
             self.minimize_every_iter = False
 
         # set bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
         # Check if bounds are correctly specified
-        bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
+        #bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
+        bnderr = abound[:, 0] > abound[:, 1]
         # Set none finite values to large floats
         infind = ~numpy.isfinite(abound)
         abound[infind[:, 0], 0] = -1e50  # e308
@@ -565,6 +576,12 @@ class SHGO(object):
         self.iter -= 1
         if self.iter <= 0:
             self.stop_global = True
+        elif self.maxev is not None:
+            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
+                self.stop_global = True
+                self.fail_routine(mes=("Failed to find a feasible "
+                                       "sampling point within the "
+                                       "maximum allowed evaluations."))
         return self.stop_global
 
     def finite_sampling(self):
@@ -575,6 +592,19 @@ class SHGO(object):
         logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
         if self.HC.V.nfev >= self.n:
             self.stop_global = True
+        elif self.maxev is not None:
+            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
+                self.stop_global = True
+                self.fail_routine(mes=("Failed to find a feasible "
+                                       "sampling point within the "
+                                       "maximum allowed evaluations."))
+            #elif self.HC.V.nfev >= self.maxfev:  # STOP FOR INFEASIBLE SAMPLING
+            #    self.stop_global = True
+            #    self.fail_routine(mes=("Failed to find a feasible "
+            #                           "sampling point within the "
+            #                           "maximum allowed evaluations."))
+
+
         return self.stop_global
 
     def finite_precision(self):
@@ -758,6 +788,14 @@ class SHGO(object):
 
         # Add local func evals to sampling func evals
         self.res.nfev += self.res.nlfev
+        return
+
+    # Algorithm controls
+    def fail_routine(self, mes=("Failed to converge")):
+        self.break_routine = True
+        self.res.success = False
+        self.X_min = [None]
+        self.res.message = mes
         return
 
 # %% Define shgo class using simplicial hypercube sampling
@@ -950,44 +988,53 @@ class SHGOs(SHGO):
 
             # Find minimiser pool
             # DIMENSIONS self.dim
-            if self.dim < 2:  # Scalar objective functions
+            if self.fn >= (self.dim + 1):
+                if self.dim < 2:  # Scalar objective functions
+                    if self.disp:
+                        print('Constructing 1D minimizer pool')
+
+                    self.ax_subspace()
+                    self.surface_topo_ref()
+                    self.X_min = self.minimizers()
+
+                else:  # Multivariate functions.
+                    if self.disp:
+                        print('Constructing Gabrial graph and minimizer pool')
+
+                    self.delaunay_triangulation()
+                    if self.disp:
+                        print('Triangulation completed, building minimizer pool')
+
+                    self.X_min = self.delaunay_minimizers()
+
+                logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+            else:
                 if self.disp:
-                    print('Constructing 1D minimizer pool')
-
-                self.ax_subspace()
-                self.surface_topo_ref()
-                self.X_min = self.minimizers()
-
-            else:  # Multivariate functions.
-                if self.disp:
-                    print('Constructing Gabrial graph and minimizer pool')
-
-                self.delaunay_triangulation()
-                if self.disp:
-                    print('Triangulation completed, building minimizer pool')
-
-                self.X_min = self.delaunay_minimizers()
-
-            logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+                    print('Not enough sampling points found in the feasible domain.')
+                self.minimizer_pool = [None]
 
             # TODO: Keep sampling until n feasible points in non-linear constraints
             # self.fn < self.n ---> self.n - self.fn
-            if len(self.minimizer_pool) == 0:
+            if (len(self.minimizer_pool) == 0) or (self.fn == 0):
                 if self.disp:
-                    print('No minimizers found. Increasing sampling space.')
+                    if len(self.minimizer_pool) == 0:
+                        print('No minimizers found. Increasing sampling space.')
+                    if self.fn == 0:
+                        print('No feasible points found. Increasing sampling space.')
                 n_add = 100
                 if self.options is not None:
                     if 'maxfev' in self.options.keys():
                         n_add = int((self.options['maxfev'] - self.fn) / 1.618)
-                        if n_add < 1:
+                        if (n_add < 1) or ((self.n + n_add) >= self.options['maxfev']):
                             self.res.message = ("Failed to find a minimizer "
-                                               "within the maximum allowed "
-                                               "function evaluations.")
+                                                "within the maximum allowed "
+                                                "function evaluations.")
 
                             if self.disp:
                                 print(self.res.message + " Breaking routine...")
 
                             self.break_routine = True
+                            self.X_min = [None]
                             self.res.success = False
                             sample = False
 
@@ -998,7 +1045,6 @@ class SHGOs(SHGO):
                 # Include each sampling point as func evaluation:
                 self.res.nfev = self.fn
                 sample = False
-        pass
 
     def construct_complex_sobol_iter(self, n_growth_init=30):
         """
