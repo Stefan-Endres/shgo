@@ -1,22 +1,14 @@
 from _shgo import *
-import logging
-import sys
+import numpy
 
-class TestFunction(object):
-    def __init__(self, bounds, expected_x, expected_fun=None,
-                 expected_xl=None, expected_funl=None):
-        self.bounds = bounds
-        self.expected_x = expected_x
-        self.expected_fun = expected_fun
-        self.expected_xl = expected_xl
-        self.expected_funl = expected_funl
+def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
+             callback=None, minimizer_kwargs=None, options=None,
+              sampling_method='sobol'):
 
-class Test1(TestFunction):
-    def f(self, x):
-        return x[0]**2 + x[1]**2
+    res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
+               g_args=g_args, n=n, iter=iter, callback=callback,
+               minimizer_kwargs=minimizer_kwargs, options=options,
+               sampling_method=sampling_method)
 
-    def g(self, x):
-       return -(numpy.sum(x, axis=0) - 6.0)
-
-test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
-                expected_x=[0, 0])
+if __name__ == '__main__':
+    run_test

@@ -114,7 +114,7 @@ class Horst5(Benchmark):
         self.global_optimum = [1.2, 0.0, 0.8]
 
         def g1(x):
-            return 2 - (x[0] + x[1] * x[2])
+            return 2 - (x[0] + x[1] + x[2])
 
         def g2(x):
             return 1 - (x[0] + x[1] - (1 / 4.0) * x[2])
@@ -181,8 +181,10 @@ class Horst7(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
         self._bounds = [(0, 6), (0, 1), (0, 3)]
-        self.fglob = -44.859
-        self.global_optimum = [6.0, 0.0, 2.0]
+        #self.fglob = -44.859
+        self.fglob = -52.87741699796952  # NOTE LOWER VALUE THAN LITERATURE
+        #self.global_optimum = [6.0, 0.0, 2.0]
+        self.global_optimum = [ 6.,  0.,  3.] # NOTE LOWER VALUE THAN LITERATURE
 
         def g1(x):
             return 1 - (-x[0] - x[1] + (1 / 2.0) * x[2])
@@ -275,7 +277,8 @@ class Hs036(Benchmark):
         self.global_optimum = [20, 11, 15]
 
         def g1(x):
-            return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+            #return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+            return -x[0] - 2 * x[1] - 2 * x[2] + 72
 
         self.g = (g1,)
 
@@ -474,7 +477,8 @@ class S250(Benchmark):
         self.global_optimum = [20, 11, 15]
 
         def g1(x):
-            return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+            # return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+            return -x[0] - 2 * x[1] - 2 * x[2] + 72
 
         self.g = (g1,)
 

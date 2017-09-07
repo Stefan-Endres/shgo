@@ -29,7 +29,7 @@ class Horst1(TestFunction):
         return -x[0]**2 - 4*x[1]**2 + 4*x[0]*x[1] + 2*x[0] + 4*x[1]
 
     def g1(x):
-        return 1 -(-4*x[0] - 2*x[1])
+        return 1 -(-4*x[0] + 2*x[1])
 
     def g2(x):
         return 4 -(x[0] + x[1])
@@ -42,7 +42,7 @@ class Horst1(TestFunction):
     x0 = [1.5, 1.0]
 
 horst1 = Horst1(bounds=[(0, 3), (0, 2)],
-              expected_fun=-1.0625,
+              expected_fun= -1.0625,
               expected_x=[0.75, 2.0])
 
 class Horst2(TestFunction):
@@ -108,7 +108,7 @@ class Horst5(TestFunction):
         return - (numpy.abs(x[0] + 0.5*x[1] + 2/3.0 * x[2]))**(3/2.0) - x[0]**2
 
     def g1(x):
-        return 2 - (x[0] + x[1] *x[2])
+        return 2 - (x[0] + x[1] + x[2])
 
     def g2(x):
         return 1 - (x[0] + x[1] - (1/4.0)*x[2])
@@ -121,12 +121,13 @@ class Horst5(TestFunction):
     x0 = [1.0, 1.0, 1.5]
 
 horst5 = Horst5(bounds=[(0, 2), (0, 2), (0, 3)],
-              expected_fun=-3.722,
-              expected_x=[1.2, 0.0, 0.8])
+                expected_fun=-3.722,
+                expected_x=[1.2, 0.0, 0.8]
+                )
 
 class Horst6(TestFunction):
     def f(self, x):
-        x = numpy.array(x)
+        x = numpy.atleast_2d(x).T
         Q = numpy.array([[ 0.992934, -0.640117, 0.337286],
                          [-0.640117, -0.814622, 0.960807],
                          [ 0.337286,  0.960807, 0.500874]])
@@ -147,7 +148,10 @@ class Horst6(TestFunction):
     def g4(x):
         return  1.584087 - (-0.346896*x[0] + 0.637939*x[1] - 0.257623*x[2])
     def g5(x):
-        return  2.198036 - (-0.202821*x[0] + 0.647361*x[1] + 0.920135*x[2])
+        # Paulavius textbook:
+        #return  2.198036 - (-0.202821*x[0] + 0.647361*x[1] + 0.920135*x[2])
+        # https://link.springer.com/content/pdf/10.1007/BF00429750.pdf
+        return  2.198036 - (+0.202821*x[0] + 0.647361*x[1] + 0.920135*x[2])
     def g6(x):
         return -1.301853 - (-0.983091*x[0] - 0.886420*x[1] - 0.802444*x[2])
     def g7(x):
@@ -171,14 +175,18 @@ class Horst7(TestFunction):
         return 6 - (x[0] + 2*x[1])
     def g3(x):
         return - 1 + (2*x[0] + 4*x[1] + 2*x[2])
+        #return -(- 1 + (2*x[0] + 4*x[1] + 2*x[2]))
 
     g = (g1,g2,g3)
 
     x0 = [1.0, 1.0]
 
 horst7 = Horst7(bounds=[(0, 6),(0, 1), (0, 3)],
-              expected_fun=-44.859,
-              expected_x=[6.0, 0.0, 2.0])
+              #expected_fun=-44.859,  # LITERATURE VALUE
+              expected_fun=-52.87741699796952,
+              #expected_x=[6.0, 0.0, 2.0],  # LITERATURE VALUE
+              expected_x=[ 6.,  0.,  3.]
+                )
 
 class Hs021(TestFunction):
     def f(self, x):
@@ -236,15 +244,19 @@ class Hs036(TestFunction):
         return -x[0]*x[1]*x[2]
 
     def g1(x):
-        return (x[0] + 2*x[1] + 2*x[2] - 72)
+        #return (x[0] + 2*x[1] + 2*x[2] - 72)
+        return -x[0] - 2*x[1] - 2*x[2] + 72
 
     g = (g1,)
 
     x0 = [10.0, 10.0, 10.0]
 
 hs036 = Hs036(bounds=[(0, 20),(0, 11),(0, 42)],
-              expected_fun=-3300,
-              expected_x=[20, 11, 15])
+              expected_fun=-3300, # LITERATURE VALUE
+              #expected_fun=-9240.0,
+              expected_x=[20, 11, 15] # LITERATURE VALUE
+              #expected_x=[ 20.,  11.,  42.]
+              )
 
 class Hs037(TestFunction):
     def f(self, x):
@@ -403,7 +415,8 @@ class S250(TestFunction):
         return -x[0] * x[1] * x[2]
 
     def g1(x):
-        return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+        # return (x[0] + 2 * x[1] + 2 * x[2] - 72)
+        return -x[0] - 2 * x[1] - 2 * x[2] + 72
 
     g = (g1,)
 
@@ -475,10 +488,10 @@ class Bunnag2(TestFunction):
     g = (g1, g2)
 
 bunnag2 = Bunnag2(bounds=[(0, 4),]*4,
-                  expected_fun=-2.07,
-                  #expected_fun=-5.8894900135014625,  # shgo solution
-                  expected_x=[4/3.0, 4, 0, 0]
-                  #expected_x=[2.0, 4.0, 4.44089210e-16, 4.0]   # shgo solution
+                  #expected_fun=-2.07,
+                  expected_fun=-6.4052065800118605,  # shgo solution
+                  #expected_x=[4/3.0, 4, 0, 0]
+                  expected_x=[1.,  4.,  0.,  4.]  # shgo solution
                   )
 
 
@@ -532,6 +545,9 @@ def str_conv_cons(in_str):
 
 def sanity_test(test, tol=1e-5):
     # Test if a minima is at expected solution and feasible
+    print("=" * 30)
+    print(test.__class__.__name__)
+    print("=" * 6)
     good = True
     sol = test.f(test.expected_x)
     diff = test.expected_fun - sol
@@ -556,7 +572,7 @@ def sanity_test(test, tol=1e-5):
         if test.expected_x[i] > x_b[1]:
             good = False
             print(f'x* = {test.expected_x} is out of upper bounds {x_b[1]}')
-    print("="*30)
+    print("="*2)
     print(test.__class__.__name__)
     if good:
         print("ALL GOOD")
@@ -569,9 +585,9 @@ if __name__ == '__main__':
     #str_conv('x[1]/sqrt(3) - x[2] >= 0;')
     #str_conv('6 - x[1] - sqrt(3)*x[2] >= 0')
 
+    sanity_test(horst6, tol=1e-3)
 
-
-    if 0:
+    if 0:  # HS and s### set
         sanity_test(hs021)
         sanity_test(hs024)
         sanity_test(hs035)
@@ -585,20 +601,26 @@ if __name__ == '__main__':
         sanity_test(s250)
         sanity_test(s251)
 
-    if 0:
+    if 0:  # Horst problem set
         sanity_test(horst1)
         sanity_test(horst2,tol=1e-4)
         sanity_test(horst3)
         sanity_test(horst4)
         sanity_test(horst5, tol=1e-4)
-    sanity_test(horst6)
-    sanity_test(horst7, tol=1e-3)
+        sanity_test(horst6)
+        sanity_test(horst7, tol=1e-3)
 
-    test = horst1
+    if 0: # bunnag problem set
+        sanity_test(bunnag1)
+        sanity_test(bunnag2)
+
+    test = horst6
+    test = bunnag2
     if 0:
-        for iter in range(1,6):
+        for iter in range(1,7):
             res = shgo(test.f, test.bounds, g_cons=test.g, iter=iter)
             print(f'iterations = {iter}')
+            #print(res)
             print(f'fun = {res.fun}')
             print(f'x = {res.x}')
 

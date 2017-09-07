@@ -39,7 +39,7 @@ args = parser.parse_args()
 
 excluded = [
             'Horst6', # <--- Not correctly defined
-            'Horst5', 'Horst7', 'Hs036', 'S250',  # <--- Slow
+            #'Horst5', 'Horst7', 'Hs036', 'S250',  # <--- Slow
             #"Bukin06",  # <--- Working, but fail on all solvers + high nfev
             'Benchmark',  # Not a GO function
             ]
@@ -97,7 +97,7 @@ class GoRunner:
         else:
             kwarg_args = {'g_cons': self.function.g}
 
-
+        #kwarg_args['options'] =
         success_l = False
         iters = 1
         while not success_l:
@@ -122,6 +122,9 @@ class GoRunner:
                 else:
                     print(f'iter = {iters}')
                     print(f'nfev = {nfev}')
+                    print(f'res.fun = {res.fun}')
+                    print(f'res.fun = {res.x}')
+                    print(f'f* = {self.function.fglob}')
                     iters += 1
             except ValueError:
                 iters += 1
@@ -153,6 +156,7 @@ class GoRunner:
         if self.name == 'Hs038':
             n = 6  # Strange Qhull error on self.function._dimensions + 1 points
 
+        #n = 1000
         while not success_l:
             self.function.nfev = 0
             t0 = time.time()
@@ -162,9 +166,9 @@ class GoRunner:
                        sampling_method='sobol',
                        **kwarg_args)
             # print(res)
-            nfev = self.function.nfev
             # nfev = res.nfev
             runtime = time.time() - t0
+            nfev = self.function.nfev
             if res.success is False:
                 n += 1
                 continue
@@ -265,27 +269,63 @@ class GoRunner:
         """
         self.function.nfev = 0
 
-        t0 = time.time()
         # Add exception handling here?
-        res = tgo(self.function.fun, self.function._bounds)
-                  #, n=5000)
-        runtime = time.time() - t0
+        if self.function.g == None:
+            kwarg_args = {'options': None}
+        else:
+            kwarg_args = {'g_cons': self.function.g}
+
+        success_l = False
+        n = self.function._dimensions + 1
+
+        #n = 1000
+        while not success_l:
+            self.function.nfev = 0
+            t0 = time.time()
+            try:
+                res = tgo(self.function.fun, self.function._bounds,
+                           n=n,
+                           **kwarg_args)
+            except IndexError:
+                n += 1
+                continue
+            # print(res)
+            nfev = self.function.nfev
+            # nfev = res.nfev
+            runtime = time.time() - t0
+            if res.success is False:
+                n += 1
+                continue
+            try:
+                # if self.function.success(res.x, tol=0.01):
+                if abs(res.fun - self.function.fglob) < 0.01:
+                    success_l = True
+                    if (res.fun - self.function.fglob) < -1e-6:
+                        print("LOWER FUNCTION VALUE FOUND = {res.fun}")
+                else:
+                    print(f'n = {n}')
+                    print(f'nfev = {nfev}')
+                    n += 1
+            except ValueError:
+                n += 1
 
         # Prepare Return dictionary
         self.results[self.name]['tgo'] = \
             {'nfev': self.function.nfev,
+             'iter': n,  # Total sampling including infeasible regions
              'nlmin': len(res.xl),  # TODO: Find no. unique local minima
              'nulmin': self.unique_minima(res.xl),
              'runtime': runtime,
              'success': self.function.success(res.x),
-             'ndim': self.function._dimensions,
+             'ndim': int(self.function._dimensions),
              'name': 'tgo'
              }
         return
 
     def update_results(self):
         # Update global results let nlmin for DE and BH := 0
-        self.results['All'][self.solver]['name'] = self.solver
+        self.results['All'][self.solver]['name'] = \
+            self.results[self.name][self.solver]['name']
         self.results['All'][self.solver]['nfev'] += \
             self.results[self.name][self.solver]['nfev']
         self.results['All'][self.solver]['iter'] += \
@@ -327,6 +367,106 @@ class GoRunner:
 
             uniq = uniql - len(numpy.unique(numpy.array(flag)))
         return uniq
+
+    def performance_profiles(self, tau_l=['nfev', 'runtime']):
+        # Use tau performance index
+        # for example function evaluations tau=`nfev`
+        # other examples like processing time tau=`runtime`
+        # If list is given subplots are generated
+        import matplotlib
+        from matplotlib import pyplot as plot
+        matplotlib.rcParams['text.usetex'] = True
+        matplotlib.rcParams['text.latex.unicode'] = True
+        fig = plot.figure()
+        axes = []
+        for tau_ind, tau in enumerate(tau_l):
+            eval_funcs = self.results['All'][self.solver]['eval count']
+            xranges = {}
+            yranges = {}
+            yranges_ext = {}
+            for solver in self.results['All'].keys():
+                yranges[solver] = numpy.array(range(1, eval_funcs + 1)) / (eval_funcs)# - 1.0)
+                yranges_ext[solver] = numpy.array([])
+                xranges[solver] = numpy.zeros(self.results['All'][self.solver]['eval count'])
+
+            for solver in self.results['All'].keys():
+                #xranges[solver] = numpy.zeros(self.results['All'][self.solver]['eval count'])
+                i = 0
+                for problem in self.results.keys():
+                    if (problem is not 'All') and (problem is not 'Average'):
+                        xranges[solver][i] = GR.results[problem][solver][tau]
+                        i += 1
+
+                xranges[solver] = numpy.sort(xranges[solver])
+
+            # Find the total range of tau data points
+            x_range = numpy.array([])
+            for solver in self.results['All'].keys():
+                x_range = numpy.append(x_range, xranges[solver])
+
+            x_range = numpy.sort(x_range)
+
+            # Find the total range of corresponding solved functions:
+            for solver in self.results['All'].keys():
+                yranges_ext[solver] = []
+                solved = 0
+                ind_s = 0
+                for x in x_range:
+                    if ind_s < xranges[solver].size:
+                        if x == xranges[solver][ind_s]:
+                            solved += 1
+                            ind_s += 1
+                            yranges_ext[solver].append(solved)
+                            continue
+                        else:
+                            yranges_ext[solver].append(solved)
+                    else:
+                        yranges_ext[solver].append(solved)
+                #print(yranges_ext[solver])
+                yranges_ext[solver] = numpy.array(yranges_ext[solver])/float(xranges[solver].size)
+                #print(yranges_ext[solver])
+
+            if tau_ind == 0:
+                #axes.append(plot.subplot(int('21{}'.format(tau_ind + 1))))
+                axes.append(
+                    fig.add_subplot(
+                        plot.subplot(int('12{}'.format(tau_ind + 1)))))
+                plot.ylabel(r"$\textrm{Fraction of functions solved}$", fontsize=14)
+            else:
+                axes.append(
+                    fig.add_subplot(
+                        plot.subplot(int('12{}'.format(tau_ind + 1)),
+                                     sharey=axes[0])))
+                plot.setp(axes[tau_ind].get_yticklabels(), visible=False)
+            #plot.figure()
+
+            line_types = ['-', '--', '-.', '-^', ':', '-o','-d']
+            colours = []
+            line_ind = 0
+            for key in yranges_ext.keys():
+                #plot.plot(x_range, yranges_ext[key], line_types[line_ind], label=key, linewidth=1.0)
+                #axes[tau_ind].plot(x_range, yranges_ext[key], line_types[line_ind], label=key, linewidth=1.0)
+                #ax1 = plot.subplot(int('2{}1'.format(tau_ind + 1)))
+                solver_name = self.results['All'][key]['name']
+                solv_label = r'$\textrm{' + solver_name + '}$'
+                axes[tau_ind].plot(x_range, yranges_ext[key],
+                                   line_types[line_ind], label=solv_label, linewidth=1.0)
+                axes[tau_ind].grid(1, alpha=0.5)
+                line_ind += 1
+                if line_ind > len(line_types):
+                    line_ind = 0
+
+            plot.legend(fontsize=14)
+
+            if tau == 'nfev':
+                plot.xlabel(r"$\textrm{Function evaluations}$", fontsize=14)
+            elif tau == 'runtime':
+                plot.xlabel(r"$\textrm{Processing time (s)}$", fontsize=14)
+            else:
+                plot.xlabel(tau, fontsize=14)
+
+        plot.tight_layout()
+        plot.show()
 
 
 if __name__ == '__main__':
@@ -377,7 +517,7 @@ if __name__ == '__main__':
         GR.results['Average'][solver]['nulmin'] = (GR.results['All'][solver]['nulmin']
                                                   / GR.results['All'][solver]['eval count']
                                                   )
-        GR.results['Average'][solver]['name'] = solver
+        GR.results['Average'][solver]['name'] = GR.results['All'][solver]['name']
 
         for key in GR.results['All'][solver].keys():
             print(key + ": " + str(GR.results['All'][solver][key]))
@@ -392,10 +532,13 @@ if __name__ == '__main__':
         print(f"""GR.results['All'][{solver}]['nulmin']"""
                f""" = {GR.results['All'][solver]['nulmin']}""")
 
-        GR.results['All'][solver]['nlmin'] = int(GR.results['Average'][solver]['nlmin'])
+        GR.results['All'][solver]['nlmin'] = int(GR.results['All'][solver]['nlmin'])
         GR.results['Average'][solver]['nlmin'] = int(GR.results['Average'][solver]['nlmin'])
-        GR.results['All'][solver]['nulmin'] = int(GR.results['Average'][solver]['nulmin'])
+        GR.results['All'][solver]['nulmin'] = int(GR.results['All'][solver]['nulmin'])
         GR.results['Average'][solver]['nulmin'] = int(GR.results['Average'][solver]['nulmin'])
         import json
         with open('results/results_lc.json', 'w') as fp:
             json.dump(GR.results, fp)
+
+    if 1:
+        GR.performance_profiles()
