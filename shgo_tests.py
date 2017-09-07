@@ -214,7 +214,7 @@ class TestInfeasible(TestFunction):
 
     g = (g1, g2, g3, g4)
 
-test_infeasible = TestInfeasible(bounds=[(-1, 1), (-1, 1)],
+test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  expected_fun=None,
                                  expected_x=None
                                  )
@@ -224,10 +224,6 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
              callback=None, minimizer_kwargs=None, options=None,
               sampling_method='sobol'):
 
-    if test == test4_1:
-        n = 1000
-        if sampling_method =='simplicial':
-            n = 1
 
     res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
                 g_args=g_args, n=n, iter=iter, callback=callback,
@@ -302,32 +298,32 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
     """
     def test_f1_1_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(-1, 6), (-1, 6)]"""
-        run_test(test1_1,  sampling_method='simplicial')
+        run_test(test1_1, n=1, sampling_method='simplicial')
 
     def test_f1_2_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(0, 1), (0, 1)]"""
-        run_test(test1_2,  sampling_method='simplicial')
+        run_test(test1_2, n=1,  sampling_method='simplicial')
 
     def test_f1_3_simplicial(self):
         """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
-        run_test(test1_3,  sampling_method='simplicial')
+        run_test(test1_3, n=1,  sampling_method='simplicial')
 
     def test_f2_1_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
-        run_test(test2_1, sampling_method='simplicial')
+        run_test(test2_1, n=100, sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
-        run_test(test2_2, sampling_method='simplicial')
+        run_test(test2_2, n=1, sampling_method='simplicial')
 
     def test_f3_simplicial(self):
         """NLP: Hock and Schittkowski problem 18"""
-        run_test(test3_1, sampling_method='simplicial')
+        run_test(test3_1, n=1, sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
     def test_f4_simplicial(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
-        run_test(test4_1, sampling_method='simplicial')
+        run_test(test4_1, n=1, sampling_method='simplicial')
 
     def test_lj_symmetry(self):
         """LJ: Symmetry constrained test function"""
@@ -337,7 +333,6 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
         run_test(testLJ, args=args, n=None,
                    options=options, iter=3,
                    sampling_method='simplicial')
-
 
 
 # Argument test functions
@@ -382,6 +377,39 @@ class TestShgoArguments(unittest.TestCase):
 
             res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                        callback=callback_func, options={'disp': True})
+
+    @numpy.testing.decorators.slow
+    def test_4_1_known_f_min(self):
+        """Test known function minima stopping criteria"""
+        options = {}
+        # Specify known function value
+        options['f_min'] = test4_1.expected_fun
+        options['f_tol'] = 1e-5
+        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
+
+    @numpy.testing.decorators.slow
+    def test_4_2_known_f_min(self):
+        """Test Global mode limiting local evalutions"""
+        options = {}
+        # Specify known function value
+        options['f_min'] = test4_1.expected_fun
+        options['f_tol'] = 1e-5
+
+        # Specify number of local iterations to perform
+        options['local_iter'] = 1
+        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
+
+    @numpy.testing.decorators.slow
+    def test_4_3_known_f_min(self):
+        """Test Global mode limiting local evalutions"""
+        options = {}
+        # Specify known function value
+        options['f_min'] = test4_1.expected_fun
+        options['f_tol'] = 1e-5
+
+        # Specify number of local iterations to perform
+        options['local_iter'] = 1
+        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='sobol')
 
 # Failure test functions
 class TestShgoFailures(unittest.TestCase):

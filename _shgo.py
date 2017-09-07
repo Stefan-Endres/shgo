@@ -588,8 +588,9 @@ class SHGO(object):
         # This is for the simplicial complex since Sobol has it's own finite generation
         #self.fn -= 1
         #print(f'self.fn = {self.fn}')
-        logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
-        logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
+        if self.disp:
+            logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
+            logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
         if self.HC.V.nfev >= self.n:
             self.stop_global = True
         elif self.maxev is not None:
@@ -649,7 +650,8 @@ class SHGO(object):
 
         while not self.stop_l_iter:
             if self.local_iter is not None:  # Note first iteration is outside loop
-                logging.info('SHGO.iter = {}'.format(self.local_iter))
+                if self.disp:
+                    logging.info('SHGO.iter in function minimise_pool = {}'.format(self.local_iter))
                 self.local_iter -= 1
                 if __name__ == '__main__':
                     if self.local_iter == 0:
@@ -673,6 +675,10 @@ class SHGO(object):
 
             # Trim minimised point from current minimiser set
             self.trim_min_pool(ind_xmin_l)
+
+            if self.f_min_true is not None:
+                if abs(lres_f_min - self.f_min_true) <= self.f_tol:
+                    self.stop_l_iter = True
         return
 
     # Local bound functions
@@ -702,9 +708,9 @@ class SHGO(object):
                 # Upper bound
                 if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
                     cbounds[i][1] = x_i
-
-        logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
-        logging.info(f'cbounds = {cbounds}')
+        if self.disp:
+            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
+            logging.info(f'cbounds = {cbounds}')
         return cbounds
 
     # Minimize a starting point locally
@@ -856,7 +862,8 @@ class SHGOh(SHGO):
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
         self.res.nfev += self.HC.V.nfev
-        print(f'self.res.nfev = {self.res.nfev}')
+        if self.disp:
+            print(f'self.res.nfev = {self.res.nfev}')
         return
 
     def iterate_diff(self):
@@ -960,7 +967,10 @@ class SHGOs(SHGO):
                  options=None, sampling_method='sobol'):
 
         if (n is None) and (iter is None):
-            n = 100  # Define arbitrary sampling if user provided none
+            if options is None:
+                n = 100  # Define arbitrary sampling if user provided none
+            elif 'f_min' in options:
+                pass
 
         SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
@@ -1015,7 +1025,7 @@ class SHGOs(SHGO):
 
             # TODO: Keep sampling until n feasible points in non-linear constraints
             # self.fn < self.n ---> self.n - self.fn
-            if (len(self.minimizer_pool) == 0) or (self.fn == 0):
+            if (len(self.minimizer_pool) == 0) or (self.fn == 0) or (self.fn < (self.dim + 1)):
                 if self.disp:
                     if len(self.minimizer_pool) == 0:
                         print('No minimizers found. Increasing sampling space.')
