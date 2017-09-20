@@ -8,6 +8,7 @@ import scipy.spatial
 import scipy.optimize
 import logging
 from triangulation import *
+from sobol_seq import *
 
 try:
     pass
@@ -1336,7 +1337,7 @@ class SHGOs(SHGO):
             # Include each sampling point as func evaluation:
             self.res.nfev = self.fn
 
-    def sobol_points(self, N, D):
+    def sobol_points_old(self, N, D):
         """
         sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
         Carl Sandrock 2016-03-31
@@ -1396,6 +1397,16 @@ class SHGOs(SHGO):
                     points[i, j] = X[i] / 2 ** 32  # *** the actual points
 
             return points
+
+    def sobol_points(self, N, D):
+        """
+        Wrapper for sobol_seq.i4_sobol_generate
+
+        Generate N sampling points in D dimensions
+        """
+        points = i4_sobol_generate(D, N, skip=0)
+
+        return points
 
     def sampling(self, method='sobol'):
         """
