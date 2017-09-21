@@ -1124,10 +1124,7 @@ class SHGO(object):
         self.sorted_samples()
 
         # Find objective function references
-        if self.infty_cons_sampl:
-            self.fun_ref_inf()
-        else:
-            self.fun_ref()
+        self.fun_ref()
 
         return
 
@@ -1424,8 +1421,6 @@ class SHGO(object):
         # Obj. function returns to be used as reference table.:
         if self.n_sampled > 0:  # Store old function evaluations
             Ftemp = self.F
-        #else:  # TODO: Fail routine
-        #    return
 
         self.F = numpy.zeros(numpy.shape(self.C)[0])
         # NOTE: It might be easier to replace this with a cached
@@ -1441,31 +1436,6 @@ class SHGO(object):
 
             if eval_f:
                 self.F[i] = self.func(self.C[i, :], *self.args)
-
-        if self.n_sampled > 0:  # Restore saved function evaluations
-            self.F[0:self.n_sampled] = Ftemp
-
-        self.n_sampled = numpy.shape(self.C)[0]
-
-        return self.F
-
-    def fun_ref_inf(self):
-        """
-        Find the objective function output reference table
-        Use inf on values outside constraints
-        """
-        # TODO: This process can be pooled
-        # Obj. function returns to be used as reference table.:
-        if self.n_sampled > 0:  # Store old function evaluations
-            Ftemp = self.F
-
-        self.F = numpy.zeros(numpy.shape(self.C)[0])
-        # NOTE: It might be easier to replace this with a cached
-        #      objective function
-        for i in range(self.n_sampled, numpy.shape(self.C)[0]):
-            self.F[i] = self.func(self.C[i, :], *self.args)
-            if 0:
-                self.F[i] = self.f = numpy.inf
 
         if self.n_sampled > 0:  # Restore saved function evaluations
             self.F[0:self.n_sampled] = Ftemp
