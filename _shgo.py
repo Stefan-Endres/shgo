@@ -278,59 +278,14 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
     """
     # Initiate SHGO class
-    if sampling_method == 'simplicial':
-        SHc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, sampling_method=sampling_method)
+    SHc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+                iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
+                options=options, sampling_method=sampling_method)
 
-    elif sampling_method == 'sobol':
-        SHc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, sampling_method=sampling_method)
+    # Run the algorithm, process results and test success
+    SHc.shgo()
 
-    else:
-        raise IOError("""Unknown sampling_method specified, use either 
-                         'sobol' or 'simplicial' """)
-
-    # Generate sampling points
-    if SHc.disp:
-        print('Generating sampling points')
-
-    # Construct directed complex.
-    if not SHc.break_routine:
-        SHc.construct_complex()
-
-    if not SHc.break_routine:
-        if SHc.disp:
-            print("Succesfully completed construction of complex.")
-
-        if sampling_method == 'simplicial':
-            # Build minimiser pool
-            SHc.simplex_minimizers()
-
-    if len(SHc.X_min) == 0:
-        # If sampling failed to find pool, return lowest sampled point
-        # with a warning
-        #TODO: Implement warning and lowest sampling return
-        SHc.break_routine = True
-        SHc.fail_routine(mes="Failed to find a feasible minimiser point. "
-                             "Lowest sampling point =")
-
-    if not SHc.break_routine:
-        # Minimise the pool of minisers with local minimisation methods
-        # Note that if Options['local_iter'] is an `int` instead of default
-        # value False then only that number of candidates will be minimised
-        SHc.minimise_pool(SHc.local_iter)
-
-    # Sort results and build the global return object
-    if not SHc.break_routine:
-        SHc.sort_result()
-
-    # Confirm the routine ran succesfully
-    if not SHc.break_routine:
-        SHc.res.message = 'Optimization terminated successfully.'
-        SHc.res.success = True
-
+    # Return the final results
     return SHc.res
 
 # %% Define the base SHGO class inherited by the different methods
@@ -345,7 +300,11 @@ class SHGO(object):
                     n = 100  # Define arbitrary sampling if user provided none
                 elif 'f_min' in options:
                     pass
-
+        elif sampling_method == 'simplicial':
+            pass
+        elif type(sampling_method) is str:
+            raise IOError("""Unknown sampling_method specified, use either 
+                                 'sobol' or 'simplicial' """)
 
         self.func = func
         #  TODO Assert if func output matches dims. found from bounds
@@ -537,7 +496,6 @@ class SHGO(object):
                           """`iter` finite iterations """
                           """or options['f_min'] known function global minima""")
 
-        #else:  # else only for collapse-able syntax
         if (self.iter is not None):
             self.stop_global = False
             # Define stop iteration method
@@ -601,6 +559,48 @@ class SHGO(object):
         self.res.nfev = 0  # Include each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
+
+
+    ## Routine iteration
+    def shgo(self):
+        # Generate sampling points
+        if self.disp:
+            print('Generating sampling points')
+
+        # Construct directed complex.
+        if not self.break_routine:
+            self.construct_complex()
+
+        if not self.break_routine:
+            if self.disp:
+                print("Succesfully completed construction of complex.")
+
+            if self.sampling_method == 'simplicial':
+                # Build minimiser pool
+                self.simplex_minimizers()
+
+        if len(self.X_min) == 0:
+            # If sampling failed to find pool, return lowest sampled point
+            # with a warning
+            # TODO: Implement warning and lowest sampling return
+            self.break_routine = True
+            self.fail_routine(mes="Failed to find a feasible minimiser point. "
+                                 "Lowest sampling point =")
+
+        if not self.break_routine:
+            # Minimise the pool of minisers with local minimisation methods
+            # Note that if Options['local_iter'] is an `int` instead of default
+            # value False then only that number of candidates will be minimised
+            self.minimise_pool(self.local_iter)
+
+        # Sort results and build the global return object
+        if not self.break_routine:
+            self.sort_result()
+
+        # Confirm the routine ran succesfully
+        if not self.break_routine:
+            self.res.message = 'Optimization terminated successfully.'
+            self.res.success = True
 
     ## Iteration properties
     # Stopping criteria functions:
