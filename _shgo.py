@@ -279,12 +279,12 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iter=None,
     """
     # Initiate SHGO class
     if sampling_method == 'simplicial':
-        SHc = SHGOh(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+        SHc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
                     options=options, sampling_method=sampling_method)
 
     elif sampling_method == 'sobol':
-        SHc = SHGOs(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+        SHc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                     iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
                     options=options, sampling_method=sampling_method)
 
@@ -338,6 +338,14 @@ class SHGO(object):
     def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
                  iter=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
+
+        if sampling_method == 'sobol':  #TODO: Is not simplicial
+            if (n is None) and (iter is None):
+                if options is None:
+                    n = 100  # Define arbitrary sampling if user provided none
+                elif 'f_min' in options:
+                    pass
+
 
         self.func = func
         #  TODO Assert if func output matches dims. found from bounds
@@ -594,7 +602,7 @@ class SHGO(object):
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
 
-    # Iteration properties
+    ## Iteration properties
     # Stopping criteria functions:
     def finite_iterations(self):
         self.iter -= 1
@@ -645,6 +653,7 @@ class SHGO(object):
                 self.stop_global = True
         return self.stop_global
 
+    ## Local minimisation
     # Minimiser pool processing
     def minimise_pool(self, force_iter=False):
         """
@@ -714,6 +723,35 @@ class SHGO(object):
             self.trim_min_pool(ind_xmin_l)
 
         return
+
+    def sort_min_pool(self):
+        # Sort to find minimum func value in min_pool
+        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
+        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
+        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[self.ind_f_min]
+        return
+
+    def trim_min_pool(self, trim_ind):
+        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
+        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
+        return
+
+    def g_topograph(self, x_min, X_min):
+        """
+        Returns the topographical vector stemming from the specified value
+        value 'x_min' for the current feasible set 'X_min' with True boolean
+        values indicating positive entries and False ref. values indicating
+        negative values.
+        """
+        x_min = numpy.array([x_min])
+        self.Y = scipy.spatial.distance.cdist(x_min,
+                                              X_min,
+                                              'euclidean')
+        # Find sorted indexes of spatial distances:
+        self.Z = numpy.argsort(self.Y, axis=-1)
+
+        self.Ss = X_min[self.Z]
+        return self.Ss
 
     # Local bound functions
     def contstruct_lcb(self, v_min):
@@ -838,20 +876,8 @@ class SHGO(object):
         self.res.message = mes
         return
 
-# %% Define shgo class using simplicial hypercube sampling
-class SHGOh(SHGO):
-    """
-    This class implements the shgo routine
-    """
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
-                 iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='sobol'):
 
-        SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, sampling_method=sampling_method)
-
-
+    ## Iterative hypercube sampling
     def construct_initial_complex(self):
         if self.disp:
             print('Building initial complex')
@@ -961,54 +987,9 @@ class SHGOh(SHGO):
 
         return self.X_min
 
-    def sort_min_pool(self):
-        # Sort to find minimum func value in min_pool
-        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[self.ind_f_min]
-        return
 
-    def trim_min_pool(self, trim_ind):
-        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
-        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
-        return
-
-    def g_topograph(self, x_min, X_min):
-        """
-        Returns the topographical vector stemming from the specified value
-        value 'x_min' for the current feasible set 'X_min' with True boolean
-        values indicating positive entries and False ref. values indicating
-        negative values.
-        """
-        x_min = numpy.array([x_min])
-        self.Y = scipy.spatial.distance.cdist(x_min,
-                                              X_min,
-                                              'euclidean')
-        # Find sorted indexes of spatial distances:
-        self.Z = numpy.argsort(self.Y, axis=-1)
-
-        self.Ss = X_min[self.Z]
-        return self.Ss
-
-
-# %% Define shgo class using arbitrary (ex Sobol) sampling
-class SHGOs(SHGO):
-    """
-    This class implements the shgo routine
-    """
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
-                 iter=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='sobol'):
-
-        if (n is None) and (iter is None):
-            if options is None:
-                n = 100  # Define arbitrary sampling if user provided none
-            elif 'f_min' in options:
-                pass
-
-        SHGO.__init__(self, func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
-                    iter=iter, callback=callback, minimizer_kwargs=minimizer_kwargs,
-                    options=options, sampling_method=sampling_method)
+    ## Delauney based sampling functions
+    #   Define shgo class methods using arbitrary (ex Sobol) sampling
 
     def construct_complex_sobol(self):
         """
@@ -1169,7 +1150,6 @@ class SHGOs(SHGO):
                 # Include each sampling point as func evaluation:
                 self.res.nfev = self.fn
                 sample = False
-
 
     def construct_complex_sobol_iter(self, n_growth_init=30):
         """
@@ -1617,35 +1597,6 @@ class SHGOs(SHGO):
             return []
 
         return self.X_min
-
-    def sort_min_pool(self):
-        # Sort to find minimum func value in min_pool
-        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = self.minimizer_pool_F[self.ind_f_min]
-        return
-
-    def trim_min_pool(self, trim_ind):
-        self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
-        self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
-        return
-
-    def g_topograph(self, x_min, X_min):
-        """
-        Returns the topographical vector stemming from the specified value
-        value 'x_min' for the current feasible set 'X_min' with True boolean
-        values indicating positive entries and False ref. values indicating
-        negative values.
-        """
-        x_min = numpy.array([x_min])
-        self.Y = scipy.spatial.distance.cdist(x_min,
-                                              X_min,
-                                              'euclidean')
-        # Find sorted indexes of spatial distances:
-        self.Z = numpy.argsort(self.Y, axis=-1)
-
-        self.Ss = X_min[self.Z]
-        return self.Ss
 
     def delaunay_triangulation(self, grow=False, n_prc=0):
         from scipy.spatial import Delaunay
