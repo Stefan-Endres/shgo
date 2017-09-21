@@ -1337,17 +1337,19 @@ class SHGOs(SHGO):
             # Include each sampling point as func evaluation:
             self.res.nfev = self.fn
 
-    def sobol_points_old(self, N, D):
+    def sobol_points(self, N, D):
         """
         sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
-        Carl Sandrock 2016-03-31
+        Carl Sandrock 2016-03-31 (MIT lic)
 
         The original program is available and described at
         http://web.maths.unsw.edu.au/~fkuo/sobol/
+        (BSD lic)
         """
         import gzip
         import os
-        path = os.path.join(os.path.dirname(__file__), 'new-joe-kuo-6.21201.gz')
+        #path = os.path.join(os.path.dirname(__file__), 'new-joe-kuo-6.21201.gz')
+        path = os.path.join(os.path.dirname(__file__), 'new-joe-kuo-6.gz')
         with gzip.open(path) as f:
             unsigned = "uint64"
             # swallow header
@@ -1398,7 +1400,7 @@ class SHGOs(SHGO):
 
             return points
 
-    def sobol_points(self, N, D):
+    def sobol_points_wrap(self, N, D):
         """
         Wrapper for sobol_seq.i4_sobol_generate
 
