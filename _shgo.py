@@ -496,14 +496,40 @@ class SHGO(object):
                           """`iter` finite iterations """
                           """or options['f_min'] known function global minima""")
 
+
+        ## Set complex construction mode based on a provided stopping criteria:
         if (self.iter is not None):
             self.stop_global = False
             # Define stop iteration method
             self.stop_iter_m = self.finite_iterations
+            # Choose complex constructor
+            if sampling_method == 'sobol':
+                self.construct_complex = self.construct_complex_sobol_iter
+            elif sampling_method == 'simplicial':
+                self.construct_complex = self.construct_complex_iteratively
+
         elif (self.n is not None):
             self.stop_global = False
             # Define stop iteration method
             self.stop_iter_m = self.finite_sampling
+            # Choose complex constructor
+            if sampling_method == 'sobol':
+                self.construct_complex = self.construct_complex_sobol
+                if options is not None:
+                    if 'infty constraints' in options:
+                        self.construct_complex = self.construct_complex_sobol_inf
+            elif sampling_method == 'simplicial':
+                self.construct_complex = self.construct_complex_iteratively
+        elif (self.f_min_true is not None):
+            if sampling_method == 'sobol':
+                self.n = self.dim + 1  #TODO: Long unittest, fix
+                self.construct_complex = self.construct_complex_sobol
+            elif sampling_method == 'simplicial':
+                self.construct_complex = self.construct_complex_iteratively
+                if self.iter is None:
+                    self.stop_iter_m = self.finite_iterations
+                    self.iter = 1
+
         elif (sampling_method == 'simplicial') and (self.iter is None):
             self.stop_iter_m = self.finite_iterations
             self.iter = 1
@@ -514,6 +540,7 @@ class SHGO(object):
         else: # Choose a default strategy if none is specified
             self.n = 100
             self.stop_iter_m = None
+
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -526,29 +553,6 @@ class SHGO(object):
         # self.sampling = sampling
         self.sampling_method = sampling_method
 
-        ## Set complex construction mode:
-        if (iter is not None):
-            if sampling_method == 'sobol':
-                self.construct_complex = self.construct_complex_sobol_iter
-            elif sampling_method == 'simplicial':
-                self.construct_complex = self.construct_complex_iteratively
-        elif (self.n is not None):  # Finite sampling points
-            if sampling_method == 'sobol':
-                self.construct_complex = self.construct_complex_sobol
-                if options is not None:
-                    if 'infty constraints' in options:
-                        self.construct_complex = self.construct_complex_sobol_inf
-
-            elif sampling_method == 'simplicial':
-                self.construct_complex = self.construct_complex_iteratively
-        elif (self.f_min_true is not None):
-            if sampling_method == 'sobol':
-                #self.construct_complex = self.construct_complex_sobol_iter
-                #self.construct_complex = self.construct_complex_iteratively
-                self.n = self.dim + 1  #TODO: Long unittest, fix
-                self.construct_complex = self.construct_complex_sobol
-            elif sampling_method == 'simplicial':
-                self.construct_complex = self.construct_complex_iteratively
 
         # Initiate storate objects used in alorithm classes
         self.x_min_glob = []
@@ -585,7 +589,7 @@ class SHGO(object):
             # TODO: Implement warning and lowest sampling return
             self.break_routine = True
             self.fail_routine(mes="Failed to find a feasible minimiser point. "
-                                 "Lowest sampling point =")
+                                  "Lowest sampling point =")
 
         if not self.break_routine:
             # Minimise the pool of minisers with local minimisation methods
