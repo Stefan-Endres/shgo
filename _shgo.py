@@ -1034,6 +1034,8 @@ class SHGO(object):
         """
         sample = True
         while sample:
+            # Generate sampling points, evaluate constraints and find
+            # objective function values at feasible points
             self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
             # Find minimiser pool
