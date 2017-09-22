@@ -123,15 +123,14 @@ class Benchmark(object):
         if self.g is not None:
             for i, gcons in enumerate(self.g):
                 con = gcons(self.global_optimum)
-                raise ValueError("Algorithm converged to an infeasible point",
-                                 x,
-                                 val,
-                                 self.fglob,
-                                 "cons = {}".format(con))
                 if con < 0:
-                    print("UNFEASIBLE BOUNDS")
-                    return False
-
+                    raise ValueError(
+                        "Algorithm converged to an infeasible point",
+                        x,
+                        val,
+                        self.fglob,
+                        "cons = {}".format(con))
+s
         # you found a lower global minimum.  This shouldn't happen.
         if val < self.fglob:
             raise ValueError("Found a lower global minimum",
