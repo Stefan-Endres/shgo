@@ -138,7 +138,7 @@ class Test4(TestFunction):
 test4_1 = Test4(bounds=[(-10, 10),]*7,
                   expected_x=[2.330499, 1.951372, -0.4775414,
                               4.365726, -0.6244870, 1.038131, 1.594227],
-                   expected_fun=[680.6300573]
+                   expected_fun=680.6300573
                   )
 
 class TestLJ(TestFunction):
