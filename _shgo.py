@@ -1110,8 +1110,6 @@ class SHGO(object):
         """
         # Construct initial sampling pool
         self.n = self.dim + 1  # Minimum vertexes required to build complex
-        self.n = self.dim + 2  # Minimum vertexes required to build complex
-        # (only 2D test functions at the moment)
 
         self.n = self.dim ** 2 + 2
         if n_growth_init is None:
