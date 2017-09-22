@@ -610,17 +610,14 @@ class SHGO(object):
         if self.disp:
             print('Splitting first generation')
 
-        stop = False
-        while not stop:
+        while not self.stop_global:
             if self.break_routine:
                 break
-
             # Iterate complex
             self.iterate_complex()
 
-            # Specify in options['minimize_every_iter'] = True to use
-            #if self.minimize_every_iter:  # TODO: TEST THIS ROUTINE
-
+            # Check if any stopping_criteria are true
+            self.stopping_criteria()
 
         # Build minimiser pool
         # Final iteration only needed if pools weren't minimised every iteration
@@ -648,8 +645,8 @@ class SHGO(object):
         # Count the number of vertices and add to function evaluations:
         #TODO:
         #self.res.nfev += self.HC.V.nfev
-        if self.disp:
-            print(f'self.res.nfev = {self.res.nfev}')
+        #if self.disp:
+        #    print(f'self.res.nfev = {self.res.nfev}')
         return
 
 
