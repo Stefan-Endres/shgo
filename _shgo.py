@@ -1014,19 +1014,6 @@ class SHGO(object):
 
     ## Delauney based sampling functions
     #   Define shgo class methods using arbitrary (ex Sobol) sampling
-    def construct_complex_delauney(self):
-        #self.construct_initial_delauney_complex()
-        pass
-        #TODO: REPLACE WITH construct_complex_iteratively
-
-        #if self.disp:
-        #    print('Splitting first generation')
-
-        #if 1:  # TODO: IF CERTAIN METHOD TO EVAL every iter
-        #    self.minimize_locally = True
-
-        #while not self.stop_iter_m():
-        #    self.iterate_delauney()
 
     def construct_complex_sobol(self):
         """
