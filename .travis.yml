@@ -38,4 +38,4 @@ install:
 
 # Run test
 script:
-  - python -m unittest test_shgo.py
+  - python -m unittest shgo_tests.py
