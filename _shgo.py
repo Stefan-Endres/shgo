@@ -22,7 +22,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
 
     # sampling_method: str, options = 'sobol', 'simplicial'
     """
-    Finds the global minima of a function using simplicial homology global
+
+    Finds the global minimum of a function using simplicial homology global
     optimisation.
 
     Parameters
@@ -66,9 +67,14 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
             g_args = (args1, args2)
 
     n : int, optional
-        Number of sampling points used in the construction of the topography
-        matrix.
+        Number of sampling points used in the construction of the simplicial complex.
 
+    iters : int, optional
+        Number of iterations used in the construction of the simplicial complex.
+
+    callback : callable, optional
+        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
+        current parameter vector.
 
     minimizer_kwargs : dict, optional
         Extra keyword arguments to be passed to the minimizer
@@ -82,30 +88,27 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
 
             options : {ftol: 1e-12}
 
-    callback : callable, optional
-        Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
-
     options : dict, optional
-        A dictionary of solver options. All methods in scipy.optimize.minimize
+        A dictionary of solver options.
+
+
+        TODO: Explain minimiserkwargs dict
+
+        All methods in scipy.optimize.minimize
         accept the following generic options:
 
-            maxiter : int
+            * maxiter : int
                 Maximum number of iterations to perform.
-            disp : bool
+            * disp : bool
                 Set to True to print convergence messages.
 
         The following options are also used in the global routine:
 
-            maxfev : int
-                Maximum number of iterations to perform in local solvers.
-                (Note only methods that support this option will terminate
-                tgo at the exact specified value)
-
-    multiproc : boolean, optional
-        If True the local minimizations of the minimizer points will be pooled
-        and processed in parallel using the multiprocessing module. This could
-        significantly speed up slow optimizations.
+                    maxfev : int
+                        Maximum number of iterations to perform in local solvers.
+                        (Note only methods that support this option will terminate
+                        tgo at the exact specified value)
+    sampling_method
 
     Returns
     -------
@@ -126,14 +129,9 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
 
     Notes
     -----
-    Global optimization using the Topographical Global Optimization (TGO)
-    method first proposed by Törn (1990) [1] with the the semi-empirical
-    correlation by Hendorson et. al. (2015) [2] for k integer defining the
-    k-t matrix.
+    Global optimization using
 
-    The TGO is a clustering method that uses graph theory to generate good
-    starting points for local search methods from points distributed uniformly
-    in the interior of the feasible set. These points are generated using the
+    These points are generated using the
     Sobol (1967) [3] sequence.
 
     The local search method may be specified using the ``minimizer_kwargs``
@@ -145,9 +143,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
     Performance can sometimes be improved by either increasing or decreasing
     the amount of sampling points ``n`` depending on the system. Increasing the
     amount of sampling points can lead to a lower amount of minimisers found
-    which requires fewer local optimisations. Forcing a low ``k_t`` value will
-    nearly always increase the amount of function evaluations that need to be
-    performed, but could lead to increased robustness.
+    which requires fewer local optimisations.
 
     The primitive polynomials and various sets of initial direction numbers for
     generating Sobol sequences is provided by [4] by Frances Kuo and
@@ -268,6 +264,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
     """
+
     # Initiate SHGO class
     shc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
                iters=iters, callback=callback, minimizer_kwargs=minimizer_kwargs,
@@ -1115,9 +1112,10 @@ class SHGO(object):
         if n_growth_init is None:
             n_growth_init = 2 * self.n  # TODO: TESTING THIS
 
-        logging.info("self.dim = {}".format(self.dim))
-        logging.info("Constructing initial complex"
-                     " with self.n = {}".format(self.n))
+        if self.disp:
+            logging.info("self.dim = {}".format(self.dim))
+            logging.info("Constructing initial complex"
+                         " with self.n = {}".format(self.n))
         # ^Run initial contructor for table top avoidance
         #    logging.info('Run initial contructor for table top avoidance')
         #    self.sampling()
