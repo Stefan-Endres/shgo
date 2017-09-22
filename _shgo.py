@@ -951,22 +951,6 @@ class SHGO(object):
             print(f'self.res.nfev = {self.res.nfev}')
         return
 
-    def iterate_diff(self):
-        """
-        Iterate a subdivision of the complex, but skip
-        unpromising cells (locally biased)
-
-        (UNFINISHED)
-
-        Ideas: We will search for sub-cells which total rank
-               contains the same number of minimisers ar the
-               the parent cell and then stop searching in
-               this region. For a first attempt, use the
-               heuristic of 2 generations with no change.
-        """
-        self.HC.split_generation()
-        return
-
     def simplex_minimizers(self):
         """
         Returns the indexes of all minimizers
