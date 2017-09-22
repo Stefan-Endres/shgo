@@ -1,0 +1,7 @@
+name: shgo
+dependencies:
+- nose>=1.0.0
+- numpy
+- scipy
+- pip:
+  - sobol-seq
