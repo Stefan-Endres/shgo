@@ -1038,33 +1038,8 @@ class SHGO(object):
             # objective function values at feasible points
             self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
-            # Find minimiser pool
-            # DIMENSIONS self.dim
-            if self.fn >= (self.dim + 1):
-                if self.dim < 2:  # Scalar objective functions
-                    if self.disp:
-                        print('Constructing 1D minimizer pool')
-
-                    self.ax_subspace()
-                    self.surface_topo_ref()
-                    self.X_min = self.minimizers()
-
-                else:  # Multivariate functions.
-                    if self.disp:
-                        print('Constructing Gabrial graph and minimizer pool')
-
-                    self.delaunay_triangulation()
-                    if self.disp:
-                        print('Triangulation completed, building minimizer pool')
-
-                    self.X_min = self.delaunay_minimizers()
-
-                if self.disp:
-                    logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
-            else:
-                if self.disp:
-                    print('Not enough sampling points found in the feasible domain.')
-                self.minimizer_pool = [None]
+            # Build complex on current sampling set and find minimiser pool
+            self.complex_minimisers()
 
             # TODO: Keep sampling until n feasible points in non-linear constraints
             # self.fn < self.n ---> self.n - self.fn
@@ -1130,6 +1105,34 @@ class SHGO(object):
 
         return
 
+    def complex_minimisers(self):
+        # Construct complex minimisers on the current sampling set.
+        if self.fn >= (self.dim + 1):
+            if self.dim < 2:  # Scalar objective functions
+                if self.disp:
+                    print('Constructing 1D minimizer pool')
+
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.X_min = self.minimizers()
+
+            else:  # Multivariate functions.
+                if self.disp:
+                    print('Constructing Gabrial graph and minimizer pool')
+
+                self.delaunay_triangulation()
+                if self.disp:
+                    print('Triangulation completed, building minimizer pool')
+
+                self.X_min = self.delaunay_minimizers()
+
+            if self.disp:
+                logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+        else:
+            if self.disp:
+                print('Not enough sampling points found in the feasible domain.')
+            self.minimizer_pool = [None]
+
     def construct_complex_sobol_iter(self, n_growth_init=None):
         """
         Construct a complex based on the Sobol sequence
@@ -1167,10 +1170,22 @@ class SHGO(object):
         #    self.n = n_growth_init
 
         while grow_complex:
+
+            ###########HEAD##############
+            # Generate sampling points, evaluate constraints and find
+            # objective function values at feasible points
+            #self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
+
+            #########################
             sample_loop = True
             # Sample untill enough points in subspace is found
             self.n_cons = self.n  # Desired sampling points
+
+            # Generate sampling points, evaluate constraints and find
+            # objective function values at feasible points
+            # self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
             while sample_loop:
+
                 self.sampling()
                 #    self.C = self.C[self.processed_n:, :]
 
@@ -1195,31 +1210,12 @@ class SHGO(object):
 
             # Find objective function references
             self.fun_ref()
+            ##########END############
 
-            # Find minimiser pool
-            # DIMENSIONS self.dim
-            if self.dim < 2:  # Scalar objective functions
-                if self.disp:
-                    print('Constructing 1D minimizer pool')
 
-                self.ax_subspace()
-                self.surface_topo_ref()
-                self.X_min = self.minimizers()
 
-            else:  # Multivariate functions.
-                if self.disp:
-                    print('Constructing Gabrial graph and minimizer pool')
-                    logging.info('Adding vertex to complex, current size = '
-                                 '{}'.format(self.processed_n))
-
-                self.delaunay_triangulation(grow=True,
-                                            n_prc=self.processed_n)
-                if self.disp:
-                    print('Triangulation completed, building minimizer pool')
-
-                self.X_min = self.delaunay_minimizers()
-
-            # logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+            # Build complex on current sampling set and find minimiser pool
+            self.complex_minimisers()
 
             if not len(self.minimizer_pool) == 0:
                 # self.X_min_all.append(self.X_min)
@@ -1589,12 +1585,14 @@ class SHGO(object):
         """
         self.minimizer_pool = []
         # TODO: Can easily be parralized
-        #    logging.info('self.fn = {}'.format(self.fn))
-        #    logging.info('self.n = {}'.format(self.n))
-        #    logging.info('numpy.shape(self.C)'
-        #                 ' = {}'.format(numpy.shape(self.C)))
+        if self.disp:
+            logging.info('self.fn = {}'.format(self.fn))
+            logging.info('self.n = {}'.format(self.n))
+            logging.info('numpy.shape(self.C)'
+                         ' = {}'.format(numpy.shape(self.C)))
         for ind in range(self.fn):
-            #    logging.info('ind = {}'.format(ind))
+            if self.disp:
+                logging.info('ind = {}'.format(ind))
             min_bool = self.sample_delaunay_topo(ind)
             if min_bool:
                 self.minimizer_pool.append(ind)
