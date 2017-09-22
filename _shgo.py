@@ -921,6 +921,10 @@ class SHGO(object):
 
         return
 
+    ## Iterative uniform sampling
+    def construct_initial_complex_sampl(self, initial_n=100):
+
+
     def iterate_hypercube(self):
         """
         Iterate a subdivision of the complex
@@ -949,6 +953,12 @@ class SHGO(object):
 
             # Specify in options['minimize_every_iter'] = True to use
             #if self.minimize_every_iter:  # TODO: TEST THIS ROUTINE
+
+            # Global mode check:
+            #if self.stop_iter_m is not None:
+            #    if self.f_min_true is not None:
+            #        if self.stop_iter_m():
+            #            grow_complex = False
 
         # Build minimiser pool
         if not self.break_routine:
@@ -1061,151 +1071,6 @@ class SHGO(object):
                 # Include each sampling point as func evaluation:
                 self.res.nfev = self.fn
                 sample = False
-
-    def construct_complex_sobol_iter(self, n_growth_init=None):
-        """
-        Construct a complex based on the Sobol sequence
-        """
-        # Construct initial sampling pool
-        self.n = self.dim + 1  # Minimum vertexes required to build complex
-
-        self.n = self.dim ** 2 + 2
-        if n_growth_init is None:
-            n_growth_init = 2 * self.n  # TODO: TESTING THIS
-
-        if self.disp:
-            logging.info("self.dim = {}".format(self.dim))
-            logging.info("Constructing initial complex"
-                         " with self.n = {}".format(self.n))
-        # ^Run initial contructor for table top avoidance
-        #    logging.info('Run initial contructor for table top avoidance')
-        #    self.sampling()
-        #    logging.info('self.C = {}'.format(self.C))
-        #    self.construct_complex_sobol()
-        #    logging.info('First Sobol iteration grown')
-        #    self.processed_n = self.n
-
-        # Start iterative complex growth
-        self.processed_n = 0
-        self.X_min_all = []
-        self.minimizer_pool_F_all = []
-        grow_complex = True
-        # homology_group_differential = n_growth_init
-        n_pool = n_growth_init
-        n_growth = 0
-        homology_group_prev = 0  # len(self.minimizer_pool)
-        homology_group_differential = 0
-        #    self.n = n_growth_init
-
-        while grow_complex:
-
-            ###########HEAD##############
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            #self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-            #########################
-            sample_loop = True
-            # Sample untill enough points in subspace is found
-            self.n_cons = self.n  # Desired sampling points
-
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            # self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-            while sample_loop:
-
-                self.sampling()
-                #    self.C = self.C[self.processed_n:, :]
-
-                # Find subspace of feasible points
-                if self.g_cons is not None:
-                    self.sampling_subspace()
-                else:
-                    self.fn = self.n
-
-                if numpy.shape(self.C)[0] < self.n_cons:
-                    self.n += 1
-                    # logging.info('Subspace search increased to '
-                    #             'self.n = {}'.format(self.n ))
-                else:
-                    sample_loop = False
-
-            # Reset to actual sampling points used
-            self.n = self.n_cons
-
-            # Sort remaining samples
-            self.sorted_samples()
-
-            # Find objective function references
-            self.fun_ref()
-            ##########END############
-
-
-
-            # Build complex on current sampling set and find minimiser pool
-            self.complex_minimisers()
-
-            if not len(self.minimizer_pool) == 0:
-                # self.X_min_all.append(self.X_min)
-                self.minimizer_pool_F_all.append(self.minimizer_pool_F)
-                homology_group = len(self.minimizer_pool)
-            else:
-                homology_group = 0
-
-            if self.disp:
-                logging.info('homology_group ='
-                             ' {}'.format(homology_group))
-                logging.info('homology_group_differential ='
-                             ' {}'.format(homology_group_differential))
-                logging.info('n_pool ='
-                             ' {}'.format(n_pool))
-
-            if homology_group > homology_group_prev:
-                hgd_new = self.n - n_growth
-
-                homology_group_differential = max(hgd_new, # TODO: Should not be max?
-                                                  homology_group_differential)
-                homology_group_prev = homology_group
-
-                if self.fn < n_growth_init:
-                    n_pool += homology_group_differential
-                else:
-                    n_pool = homology_group_differential  # * self.dim
-                # ^^ Should be set equal to this?
-                n_growth = self.n
-            else:
-                n_pool -= 1
-                self.n += 1
-
-            if n_pool == 0:
-                grow_complex = False
-            self.processed_n = self.fn  # self.n
-
-            # Global mode check:
-            if self.stop_iter_m is not None:
-                if self.f_min_true is not None:
-                    if self.stop_iter_m():
-                        grow_complex = False
-
-        # Break if no final minima found
-        # logging.info('self.X_min = {}'.format(self.X_min))
-        if len(self.X_min) == 0:
-            self.break_routine = True
-            self.res.message = 'No minimizers found in iterative growth mode'
-            self.res.success = False
-            if self.disp:
-                print("Failed to find non-zero set of minimzers in iterative"
-                      "growrth mode complex construction")
-
-        # After the complex is completed count the function evaluations used:
-        if self.dim > 1:
-            logging.info('self.Tri.points = {}'.format(len(self.Tri.points)))
-            self.res.nfev = len(self.Tri.points)
-            # logging.info('self.Tri.points '
-            #             '= {}'.format(self.Tri.points))
-        else:
-            # Include each sampling point as func evaluation:
-            self.res.nfev = self.fn
 
     def sampled_surface(self, infty_cons_sampl=False):
         """
