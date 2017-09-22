@@ -405,6 +405,7 @@ class SHGO(object):
             self.maxev = None
             self.maxtime = None
             self.f_min_true = None
+            self.maxhgrd = None
 
             # Objective function knowledge
             self.symmetry = False
@@ -525,6 +526,11 @@ class SHGO(object):
             self.minimizer_kwargs['options']['ftol'] = \
                 options['ftol']
 
+        if 'maxhgrd' in options:
+            self.maxhgrd = options['maxhgrd']
+        else:
+            self.maxhgrd = None
+
         # Objective function knowledge
         if 'symmetry' in options:
             self.symmetry = True
@@ -623,24 +629,7 @@ class SHGO(object):
         # Final iteration only needed if pools weren't minimised every iteration
         if not self.minimize_every_iter:
             if not self.break_routine:
-                self.minimizers()
-                if len(self.X_min) is not 0:
-                    # Minimise the pool of minisers with local minimisation methods
-                    # Note that if Options['local_iter'] is an `int` instead of default
-                    # value False then only that number of candidates will be minimised
-                    self.minimise_pool(self.local_iter)
-                    # Sort results and build the global return object
-                    self.sort_result()
-            self.f_lowest = self.res.fun
-
-
-            # Global mode check:
-            # if self.stop_iter_m is not None:
-            #    if self.f_min_true is not None:
-            #        if self.stop_iter_m():
-            #            grow_complex = False
-
-            ##################################
+                self.find_minima()
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
         #TODO:
@@ -649,24 +638,45 @@ class SHGO(object):
         #    print(f'self.res.nfev = {self.res.nfev}')
         return
 
+    def find_minima(self):
+        """Construct the minimiser pool, map the minimisers to local minima
+           and sort the results into a global return object"""
+        self.minimizers()
+        if len(self.X_min) is not 0:
+            # Minimise the pool of minisers with local minimisation methods
+            # Note that if Options['local_iter'] is an `int` instead of default
+            # value False then only that number of candidates will be minimised
+            self.minimise_pool(self.local_iter)
+            # Sort results and build the global return object
+            self.sort_result()
+
+            # Lowest values used to report in case of failures
+            self.f_lowest = self.res.fun
+            self.x_lowest = self.res.x
+        else:
+            self.find_lowest_vertex()
+        return
+
+    def find_lowest_vertex(self):
+        # Find the
+        if self.sampling_method == 'simplicial':
+            self.f_lowest = numpy.inf
+            for x in self.HC.V.cache:
+                if x.f < self.f_lowest:
+                    self.f_lowest = x.f
+                    self.x_lowest = x.x_a
+        else:
+            self.f_lowest = numpy.min(self.F)
+            # TODO: Find this vlaue
+            #self.x_lowest = numpy.min(self.F)
 
     # Stopping criteria functions:
     def finite_iterations(self):
-        self.iters -= 1
-        if self.iters <= 0:
+        if self.iters_done >= self.maxev:  # Stop for infeasible sampling
             self.stop_global = True
-        elif self.maxev is not None:
-            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
-                self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
-        elif self.maxiter is not None:
-            if self.iters >= self.maxev:  # Stop for infeasible sampling
-                self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
+            self.fail_routine(mes=("Failed to find a feasible "
+                                   "sampling point within the "
+                                   "maximum allowed evaluations."))
         return self.stop_global
 
     def finite_fev(self):
@@ -696,6 +706,10 @@ class SHGO(object):
     def finite_ev(self):
         # Finite evaluations including infeasible sampling points
         pass
+
+    def finite_time(self):
+        pass
+
     def finite_precision(self):
         # Stop the algorithm if the final function value is known
         # Specify in options (with self.f_min_true = options['f_min'])
@@ -712,8 +726,7 @@ class SHGO(object):
     def finite_homology_growth(self):
         pass
 
-    def finite_time(self):
-        pass
+
 
     def stopping_criteria(self):
         """
@@ -728,6 +741,17 @@ class SHGO(object):
         """
         if self.maxiter is not None:
             self.finite_iterations()
+        if self.maxfev is not None:
+            self.finite_fevs()
+        if self.maxev is not None:
+            self.finite_ev()
+        if self.maxtime is not None:
+            self.finite_time()
+        if self.f_min_true is not None:
+            self.finite_precision()
+        if self.maxhgrd is not None:
+            self.finite_homology_growth()
+
         return
 
 
@@ -747,14 +771,7 @@ class SHGO(object):
         # Build minimiser pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.minimizers()
-                if len(self.X_min) is not 0:
-                    # Minimise the pool of minisers with local minimisation methods
-                    # Note that if Options['local_iter'] is an `int` instead of default
-                    # value False then only that number of candidates will be minimised
-                    self.minimise_pool(self.local_iter)
-                    # Sort results and build the global return object
-                    self.sort_result()
+                self.find_minima()
 
         return
 
@@ -765,57 +782,45 @@ class SHGO(object):
         # Build minimiser pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.minimizers()
-                if len(self.X_min) is not 0:
-                    # Minimise the pool of minisers with local minimisation methods
-                    # Note that if Options['local_iter'] is an `int` instead of default
-                    # value False then only that number of candidates will be minimised
-                    self.minimise_pool(self.local_iter)
-                    # Sort results and build the global return object
-                    self.sort_result()
+                self.find_minima()
         return
 
     def iterate_hypercube(self):
         """
         Iterate a subdivision of the complex
-         (globally biased)
+
+        NOTE: Called with self.iterate_complex() after class initiation
         """
+        # Iterate the complex
         self.HC.split_generation()
 
         # Build minimiser pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.minimizers()
-                if len(self.X_min) is not 0:
-                    # Minimise the pool of minisers with local minimisation methods
-                    # Note that if Options['local_iter'] is an `int` instead of default
-                    # value False then only that number of candidates will be minimised
-                    self.minimise_pool(self.local_iter)
-                    # Sort results and build the global return object
-                    self.sort_result()
+                self.find_minima()
+
+        self.iters_done += 1
 
         return
 
     def iterate_delauney(self):
         """
-        Build a complex of
+        Build a complex of delauney triangulated points
+
+        NOTE: Called with self.iterate_complex() after class initiation
         """
-        self.nc += self.n
         #NOTE: ADD n_c - n_sampled points
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Build minimiser pool
         if self.minimize_every_iter:
             if not self.break_routine:
-                self.minimizers()
-                if len(self.X_min) is not 0:
-                    # Minimise the pool of minisers with local minimisation methods
-                    # Note that if Options['local_iter'] is an `int` instead of default
-                    # value False then only that number of candidates will be minimised
-                    self.minimise_pool(self.local_iter)
-                    # Sort results and build the global return object
-                    self.sort_result()
+                self.find_minima()
 
+        self.iters_done += 1
+        self.nc += self.n
+
+    ## Hypercube minimizers
     def simplex_minimizers(self):
         """
         Returns the indexes of all minimizers
