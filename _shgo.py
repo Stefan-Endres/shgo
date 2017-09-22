@@ -244,7 +244,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
     (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
 
 
-    References
+    References #TODO
     ----------
     .. [1] Törn, A (1990) "Topographical global optimization", Reports on
            Computer Science and Mathematics Ser. A, No 199, 8p. Abo Akademi
@@ -421,6 +421,7 @@ class SHGO(object):
         # Choose complex constructor
         if sampling_method == 'simplicial':
             self.construct_complex = self.construct_complex_iteratively
+            self.iterate = self.iterate_hypercube
         elif sampling_method == 'sobol':
             self.construct_complex = self.construct_complex_sobol_iter
             #if (options is not None) and (self.n is not None):
@@ -593,32 +594,35 @@ class SHGO(object):
             if self.disp:
                 print("Succesfully completed construction of complex.")
 
-            if self.sampling_method == 'simplicial':
-                # Build minimiser pool
-                self.simplex_minimizers()
+            #if self.sampling_method == 'simplicial':
+            #    # Build minimiser pool
+            #    self.simplex_minimizers()
 
-        if len(self.X_min) == 0:
-            # If sampling failed to find pool, return lowest sampled point
-            # with a warning
-            # TODO: Implement warning and lowest sampling return
-            self.break_routine = True
-            self.fail_routine(mes="Failed to find a feasible minimiser point. "
-                                  "Lowest sampling point =")
+        if 0:  # Break routine
+            if len(self.X_min) == 0:
+                # If sampling failed to find pool, return lowest sampled point
+                # with a warning
+                # TODO: Implement warning and lowest sampling return
+                self.break_routine = True
+                self.fail_routine(mes="Failed to find a feasible minimiser point. "
+                                      "Lowest sampling point = {}")
 
-        if not self.break_routine:
+        #if not self.break_routine:
             # Minimise the pool of minisers with local minimisation methods
             # Note that if Options['local_iter'] is an `int` instead of default
             # value False then only that number of candidates will be minimised
-            self.minimise_pool(self.local_iter)
+            #self.minimise_pool(self.local_iter)
 
         # Sort results and build the global return object
-        if not self.break_routine:
-            self.sort_result()
+        #if not self.break_routine:
+        #    self.sort_result()
 
         # Confirm the routine ran succesfully
         if not self.break_routine:
             self.res.message = 'Optimization terminated successfully.'
             self.res.success = True
+
+        return self.res
 
     ## Iteration properties
     # Stopping criteria functions:
@@ -903,15 +907,21 @@ class SHGO(object):
         return
 
     ## Iterative hypercube sampling
-    def construct_initial_complex(self):
+    def construct_initial_complex(self, initial_iters=0):
         if self.disp:
             print('Building initial complex')
 
+        # Initial triangulation of the hyper-rectangle
         self.HC = Complex(self.dim, self.func, self.args,
                           self.symmetry, self.bounds, self.g_func, self.g_args)
+
+        # Initial sub-triangulations of the hyper-rectangle, if any
+        for i in range(initial_iters):
+            self.HC.split_generation()
+
         return
 
-    def iterate(self):
+    def iterate_hypercube(self):
         """
         Iterate a subdivision of the complex
          (globally biased)
@@ -931,16 +941,28 @@ class SHGO(object):
             print('Splitting first generation')
 
         while not self.stop_iter_m():
+            if self.break_routine:
+                break
+
+            ###########WRAP IN "def iteration"#####################
             self.iterate()
 
             # Specify in options['minimize_every_iter'] = True to use
-            if self.minimize_every_iter:  # TODO: TEST THIS ROUTINE
-                self.simplex_minimizers()
-                if len(self.X_min) is not 0:
-                    self.minimise_pool(self.local_iter)
-                    self.sort_result()
-                    self.f_lowest = self.res.fun
+            #if self.minimize_every_iter:  # TODO: TEST THIS ROUTINE
 
+        # Build minimiser pool
+        if not self.break_routine:
+            self.simplex_minimizers()
+            if len(self.X_min) is not 0:
+                # Minimise the pool of minisers with local minimisation methods
+                # Note that if Options['local_iter'] is an `int` instead of default
+                # value False then only that number of candidates will be minimised
+                self.minimise_pool(self.local_iter)
+                # Sort results and build the global return object
+                self.sort_result()
+                self.f_lowest = self.res.fun
+
+            ##################################
         # Algorithm updates
         # Count the number of vertices and add to function evaluations:
         self.res.nfev += self.HC.V.nfev
@@ -995,7 +1017,6 @@ class SHGO(object):
 
     ## Delauney based sampling functions
     #   Define shgo class methods using arbitrary (ex Sobol) sampling
-
     def construct_complex_sobol(self):
         """
         Construct a complex based on the Sobol sequence
@@ -1040,66 +1061,6 @@ class SHGO(object):
                 # Include each sampling point as func evaluation:
                 self.res.nfev = self.fn
                 sample = False
-
-    def sampled_surface(self, infty_cons_sampl=False):
-        """
-        Sample the function surface. There are 2 modes, if infty_cons_sampl
-        is True then the sampled points that are generated outside the feasible
-        domain will be assigned an `inf` value in accordance with SHGO rules.
-        This guarantees convergence and usually requires less objective function
-        evaluations at the computational costs of more Delauney triangulation points.
-
-        If infty_cons_sampl is False then the infeasible points are discarded and
-        only a subspace of the sampled points are used. This comes at the cost of
-        the loss of guaranteed convergence and usually requires more objective function
-        evaluations.
-        """
-        # TODO: Add unittest where infty_cons_sampl = True
-
-        self.sampling()
-
-        if not self.infty_cons_sampl:
-            # Find subspace of feasible points
-            if self.g_cons is not None:
-                self.sampling_subspace()
-            else:
-                self.fn = self.n
-
-        # Sort remaining samples
-        self.sorted_samples()
-
-        # Find objective function references
-        self.fun_ref()
-
-        return
-
-    def complex_minimisers(self):
-        # Construct complex minimisers on the current sampling set.
-        if self.fn >= (self.dim + 1):
-            if self.dim < 2:  # Scalar objective functions
-                if self.disp:
-                    print('Constructing 1D minimizer pool')
-
-                self.ax_subspace()
-                self.surface_topo_ref()
-                self.X_min = self.minimizers()
-
-            else:  # Multivariate functions.
-                if self.disp:
-                    print('Constructing Gabrial graph and minimizer pool')
-
-                self.delaunay_triangulation()
-                if self.disp:
-                    print('Triangulation completed, building minimizer pool')
-
-                self.X_min = self.delaunay_minimizers()
-
-            if self.disp:
-                logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
-        else:
-            if self.disp:
-                print('Not enough sampling points found in the feasible domain.')
-            self.minimizer_pool = [None]
 
     def construct_complex_sobol_iter(self, n_growth_init=None):
         """
@@ -1245,6 +1206,66 @@ class SHGO(object):
         else:
             # Include each sampling point as func evaluation:
             self.res.nfev = self.fn
+
+    def sampled_surface(self, infty_cons_sampl=False):
+        """
+        Sample the function surface. There are 2 modes, if infty_cons_sampl
+        is True then the sampled points that are generated outside the feasible
+        domain will be assigned an `inf` value in accordance with SHGO rules.
+        This guarantees convergence and usually requires less objective function
+        evaluations at the computational costs of more Delauney triangulation points.
+
+        If infty_cons_sampl is False then the infeasible points are discarded and
+        only a subspace of the sampled points are used. This comes at the cost of
+        the loss of guaranteed convergence and usually requires more objective function
+        evaluations.
+        """
+        # TODO: Add unittest where infty_cons_sampl = True
+
+        self.sampling()
+
+        if not self.infty_cons_sampl:
+            # Find subspace of feasible points
+            if self.g_cons is not None:
+                self.sampling_subspace()
+            else:
+                self.fn = self.n
+
+        # Sort remaining samples
+        self.sorted_samples()
+
+        # Find objective function references
+        self.fun_ref()
+
+        return
+
+    def complex_minimisers(self):
+        # Construct complex minimisers on the current sampling set.
+        if self.fn >= (self.dim + 1):
+            if self.dim < 2:  # Scalar objective functions
+                if self.disp:
+                    print('Constructing 1D minimizer pool')
+
+                self.ax_subspace()
+                self.surface_topo_ref()
+                self.X_min = self.minimizers()
+
+            else:  # Multivariate functions.
+                if self.disp:
+                    print('Constructing Gabrial graph and minimizer pool')
+
+                self.delaunay_triangulation()
+                if self.disp:
+                    print('Triangulation completed, building minimizer pool')
+
+                self.X_min = self.delaunay_minimizers()
+
+            if self.disp:
+                logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+        else:
+            if self.disp:
+                print('Not enough sampling points found in the feasible domain.')
+            self.minimizer_pool = [None]
 
     def sobol_points(self, N, D):
         """
