@@ -405,8 +405,8 @@ class Complex:
 
         S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
 
-        for i, v in enumerate(S_new_u()):
-            print(f'S_new_u()[{i}].x = {v.x}')
+        #for i, v in enumerate(S_new_u()):
+        #    print(f'S_new_u()[{i}].x = {v.x}')
 
         self.H[gen].append(S_new_l)
         if 1:
@@ -831,6 +831,7 @@ class VertexCache:
         self.func_args = func_args
         self.bounds = bounds
         self.nfev = 0
+        self.size = 0
 
         if indexed:
             self.Index = -1
@@ -861,8 +862,9 @@ class VertexCache:
                     #print(f'xval.feasible = {xval.feasible}')
                     if xval.feasible:
                         self.nfev += 1
+                        self.size += 1
                 else:
-                    self.nfev += 1
+                    self.size += 1
 
             return self.cache[x]
 
@@ -879,7 +881,7 @@ if __name__ == '__main__':
     g_cons = [test_g_cons]
     tr = []
     nr = list(range(9))
-    HC = Complex(8, test_func, symmetry=0, g_cons=g_cons)
+    HC = Complex(2, test_func, symmetry=0, g_cons=g_cons)
     logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
     #HC = Complex(13, test_func, symmetry=1)
     if 0:
@@ -922,10 +924,10 @@ if __name__ == '__main__':
     print(HC.generate_sub_cell_t1.cache_info())
     print(HC.generate_sub_cell_t2.cache_info())
 
-    if 1:
+    if 0:
         HC.plot_complex()
 
-    if 1:
+    if 0:
         for i in range(2):
             logging.info('Start complex refinement gen = {}'.format(i + 1))
             HC.split_generation()
