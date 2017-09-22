@@ -438,21 +438,25 @@ class SHGO(object):
 
         ## Set complex construction mode based on a provided stopping criteria:
         # Choose complex constructor
-        self.construct_complex = self.construct_complex_iteratively
         if sampling_method == 'simplicial':
             self.construct_initial_complex = self.construct_initial_complex_hyperc
+            print('TEST')
             self.iterate_complex = self.iterate_hypercube
+            print('TEST2')
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
         elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
             self.construct_initial_complex = self.construct_initial_complex_sampl
+            self.iterate_complex = self.iterate_delauney
             # Sampling method used
             if sampling_method == 'sobol':
                 self.sampling_method = sampling_method
-                self.sampling_points = self.sampling_sobol
+                #self.sampling_points = self.sampling_sobol
+                self.sampling = self.sampling_sobol
             else:
                 # A user defined sampling method:
-                self.sampling_points = sampling_method
+                #self.sampling_points = sampling_method
+                self.sampling = sampling_method
             # Minimiser functions
             if self.dim < 2:
                 self.minimizers = self.minimizers_1D
@@ -478,6 +482,7 @@ class SHGO(object):
         self.res.nfev = 0  # Include each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
+        return
 
     ## Initiation aids
     def init_options(self, options):
@@ -491,6 +496,12 @@ class SHGO(object):
         -------
 
         """
+        # Default settings:
+        if 'minimize_every_iter' in options:
+            self.minimize_every_iter = options['minimize_every_iter']
+        else:
+            self.minimize_every_iter = False
+
         # Algorithm limits
         if 'maxiter' in options:
             self.maxiter = options['maxiter']
@@ -670,13 +681,13 @@ class SHGO(object):
             # TODO: Find this vlaue
             #self.x_lowest = numpy.min(self.F)
 
-    # Stopping criteria functions:
+    ## Stopping criteria functions:
     def finite_iterations(self):
         if self.iters_done >= self.maxev:  # Stop for infeasible sampling
             self.stop_global = True
-            self.fail_routine(mes=("Failed to find a feasible "
-                                   "sampling point within the "
-                                   "maximum allowed evaluations."))
+            #self.fail_routine(mes=("Failed to find a feasible "
+            #                       "sampling point within the "
+            #                       "maximum allowed evaluations."))
         return self.stop_global
 
     def finite_fev(self):
@@ -687,24 +698,17 @@ class SHGO(object):
         #if self.disp:
         #    logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
         #    logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
-        if self.HC.V.nfev >= self.maxfev:
+        if self.fn >= self.maxfev:
             self.stop_global = True
-        elif self.maxev is not None:
-            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
-                self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
-                # elif self.HC.V.nfev >= self.maxfev:  # STOP FOR INFEASIBLE SAMPLING
-                #    self.stop_global = True
-                #    self.fail_routine(mes=("Failed to find a feasible "
-                #                           "sampling point within the "
-                #                           "maximum allowed evaluations."))
-
+            #self.fail_routine(mes=("Failed to find a feasible "
+            #                       "sampling point within the "
+            #                       "maximum allowed evaluations."))
         return self.stop_global
 
     def finite_ev(self):
         # Finite evaluations including infeasible sampling points
+        if self.n_sampled >= self.maxfev:
+            self.stop_global = True
         pass
 
     def finite_time(self):
@@ -726,8 +730,6 @@ class SHGO(object):
     def finite_homology_growth(self):
         pass
 
-
-
     def stopping_criteria(self):
         """
         Various stopping criteria ran every iteration
@@ -736,8 +738,6 @@ class SHGO(object):
         -------
 
         stop : bool
-
-
         """
         if self.maxiter is not None:
             self.finite_iterations()
@@ -800,6 +800,8 @@ class SHGO(object):
                 self.find_minima()
 
         self.iters_done += 1
+        self.fn = self.HC.V.nfev  # nfevs counted by the triangulation.py routines
+        self.n_sampled= len(self.HC.V.cache)
 
         return
 
@@ -810,6 +812,8 @@ class SHGO(object):
         NOTE: Called with self.iterate_complex() after class initiation
         """
         #NOTE: ADD n_c - n_sampled points
+        self.nc += self.n
+
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Build minimiser pool
@@ -818,7 +822,7 @@ class SHGO(object):
                 self.find_minima()
 
         self.iters_done += 1
-        self.nc += self.n
+        self.n_sampled = self.nc
 
     ## Hypercube minimizers
     def simplex_minimizers(self):
@@ -1332,8 +1336,11 @@ class SHGO(object):
         """
         # TODO: This process can be pooled
         # Obj. function returns to be used as reference table.:
+        f_cache_bool = False
         if self.fn > 0:  # Store old function evaluations
             Ftemp = self.F
+            fn_old = self.fn
+            f_cache_bool = True
 
         self.F = numpy.zeros(numpy.shape(self.C)[0])
         # NOTE: It might be easier to replace this with a cached
@@ -1350,11 +1357,12 @@ class SHGO(object):
             if eval_f:
                 self.F[i] = self.func(self.C[i, :], *self.args)
                 self.fn += 1
+                
+        if f_cache_bool:
+            if fn_old > 0:  # Restore saved function evaluations
+                self.F[0:fn_old] = Ftemp
 
-        if self.fn > 0:  # Restore saved function evaluations
-            self.F[0:self.fn] = Ftemp
-
-        self.fn = numpy.shape(self.C)[0]
+        #self.fn = numpy.shape(self.C)[0]
 
         return self.F
 
@@ -1549,5 +1557,17 @@ if __name__ == '__main__':
                    options=options,
                    sampling_method='simplicial')
 
-        shc.shgo()
-        print(shc.res)
+        shc.construct_initial_complex()
+        shc.iterate_complex()
+        #shc.shgo()
+        #print(shc.res)
+
+        shc2 = SHGO(f, bounds, g_cons=g,
+                   n=50,
+                   iters=2,
+                   #callback=callback, minimizer_kwargs=minimizer_kwargs,
+                   options=options,
+                   sampling_method='sobol')
+
+        shc2.construct_initial_complex()
+        shc2.iterate_complex()
