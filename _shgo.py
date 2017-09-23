@@ -429,11 +429,15 @@ class SHGO(object):
         self.fn = 0  # Number of feasible sampling points evaluations performed
 
         # Default settings if no sampling criteria.
-        if (self.f_min_true is None) and (self.maxiter is None) and (self.maxiter is None):
-            if (self.n is None) and (self.iters is None):
-                self.n = 100
-                self.nc = n
-                self.iters = 1
+        if ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
+            and (self.maxhgrd is None) and (self.f_min_true is None)):
+                if self.iters is None:
+                    self.iters = 1
+                if self.n is None:
+                    self.n = 100
+                    self.nc = n
+
+                #self.iters = 1
 
 
         ## Set complex construction mode based on a provided stopping criteria:
@@ -683,7 +687,12 @@ class SHGO(object):
 
     ## Stopping criteria functions:
     def finite_iterations(self):
-        if self.iters_done >= self.maxev:  # Stop for infeasible sampling
+        if self.iters is not None:
+            if self.iters_done >= self.iters:
+                self.stop_global = True
+
+
+        if self.iters_done >= self.maxiters:  # Stop for infeasible sampling
             self.stop_global = True
             #self.fail_routine(mes=("Failed to find a feasible "
             #                       "sampling point within the "
@@ -1357,7 +1366,7 @@ class SHGO(object):
             if eval_f:
                 self.F[i] = self.func(self.C[i, :], *self.args)
                 self.fn += 1
-                
+
         if f_cache_bool:
             if fn_old > 0:  # Restore saved function evaluations
                 self.F[0:fn_old] = Ftemp
