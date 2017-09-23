@@ -271,7 +271,16 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
                options=options, sampling_method=sampling_method)
 
     # Run the algorithm, process results and test success
-    shc.shgo()
+    shc.construct_complex()
+
+    # Test post iterations success
+    if len(shc.X_min) == 0:
+        # If sampling failed to find pool, return lowest sampled point
+        # with a warning
+        # TODO: Implement warning and lowest sampling return
+        shc.break_routine = True
+        shc.fail_routine(mes="Failed to find a feasible minimiser point. "
+                              "Lowest sampling point = {}")
 
     # Return the final results
     return shc.res
@@ -444,9 +453,7 @@ class SHGO(object):
         # Choose complex constructor
         if sampling_method == 'simplicial':
             self.construct_initial_complex = self.construct_initial_complex_hyperc
-            print('TEST')
             self.iterate_complex = self.iterate_hypercube
-            print('TEST2')
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
         elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
@@ -465,7 +472,8 @@ class SHGO(object):
             if self.dim < 2:
                 self.minimizers = self.minimizers_1D
             else:
-                self.minimizers = self.delaunay_minimizers
+                #self.minimizers = self.delaunay_minimizers
+                self.minimizers = self.delaunay_complex_minimisers
             pass
 
         # Define stop iteration method
@@ -573,13 +581,6 @@ class SHGO(object):
 
     ## Routine iteration
     def shgo(self):
-        # Generate sampling points
-        if self.disp:
-            print('Generating sampling points')
-
-        # Construct directed complex.
-        if not self.break_routine:
-            self.construct_complex()
 
         if not self.break_routine:
             if self.disp:
@@ -589,14 +590,6 @@ class SHGO(object):
             #    # Build minimiser pool
             #    self.simplex_minimizers()
 
-        if 0:  # Break routine
-            if len(self.X_min) == 0:
-                # If sampling failed to find pool, return lowest sampled point
-                # with a warning
-                # TODO: Implement warning and lowest sampling return
-                self.break_routine = True
-                self.fail_routine(mes="Failed to find a feasible minimiser point. "
-                                      "Lowest sampling point = {}")
 
         #if not self.break_routine:
             # Minimise the pool of minisers with local minimisation methods
@@ -626,10 +619,12 @@ class SHGO(object):
         processing time) has been met.
 
         """
-        self.construct_initial_complex()
-
         if self.disp:
             print('Splitting first generation')
+
+        self.construct_initial_complex()
+
+
 
         while not self.stop_global:
             if self.break_routine:
@@ -638,7 +633,9 @@ class SHGO(object):
             self.iterate_complex()
 
             # Check if any stopping_criteria are true
+            print("TEST")
             self.stopping_criteria()
+
 
         # Build minimiser pool
         # Final iteration only needed if pools weren't minimised every iteration
@@ -691,12 +688,12 @@ class SHGO(object):
             if self.iters_done >= self.iters:
                 self.stop_global = True
 
-
-        if self.iters_done >= self.maxiters:  # Stop for infeasible sampling
-            self.stop_global = True
-            #self.fail_routine(mes=("Failed to find a feasible "
-            #                       "sampling point within the "
-            #                       "maximum allowed evaluations."))
+        if self.maxiter is not None:
+            if self.iters_done >= self.maxiter:  # Stop for infeasible sampling
+                self.stop_global = True
+                #self.fail_routine(mes=("Failed to find a feasible "
+                #                       "sampling point within the "
+                #                       "maximum allowed evaluations."))
         return self.stop_global
 
     def finite_fev(self):
@@ -749,6 +746,8 @@ class SHGO(object):
         stop : bool
         """
         if self.maxiter is not None:
+            self.finite_iterations()
+        if self.iters is not None:
             self.finite_iterations()
         if self.maxfev is not None:
             self.finite_fevs()
@@ -822,7 +821,6 @@ class SHGO(object):
         """
         #NOTE: ADD n_c - n_sampled points
         self.nc += self.n
-
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Build minimiser pool
@@ -910,14 +908,16 @@ class SHGO(object):
         while not self.stop_l_iter:
             # ======Dev========
             # Global stopping criteria:
-            if self.local_fglob is not None:
-                if abs(lres_f_min.fun - self.local_fglob) <= self.local_f_tol:
-                    self.stop_l_iter = True
-                    break
+            #if self.local_fglob is not None:
+            #if self.local_fglob is not None:
+            #    if abs(lres_f_min.fun - self.local_fglob) <= self.local_f_tol:
+            #        self.stop_l_iter = True
+            #        break
 
             if self.f_min_true is not None:
                 if abs(lres_f_min.fun - self.f_min_true) <= self.f_tol:
                     self.stop_l_iter = True
+                    break
             # ======Dev========
 
 
@@ -1115,7 +1115,7 @@ class SHGO(object):
             self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
             # Build complex on current sampling set and find minimiser pool
-            self.complex_minimisers()
+            self.delaunay_complex_minimisers()
 
 
             if (len(self.minimizer_pool) == 0) or (self.fn == 0) or (self.fn < (self.dim + 1)):
@@ -1163,6 +1163,9 @@ class SHGO(object):
         """
         # TODO: Add unittest where infty_cons_sampl = True
 
+        # Generate sampling points
+        if self.disp:
+            print('Generating sampling points')
         self.sampling()
 
         if not self.infty_cons_sampl:
@@ -1182,7 +1185,7 @@ class SHGO(object):
 
         return
 
-    def complex_minimisers(self):
+    def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
         if self.fn >= (self.dim + 1):
             if self.dim < 2:  # Scalar objective functions
@@ -1580,3 +1583,10 @@ if __name__ == '__main__':
 
         shc2.construct_initial_complex()
         shc2.iterate_complex()
+
+        print(shgo(f, bounds, g_cons=g,
+                   n=50,
+                   iters=2,
+                   #callback=callback, minimizer_kwargs=minimizer_kwargs,
+                   options=options,
+                   sampling_method='sobol'))
