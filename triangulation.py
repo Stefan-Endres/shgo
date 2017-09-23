@@ -3,8 +3,10 @@ import numpy
 import logging
 import sys
 import copy
-import functools
-from functools import lru_cache
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
 
 try:
     pass

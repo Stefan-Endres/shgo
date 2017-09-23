@@ -3,6 +3,7 @@ sudo: false
 language: python
 
 python:
+  - "2.7"
   - "3.5"
   - "3.6"
 
@@ -39,4 +40,4 @@ install:
 
 # Run test
 script:
-  - python -m unittest shgo_tests.py
+  - python -m unittest shgo_tests
