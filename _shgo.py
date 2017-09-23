@@ -645,8 +645,8 @@ class SHGO(object):
         # self.fn -= 1
         # print(f'self.fn = {self.fn}')
         if self.disp:
-            logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
-            logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
+            logging.info('len(self.HC.V.cache)= {}'.format(len(self.HC.V.cache)))
+            logging.info('self.HC.V.nfev = {}'.format(self.HC.V.nfev))
         if self.HC.V.nfev >= self.n:
             self.stop_global = True
         elif self.maxev is not None:
@@ -807,8 +807,8 @@ class SHGO(object):
                 if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
                     cbounds[i][1] = x_i
         if self.disp:
-            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
-            logging.info(f'cbounds = {cbounds}')
+            logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
+            logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
     # Minimize a starting point locally
@@ -945,7 +945,7 @@ class SHGO(object):
         # Count the number of vertices and add to function evaluations:
         self.res.nfev += self.HC.V.nfev
         if self.disp:
-            print(f'self.res.nfev = {self.res.nfev}')
+            print('self.res.nfev = {}'.format(self.res.nfev))
         return
 
     def simplex_minimizers(self):
