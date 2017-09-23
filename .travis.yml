@@ -37,6 +37,9 @@ before_install:
 install:
   - conda env create --file environment.yml python=$TRAVIS_PYTHON_VERSION
   - source activate shgo
+  - if [[ "${TRAVIS_PYTHON_VERSION%.*}" == "2" ]]; then
+      conda install functools32
+    fi
 
 # Run test
 script:
