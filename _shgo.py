@@ -470,7 +470,8 @@ class SHGO(object):
                 self.sampling = sampling_method
             # Minimiser functions
             if self.dim < 2:
-                self.minimizers = self.minimizers_1D
+                #self.minimizers = self.minimizers_1D
+                self.minimizers = self.delaunay_complex_minimisers
             else:
                 #self.minimizers = self.delaunay_minimizers
                 self.minimizers = self.delaunay_complex_minimisers
@@ -1194,7 +1195,8 @@ class SHGO(object):
 
                 self.ax_subspace()
                 self.surface_topo_ref()
-                self.X_min = self.minimizers()
+                #self.X_min = self.minimizers()
+                self.X_min = self.minimizers_1D()
 
             else:  # Multivariate functions.
                 if self.disp:
