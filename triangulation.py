@@ -3,8 +3,10 @@ import numpy
 import logging
 import sys
 import copy
-import functools
-from functools import lru_cache
+try:
+    from functools import lru_cache
+except ImportError:
+    from functools32 import lru_cache
 
 try:
     pass
@@ -406,7 +408,7 @@ class Complex:
         S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
 
         for i, v in enumerate(S_new_u()):
-            print(f'S_new_u()[{i}].x = {v.x}')
+            print('S_new_u()[{}].x = {}'.format(i, v.x))
 
         self.H[gen].append(S_new_l)
         if 1:
