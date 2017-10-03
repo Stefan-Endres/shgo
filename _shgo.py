@@ -3,6 +3,7 @@
 """ execfile('tgo.py')
 """
 from __future__ import division, print_function, absolute_import
+import numpy
 import scipy.spatial
 import scipy.optimize
 from triangulation import *
@@ -278,9 +279,11 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
         # If sampling failed to find pool, return lowest sampled point
         # with a warning
         # TODO: Implement warning and lowest sampling return
+        # If no minimiser has been found use the lowest sampling value
+        shc.find_lowest_vertex()
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimiser point. "
-                              "Lowest sampling point = {}")
+                              "Lowest sampling point = {}".format(shc.f_lowest))
 
     # Return the final results
     return shc.res
@@ -326,7 +329,7 @@ class SHGO(object):
             if (type(g_cons) is not tuple) and (type(g_cons) is not list):
                 #TODO: Refactor self.g_func back to self.g_cons
                 self.g_func = (g_cons,)
-                self.g_cons = (g_cons,)
+                #self.g_cons = (g_cons,)
             else:
                 self.g_func = g_cons
         else:
@@ -383,11 +386,11 @@ class SHGO(object):
                                                  },
                                      'callback': self.callback
                                      }
+            if g_cons is not None:
+                if (self.minimizer_kwargs['method'] == 'SLSQP' or
+                                self.minimizer_kwargs['method'] == 'COBYLA'):
 
-            #TODO: Uncomment
-            #if self.minimizer_kwargs['method'] == 'SLSQP' or \
-            #                self.minimizer_kwargs['method'] == 'COBYLA':
-            #    minimizer_kwargs['constraints'] = self.min_cons
+                    self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
                 if 'ftol' in options:
@@ -444,7 +447,7 @@ class SHGO(object):
                     self.iters = 1
                 if self.n is None:
                     self.n = 100
-                    self.nc = n
+                    self.nc = self.n
 
                 #self.iters = 1
 
@@ -475,20 +478,21 @@ class SHGO(object):
             else:
                 #self.minimizers = self.delaunay_minimizers
                 self.minimizers = self.delaunay_complex_minimisers
-            pass
 
-        # Define stop iteration method
+        # Define stop iteration method(s)
         # TODO: Change to only max values
 
 
         # Local controls
-        self.stop_l_iter = False  # Local minimisation iterations #TODO: The fuck?
+        self.stop_l_iter = False  # Local minimisation iterations
         self.stop_complex_iter = False  # Sampling iterations
 
         # Initiate storage objects used in algorithm classes
         self.fun_min_glob = []  # List of objective function values at minima found
         self.x_min_glob = []  # List of coordinate candidates at minima found
 
+        self.lx_maps = []  # List of local minimizers mapped
+        self.lf_maps = []  # List of local minimizers maps
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
@@ -675,12 +679,15 @@ class SHGO(object):
         if self.sampling_method == 'simplicial':
             self.f_lowest = numpy.inf
             for x in self.HC.V.cache:
-                if x.f < self.f_lowest:
-                    self.f_lowest = x.f
-                    self.x_lowest = x.x_a
+                if self.HC.V[x].f < self.f_lowest:
+                    self.f_lowest = self.HC.V[x].f
+                    self.x_lowest = self.HC.V[x].x_a
         else:
-            self.f_lowest = numpy.min(self.F)
-            # TODO: Find this vlaue
+            #self.f_lowest = numpy.min(self.F)
+            self.f_I = numpy.argsort(self.F, axis=-1)
+            self.f_lowest = self.F[self.f_I[0]]
+            self.x_lowest = self.C[self.f_I[0]]
+            #TODO: TEST THESE VALES
             #self.x_lowest = numpy.min(self.F)
 
     ## Stopping criteria functions:
@@ -725,9 +732,20 @@ class SHGO(object):
         # Stop the algorithm if the final function value is known
         # Specify in options (with self.f_min_true = options['f_min'])
         #  and the tolerance with f_tol = options['f_tol']
-        if self.f_lowest == 0:
-            if self.f_lowest <= self.f_tol:
-                self.stop_global = True
+
+        # If no minimiser has been found use the lowest sampling value
+        try:
+            if len(self.X_min) == 0:
+                self.find_lowest_vertex()
+        except AttributeError:
+            if self.minimize_every_iter is False:
+                self.find_lowest_vertex()
+
+        # Function to stop algorithm at specified percentage error:
+        if self.f_lowest == 0.0:
+            if self.f_min_true == 0.0:
+                if self.f_lowest <= self.f_tol:
+                    self.stop_global = True
         else:
             pe = (self.f_min_true - self.f_lowest) / abs(self.f_lowest)
             if pe <= self.f_tol:
@@ -1060,7 +1078,14 @@ class SHGO(object):
             print('lres = {}'.format(lres))
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
+
+        # Convert containers to lists
+        self.x_min_glob = list(self.x_min_glob)
+        self.fun_min_glob = list(self.fun_min_glob)
+
+        # Append minima maps
         self.x_min_glob.append(lres.x)
+        #numpy.append(self.x_min_glob, lres.x, axis=-1)
         try:  # Needed because of the brain dead 1x1 numpy arrays
             self.fun_min_glob.append(lres.fun[0])
         except (IndexError, TypeError):
@@ -1171,7 +1196,7 @@ class SHGO(object):
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
-            if self.g_cons is not None:
+            if self.g_func is not None:
                 self.sampling_subspace()
             else:
                 pass
@@ -1232,7 +1257,6 @@ class SHGO(object):
             unsigned = "uint64"
             # swallow header
             buffer = next(f)
-
             L = int(numpy.log(N) // numpy.log(2.0)) + 1
 
             C = numpy.ones(N, dtype=unsigned)
@@ -1453,6 +1477,7 @@ class SHGO(object):
         """
         Returns the indexes of all minimizers
         """
+        #TODO: Add capability to minimize limited subset like >1D
         self.minimizer_pool = []
         # TODO: Can be parralized
         for ind in range(self.fn):

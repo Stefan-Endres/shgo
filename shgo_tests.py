@@ -220,15 +220,15 @@ test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  )
 
 
-def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iter=None,
+def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
-              sampling_method='sobol'):
+             sampling_method='sobol'):
 
 
     res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                g_args=g_args, n=n, iter=iter, callback=callback,
-                minimizer_kwargs=minimizer_kwargs, options=options,
-                sampling_method=sampling_method)
+               g_args=g_args, n=n, iters=iters, callback=callback,
+               minimizer_kwargs=minimizer_kwargs, options=options,
+               sampling_method=sampling_method)
 
     logging.info(res)
 
@@ -331,28 +331,28 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
                    'disp': True}
         args = (6,)  # No. of atoms
         run_test(testLJ, args=args, n=None,
-                   options=options, iter=3,
-                   sampling_method='simplicial')
+                 options=options, iters=3,
+                 sampling_method='simplicial')
 
 
 # Argument test functions
 class TestShgoArguments(unittest.TestCase):
     def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
-        run_test(test1_2, n=None, iter=2, sampling_method='simplicial')
+        run_test(test1_2, n=None, iters=2, sampling_method='simplicial')
 
     def test_1_2_simpl_iter(self):
         """Iterative simplicial on TestFunction 2 (univariate)"""
-        run_test(test2_1, n=None, iter=6, sampling_method='simplicial')
+        run_test(test2_1, n=None, iters=6, sampling_method='simplicial')
 
     def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
-        run_test(test1_2, n=None, iter=1, sampling_method='sobol')
+        run_test(test1_2, n=None, iters=1, sampling_method='sobol')
 
-    def test_2_1_sobol_iter(self):
+    def test_2_2_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 2 (univariate)"""
         res = shgo(test2_1.f, test2_1.bounds, g_cons=test2_1.g,
-                   n=None, iter=1, sampling_method = 'sobol')
+                   n=None, iters=1, sampling_method ='sobol')
         numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
@@ -361,7 +361,7 @@ class TestShgoArguments(unittest.TestCase):
         def callback_func(x):
             print("Local minimization callback test")
         for test in [test1_1, test2_1]:
-                res = shgo(test.f, test.bounds, iter=1, sampling_method='simplicial',
+                res = shgo(test.f, test.bounds, iters=1, sampling_method='simplicial',
                            callback=callback_func, options={'disp': True})
                 res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                            callback=callback_func, options={'disp': True})
@@ -372,7 +372,7 @@ class TestShgoArguments(unittest.TestCase):
             print("Local minimization callback test")
 
         for test in [test1_1, test2_1]:
-            res = shgo(test.f, test.bounds, iter=1, sampling_method='sobol',
+            res = shgo(test.f, test.bounds, iters=1, sampling_method='sobol',
                        callback=callback_func, options={'disp': True})
 
             res = shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
@@ -383,8 +383,10 @@ class TestShgoArguments(unittest.TestCase):
         """Test known function minima stopping criteria"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun
+        options['f_min'] = test4_1.expected_fun[0]
         options['f_tol'] = 1e-5
+        options['minimize_every_iter'] = True
+        #TODO: Make default n higher for faster tests
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
@@ -392,7 +394,7 @@ class TestShgoArguments(unittest.TestCase):
         """Test Global mode limiting local evalutions"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun
+        options['f_min'] = test4_1.expected_fun[0]
         options['f_tol'] = 1e-5
 
         # Specify number of local iterations to perform
@@ -404,12 +406,40 @@ class TestShgoArguments(unittest.TestCase):
         """Test Global mode limiting local evalutions"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun
+        options['f_min'] = test4_1.expected_fun[0]
         options['f_tol'] = 1e-5
 
         # Specify number of local iterations to perform
         options['local_iter'] = 1
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='sobol')
+
+    def test_5_1_simplicial_argless(self):
+        """Test Default simplicial sampling settings on TestFunction 1"""
+        res = shgo(test1_1.f, test1_1.bounds, g_cons=test1_1.g)
+        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
+
+    def test_5_2_sobol_argless(self):
+        """Test Default sobol sampling settings on TestFunction 1"""
+        res = shgo(test1_1.f, test1_1.bounds, g_cons=test1_1.g, sampling_method='sobol')
+        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
+
+    def test_6_1_simplicial_max_iter(self):
+        """Test that maximum iteration option works on TestFunction 3"""
+        options = {'max_iter': 2}
+        res = shgo(test3_1.f, test3_1.bounds, g_cons=test3_1.g,
+                   options=options, sampling_method='simplicial')
+        print(res)
+        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
+
+    def test_6_2_simplicial_min_iter(self):
+        """Test that maximum iteration option works on TestFunction 3"""
+        options = {'min_iter': 2}
+        res = shgo(test3_1.f, test3_1.bounds, g_cons=test3_1.g,
+                   options=options, sampling_method='simplicial')
+        print(res)
+        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
+        numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
 # Failure test functions
 class TestShgoFailures(unittest.TestCase):
@@ -418,7 +448,7 @@ class TestShgoFailures(unittest.TestCase):
         `n` and `iter`"""
         numpy.testing.assert_raises(IOError,
                                     SHGO, test1_1.f, test1_1.bounds,
-                                    n=10, iter=3)
+                                    n=10, iters=3)
 
     def test_1_2_arguments(self):
         """Ambiguous arguments for stopping criteria,
@@ -432,7 +462,7 @@ class TestShgoFailures(unittest.TestCase):
         `iter` and options=['f_min']"""
         numpy.testing.assert_raises(IOError,
                                     SHGO, test1_1.f, test1_1.bounds,
-                                    iter=3, options={'f_min': 1.0})
+                                    iters=3, options={'f_min': 1.0})
 
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
@@ -499,10 +529,10 @@ class TestShgoFailures(unittest.TestCase):
 
         numpy.testing.assert_equal(False, res.success)
 
-    def test_6_func_arguments(self):
-        args = 1
-        numpy.testing.assert_raises(TypeError,
-                                    shgo, test1_1.f, test1_1.bounds, args=args)
+    #def test_6_func_arguments(self):
+    #    args = 1
+     #   numpy.testing.assert_raises(TypeError,
+    #                                shgo, test1_1.f, test1_1.bounds, args=args)
         #numpy.testing.assert_raises(TypeError,
         #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
 
