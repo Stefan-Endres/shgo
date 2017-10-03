@@ -341,7 +341,7 @@ def run_test(test, args=(), g_args=()):
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                         g_args=g_args, n=100, iter=None,
+                         g_args=g_args, n=100, iters=None,
                          minimizer_kwargs=minimizer_kwargs2)
 
     if test == test5_1:
@@ -355,11 +355,11 @@ def run_test(test, args=(), g_args=()):
         res = tgo(test.f, test.bounds, args=args, g_cons=test.g,
                   g_args=g_args, n=1000)
         ares = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                    g_args=g_args, n=1000, iter=None, sampling_method='sobol')#, crystal_mode=True)
+                    g_args=g_args, n=1000, iters=None, sampling_method='sobol')#, crystal_mode=True)
 
         if ThirdDev:
             ares2 = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-                         g_args=g_args, n=100, iter=None,
+                         g_args=g_args, n=1000, iters=None,
                          minimizer_kwargs=minimizer_kwargs2)
 
     #TODO: Create 2d test for a

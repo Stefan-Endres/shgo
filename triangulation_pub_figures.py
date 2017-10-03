@@ -495,82 +495,59 @@ class Complex:
         """
         from matplotlib import pyplot
         if self.dim == 2:
-            pyplot.figure()
-            for C in self.H:
-                for c in C:
-                    for v in c():
-                        if self.bounds is None:
-                            x_a = numpy.array(v.x, dtype=float)
-                        else:
-                            x_a = numpy.array(v.x, dtype=float)
-                            for i in range(len(self.bounds)):
-                                x_a[i] = (x_a[i] * (self.bounds[i][1]
-                                              - self. bounds[i][0])
-                                       + self.bounds[i][0])
-
-                        #logging.info('v.x_a = {}'.format(x_a))
-
-                        pyplot.plot([x_a[0]], [x_a[1]], 'o')
-
-                        xlines = []
-                        ylines = []
-                        for vn in v.nn:
+            #pyplot.figure()
+            f, ((ax1, ax2), (ax3, ax4)) = pyplot.subplots(2, 2, sharey=True, sharex=True)
+            for ax in [ax1, ax2, ax3, ax4]:
+                for C in self.H:
+                    for c in C:
+                        for v in c():
                             if self.bounds is None:
-                                xn_a = numpy.array(vn.x, dtype=float)
+                                x_a = numpy.array(v.x, dtype=float)
                             else:
-                                xn_a = numpy.array(vn.x, dtype=float)
+                                x_a = numpy.array(v.x, dtype=float)
                                 for i in range(len(self.bounds)):
-                                    xn_a[i] = (xn_a[i] * (self.bounds[i][1]
-                                                  - self.bounds[i][0])
+                                    x_a[i] = (x_a[i] * (self.bounds[i][1]
+                                                  - self. bounds[i][0])
                                            + self.bounds[i][0])
 
-                            #logging.info('vn.x = {}'.format(vn.x))
+                            #logging.info('v.x_a = {}'.format(x_a))
 
-                            xlines.append(xn_a[0])
-                            ylines.append(xn_a[1])
-                            xlines.append(x_a[0])
-                            ylines.append(x_a[1])
+                            ax.plot([x_a[0]], [x_a[1]], 'o')
 
-                        pyplot.plot(xlines, ylines)
+                            xlines = []
+                            ylines = []
+                            for vn in v.nn:
+                                if self.bounds is None:
+                                    xn_a = numpy.array(vn.x, dtype=float)
+                                else:
+                                    xn_a = numpy.array(vn.x, dtype=float)
+                                    for i in range(len(self.bounds)):
+                                        xn_a[i] = (xn_a[i] * (self.bounds[i][1]
+                                                      - self.bounds[i][0])
+                                               + self.bounds[i][0])
 
-            if self.bounds is None:
-                pyplot.ylim([-1e-2, 1 + 1e-2])
-                pyplot.xlim([-1e-2, 1 + 1e-2])
-            else:
-                pyplot.ylim([self.bounds[1][0]-1e-2, self.bounds[1][1] + 1e-2])
-                pyplot.xlim([self.bounds[0][0]-1e-2, self.bounds[0][1] + 1e-2])
+                                #logging.info('vn.x = {}'.format(vn.x))
 
-            pyplot.show()
+                                xlines.append(xn_a[0])
+                                ylines.append(xn_a[1])
+                                xlines.append(x_a[0])
+                                ylines.append(x_a[1])
 
-        elif self.dim == 3:
-            from mpl_toolkits.mplot3d import Axes3D
-            fig = pyplot.figure()
-            ax = fig.add_subplot(111, projection='3d')
+                            ax.plot(xlines, ylines)
 
-            for C in self.H:
-                for c in C:
-                    for v in c():
-                        x = []
-                        y = []
-                        z = []
-                        #logging.info('v.x = {}'.format(v.x))
-                        x.append(v.x[0])
-                        y.append(v.x[1])
-                        z.append(v.x[2])
-                        for vn in v.nn:
-                            x.append(vn.x[0])
-                            y.append(vn.x[1])
-                            z.append(vn.x[2])
-                            x.append(v.x[0])
-                            y.append(v.x[1])
-                            z.append(v.x[2])
-                            #logging.info('vn.x = {}'.format(vn.x))
+                if self.bounds is None:
+                    pyplot.ylim([-1e-2, 1 + 1e-2])
+                    pyplot.xlim([-1e-2, 1 + 1e-2])
+                else:
+                    pyplot.ylim([self.bounds[1][0]-1e-2, self.bounds[1][1] + 1e-2])
+                    pyplot.xlim([self.bounds[0][0]-1e-2, self.bounds[0][1] + 1e-2])
 
-                        ax.plot(x, y, z, label='simplex')
-
-            pyplot.show()
+                #pyplot.show()
+                self.split_generation()
         else:
             print("dimension higher than 3 or wrong complex format")
+
+        pyplot.show()
         return
 
 
@@ -880,6 +857,7 @@ if __name__ == '__main__':
     tr = []
     nr = list(range(9))
     HC = Complex(2, test_func, symmetry=0, g_cons=g_cons)
+    HC.plot_complex()
     logging.info('Verex Cache size = {}'.format(len(HC.V.cache)))
     #HC = Complex(13, test_func, symmetry=1)
     if 0:

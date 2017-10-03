@@ -13,7 +13,7 @@ import scipy.optimize
 from _shgo import *
 #from _shgo_sobol import shgo as shgo_sobol
 from _tgo import *
-from go_funcs.go_benchmark import Benchmark
+from go_funcs_lc.go_benchmark import Benchmark
 import go_funcs_lc
 import inspect
 import time
@@ -38,7 +38,8 @@ args = parser.parse_args()
 
 
 excluded = [
-            'Horst6', # <--- Not correctly defined
+            #'Horst6', # <--- Not correctly defined
+            #'Hs038',  #
             #'Horst5', 'Horst7', 'Hs036', 'S250',  # <--- Slow
             #"Bukin06",  # <--- Working, but fail on all solvers + high nfev
             'Benchmark',  # Not a GO function
@@ -71,7 +72,8 @@ class GoRunner:
                                            # Total success rate over all functions
                                            'success count': 0,
                                            'eval count': 0,
-                                           'total runtime': 0}
+                                           'total runtime': 0
+                                           }
 
             self.results['Average'][solver] = {}
 
@@ -97,7 +99,16 @@ class GoRunner:
         else:
             kwarg_args = {'g_cons': self.function.g}
 
-        #kwarg_args['options'] =
+        # Global mode
+        kwarg_args['options'] = {}
+        kwarg_args['options']['local_iter'] = 10
+        kwarg_args['options']['local_fglob'] = self.function.fglob
+        kwarg_args['options']['local_f_tol'] = 0.01
+        #kwarg_args['options']['f_tol'] = 0.01
+
+        #minimizer_kwargs = {'method': 'Nelder-Mead'
+        #                    }
+
         success_l = False
         iters = 1
         while not success_l:
@@ -105,7 +116,8 @@ class GoRunner:
             t0 = time.time()
 
             res = shgo(self.function.fun, self.function._bounds,
-                       iter=iters,
+                       iters=iters,
+                       #minimizer_kwargs=minimizer_kwargs,
                        sampling_method='simplicial',
                        **kwarg_args)
             #print(res)
@@ -151,20 +163,30 @@ class GoRunner:
         else:
             kwarg_args = {'g_cons': self.function.g}
 
+        # Global mode
+        kwarg_args['options'] = {}
+        kwarg_args['options']['local_iter'] = 10
+        kwarg_args['options']['local_fglob'] = self.function.fglob
+        kwarg_args['options']['local_f_tol'] = 0.01
+        kwarg_args['options']['infty constraints'] = True
+
         success_l = False
         n = self.function._dimensions + 1
-        if self.name == 'Hs038':
-            n = 6  # Strange Qhull error on self.function._dimensions + 1 points
 
-        #n = 1000
+        if self.name == 'Hs038':
+            n = 458-1
+
         while not success_l:
             self.function.nfev = 0
             t0 = time.time()
-
-            res = shgo(self.function.fun, self.function._bounds,
-                       n=n,
-                       sampling_method='sobol',
-                       **kwarg_args)
+            try:
+                res = shgo(self.function.fun, self.function._bounds,
+                           n=n,
+                           sampling_method='sobol',
+                           **kwarg_args)
+            except scipy.spatial.qhull.QhullError:
+                n += 1
+                continue
             # print(res)
             # nfev = res.nfev
             runtime = time.time() - t0
@@ -278,6 +300,9 @@ class GoRunner:
         success_l = False
         n = self.function._dimensions + 1
 
+        #if self.name == 'Hs038':  # difficult test
+        #    n = 1000
+
         #n = 1000
         while not success_l:
             self.function.nfev = 0
@@ -368,7 +393,9 @@ class GoRunner:
             uniq = uniql - len(numpy.unique(numpy.array(flag)))
         return uniq
 
-    def performance_profiles(self, tau_l=['nfev', 'runtime']):
+    def performance_profiles(self, tau_l=['nfev', 'runtime'],
+                             solvers=['shgo', 'shgo_sobol', 'tgo'],
+                             xlims=None):
         # Use tau performance index
         # for example function evaluations tau=`nfev`
         # other examples like processing time tau=`runtime`
@@ -384,12 +411,12 @@ class GoRunner:
             xranges = {}
             yranges = {}
             yranges_ext = {}
-            for solver in self.results['All'].keys():
+            for solver in solvers:
                 yranges[solver] = numpy.array(range(1, eval_funcs + 1)) / (eval_funcs)# - 1.0)
                 yranges_ext[solver] = numpy.array([])
                 xranges[solver] = numpy.zeros(self.results['All'][self.solver]['eval count'])
 
-            for solver in self.results['All'].keys():
+            for solver in solvers:
                 #xranges[solver] = numpy.zeros(self.results['All'][self.solver]['eval count'])
                 i = 0
                 for problem in self.results.keys():
@@ -401,13 +428,13 @@ class GoRunner:
 
             # Find the total range of tau data points
             x_range = numpy.array([])
-            for solver in self.results['All'].keys():
+            for solver in solvers:
                 x_range = numpy.append(x_range, xranges[solver])
 
             x_range = numpy.sort(x_range)
 
             # Find the total range of corresponding solved functions:
-            for solver in self.results['All'].keys():
+            for solver in solvers:
                 yranges_ext[solver] = []
                 solved = 0
                 ind_s = 0
@@ -476,6 +503,7 @@ if __name__ == '__main__':
     if args.solvers is None:
         GR = GoRunner(solvers=['shgo'])
                              # , 'tgo'])
+        args.solvers = ['shgo']
     else:
         GR = GoRunner(solvers=args.solvers)
 
@@ -499,26 +527,28 @@ if __name__ == '__main__':
     # Process average values and print out total performance
 
     for solver in GR.results['All'].keys():
+
         print("=" * 60)
         print("Results for {}".format(solver))
         print("="*30)
         GR.results['All'][solver]['average runtime'] = (GR.results['All'][solver]['total runtime']
-                                                /GR.results['All'][solver]['eval count'])
+                                                /22.0)#GR.results['All'][solver]['eval count'])
         GR.results['All'][solver]['average nfev'] = (GR.results['All'][solver]['nfev']
-                                                /GR.results['All'][solver]['eval count'])
+                                                /22.0)#GR.results['All'][solver]['eval count'])
 
-
-        GR.results['Average'][solver]['runtime'] = GR.results['All'][solver]['average runtime']
-        GR.results['Average'][solver]['nfev'] = int(GR.results['All'][solver]['average nfev'])
-        GR.results['Average'][solver]['ndim'] = int(0)
-        GR.results['Average'][solver]['nlmin'] = (GR.results['All'][solver]['nlmin']
-                                                  / GR.results['All'][solver]['eval count']
-                                                  )
-        GR.results['Average'][solver]['nulmin'] = (GR.results['All'][solver]['nulmin']
-                                                  / GR.results['All'][solver]['eval count']
-                                                  )
-        GR.results['Average'][solver]['name'] = GR.results['All'][solver]['name']
-
+        # Process averages
+        if 1:  # Average
+            GR.results['Average'][solver]['runtime'] = GR.results['All'][solver]['average runtime']
+            GR.results['Average'][solver]['nfev'] = int(GR.results['All'][solver]['average nfev'])
+            GR.results['Average'][solver]['ndim'] = int(0)
+            GR.results['Average'][solver]['nlmin'] = (GR.results['All'][solver]['nlmin']
+                                                      / GR.results['All'][solver]['eval count']
+                                                      )
+            GR.results['Average'][solver]['nulmin'] = (GR.results['All'][solver]['nulmin']
+                                                      / GR.results['All'][solver]['eval count']
+                                                      )
+            GR.results['Average'][solver]['name'] = GR.results['All'][solver]['name']
+        # Print results
         for key in GR.results['All'][solver].keys():
             print(key + ": " + str(GR.results['All'][solver][key]))
             #print(GR.results['All'][solver])
@@ -536,9 +566,12 @@ if __name__ == '__main__':
         GR.results['Average'][solver]['nlmin'] = int(GR.results['Average'][solver]['nlmin'])
         GR.results['All'][solver]['nulmin'] = int(GR.results['All'][solver]['nulmin'])
         GR.results['Average'][solver]['nulmin'] = int(GR.results['Average'][solver]['nulmin'])
+
+
         import json
         with open('results/results_lc.json', 'w') as fp:
             json.dump(GR.results, fp)
 
     if 1:
-        GR.performance_profiles()
+        GR.performance_profiles(solvers=args.solvers)
+        #GR.performance_profiles(solvers=['shgo', 'tgo'])

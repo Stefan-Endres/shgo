@@ -153,6 +153,8 @@ class Horst6(TestFunction):
         # https://link.springer.com/content/pdf/10.1007/BF00429750.pdf
         return  2.198036 - (+0.202821*x[0] + 0.647361*x[1] + 0.920135*x[2])
     def g6(x):
+        #print("VIOLATION")
+        #print(-1.301853 - (-0.983091*x[0] - 0.886420*x[1] - 0.802444*x[2]))
         return -1.301853 - (-0.983091*x[0] - 0.886420*x[1] - 0.802444*x[2])
     def g7(x):
         return -0.738290 - (-0.305441*x[0] - 0.180123*x[1] - 0.515399*x[2])
@@ -314,6 +316,7 @@ class Hs044(TestFunction):
 
     def g5(x):
         return -(x[2] + 2*x[3] - 8.0)
+
 
     def g6(x):
         return -(x[2] + x[3] - 5.0)
@@ -550,8 +553,9 @@ def sanity_test(test, tol=1e-5):
     print("=" * 6)
     good = True
     sol = test.f(test.expected_x)
-    diff = test.expected_fun - sol
-    print(f'f* - f(x*) = {diff}')
+    diff = sol - test.expected_fun
+    print(f'  f(x*) - f* = {diff}')
+    print(f'(f(x*) - f*)/abs(f*) = {diff/abs(test.expected_fun)}')
     if abs(diff) <= tol:
         print("GOOD")
     else:
@@ -614,26 +618,43 @@ if __name__ == '__main__':
         sanity_test(bunnag1)
         sanity_test(bunnag2)
 
-    test = horst6
     test = bunnag2
+    test = horst6
     if 0:
-        for iter in range(1,7):
-            res = shgo(test.f, test.bounds, g_cons=test.g, iter=iter)
-            print(f'iterations = {iter}')
+        res = shgo(test.f, test.bounds, g_cons=test.g, n=5000000,
+                   sampling_method='sobol')
+        print(f'iterations = {iter}')
+        print(res)
+        print(f'fun = {res.fun}')
+        print(f'x = {res.x}')
+
+    if 0:
+        for iters in range(6, 8):
+            res = shgo(test.f, test.bounds, g_cons=test.g, iters=iters)
+            print(f'iterations = {iters}')
             #print(res)
             print(f'fun = {res.fun}')
             print(f'x = {res.x}')
 
+    """
+    iterations = 6
+fun = -12.00117012392055
+x = [ 1.40625     2.95479488  0.        ]
+
+    n = 2000000
+fun = -12.003240034450666
+x = [ 1.36656132  2.96722951  0.        ]
+"""
 
     if 0:  # bunnag
         print(bunnag1.f([3,2,3.36]))
         print(bunnag1.g[0]([3,2,3.36]))
-        print(shgo(bunnag1.f, bunnag1.bounds, g_cons=bunnag1.g, iter=1))
+        print(shgo(bunnag1.f, bunnag1.bounds, g_cons=bunnag1.g, iters=1))
         #print(shgo(bunnag1.f, bunnag1.bounds, g_cons=bunnag1.g, iter=3))
         #print(shgo(bunnag1.f, bunnag1.bounds, g_cons=bunnag1.g, iter=5))
 
         #res = shgo(bunnag1.f, bunnag1.bounds, g_cons=bunnag1.g, iter=7)
-        res = shgo(bunnag2.f, bunnag2.bounds, g_cons=bunnag2.g, iter=1)
+        res = shgo(bunnag2.f, bunnag2.bounds, g_cons=bunnag2.g, iters=1)
         print(res)
         print(bunnag2.g[0](res.x))
         print(bunnag2.g[1](res.x))

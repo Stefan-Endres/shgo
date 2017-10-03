@@ -6,17 +6,22 @@ def f(x):  # Alpine2
 
     return prod
 
-bounds = [(0, 5), (0, 5)]
+
+def f(x):  # s231
+    return 100*(x[1]-x[0]**2)**2 + (1-x[0])**2
+
+def g1(x):
+    return x[0]/3 + x[1] + 0.1
+
+def g2(x):
+    return -1*x[0]/3 + x[1] + 0.1
+
+g = (g1,g2)
+
+bounds = [(-2, 2), ] * 2
 n = 10
 
-def f(x):  # Ursem01
-    import numpy
-    return -numpy.sin(2 * x[0] - 0.5 *numpy.pi)  - 3 * numpy.cos(x[1]) - 0.5 * x[0]
-
-bounds = [(-2.5, 3), (-2, 2)]
-bounds = [(-3, 3), (-3, 3)]
-n = 10
-SHc = SHGO(f, bounds, n = n)
+SHc = SHGO(f, bounds, n = n, g_cons=g)
 
 
 # %matplotlib nbagg
@@ -102,7 +107,7 @@ def direct_2d(ax, func, V1, V2, vertex_plot_size=0.00):
 def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
     import numpy
     bounds = [(lb1, ub1), (lb2, ub2)]
-    SHc = SHGO(f, bounds, n=n)
+    SHc = SHGO(f, bounds, n=n, g_cons=g)
     SHc.construct_complex_sobol()
     SHc.minimise_pool()
     SHc.sort_result()
@@ -177,7 +182,7 @@ def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
         y = [SHc.C[9][1], SHc.C[11][1], SHc.C[4][1], SHc.C[14][1]]
         plt.fill(x, y, color='grey', lw=1, alpha=0.6)#,  hatch= "/ ")
 
-    if 1:  # Simplex shades for Sperner proof
+    if 0:  # Simplex shades for Sperner proof
         # Fills
         # define corner points
         x = [SHc.C[8][0], SHc.C[3][0], 0]
@@ -285,7 +290,9 @@ def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
 
 #build_complex(n=15, lb1=0, lb2=-2.5, ub1=9.2, ub2=2.5)
 if 1:
-    build_complex(n=15, lb1=0, lb2=-2.5, ub1=9.2, ub2=2.5)
+    #build_complex(n=15, lb1=0, lb2=-2.5, ub1=9.2, ub2=2.5)
+    #build_complex(n=15, lb1=-2.0, lb2=-2.0, ub1=2.0, ub2=2.0, labels=False)
+    build_complex(n=7, lb1=-2.0, lb2=-2.0, ub1=2.0, ub2=2.0, labels=False)
 
 if 0:
     build_complex(n=150, lb1=0, lb2=-2.5, ub1=9.2, ub2=2.5, labels=False)

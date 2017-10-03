@@ -67,6 +67,7 @@ class Benchmark(object):
         self.global_optimum = None
         self.change_dimensionality = False
         self.custom_bounds = None
+        self.g = None
 
     def __str__(self):
         return '{0} ({1} dimensions)'.format(self.__class__.__name__, self.N)
