@@ -464,12 +464,10 @@ class SHGO(object):
         ## Set complex construction mode based on a provided stopping criteria:
         # Choose complex constructor
         if sampling_method == 'simplicial':
-            self.construct_initial_complex = self.construct_initial_complex_hyperc
             self.iterate_complex = self.iterate_hypercube
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
         elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
-            self.construct_initial_complex = self.construct_initial_complex_sampl
             self.iterate_complex = self.iterate_delauney
             # Sampling method used
             if sampling_method == 'sobol':
@@ -514,7 +512,7 @@ class SHGO(object):
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
-        self.res.nfev = 0  # Include each sampling point as func evaluation
+        self.res.nfev = 0  # Includes each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
         return
@@ -637,33 +635,22 @@ class SHGO(object):
         if self.disp:
             print('Splitting first generation')
 
-        self.construct_initial_complex()
-
-
-
+        #self.construct_initial_complex()
+        #self.stopping_criteria()
         while not self.stop_global:
             if self.break_routine:
                 break
-            # Iterate complex
+            # Iterate complex, process minimisers
             self.iterate_complex()
 
-            # Check if any stopping_criteria are true
-            print("TEST")
             self.stopping_criteria()
-
 
         # Build minimiser pool
         # Final iteration only needed if pools weren't minimised every iteration
         if not self.minimize_every_iter:
             if not self.break_routine:
                 self.find_minima()
-        # Algorithm updates
-        # Count the number of vertices and add to function evaluations:
-        #TODO:
-        #self.res.nfev += self.HC.V.nfev
-        #if self.disp:
-        #    print(f'self.res.nfev = {self.res.nfev}')
-        #self.res.nfev += self.HC.V.nfev
+
         return
 
     def find_minima(self):
@@ -792,37 +779,6 @@ class SHGO(object):
 
         return
 
-
-    ## Iterative hypercube sampling
-    def construct_initial_complex_hyperc(self):
-        if self.disp:
-            print('Building initial complex')
-
-        # Initial triangulation of the hyper-rectangle
-        self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.bounds, self.g_func, self.g_args)
-
-        # Initial sub-triangulations of the hyper-rectangle, if any
-        #for i in range(self.iters):
-        #    self.HC.split_generation()
-
-        # Build minimiser pool
-        if self.minimize_every_iter:
-            if not self.break_routine:
-                self.find_minima()
-
-        return
-
-    ## Iterative uniform sampling
-    def construct_initial_complex_sampl(self):
-        self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-        # Build minimiser pool
-        if self.minimize_every_iter:
-            if not self.break_routine:
-                self.find_minima()
-        return
-
     def iterate_hypercube(self):
         """
         Iterate a subdivision of the complex
@@ -830,7 +786,12 @@ class SHGO(object):
         NOTE: Called with self.iterate_complex() after class initiation
         """
         # Iterate the complex
-        self.HC.split_generation()
+        if self.n_sampled == 0:
+            # Initial triangulation of the hyper-rectangle
+            self.HC = Complex(self.dim, self.func, self.args,
+                              self.symmetry, self.bounds, self.g_func, self.g_args)
+        else:
+            self.HC.split_generation()
 
         # Build minimiser pool
         if self.minimize_every_iter:
@@ -857,7 +818,11 @@ class SHGO(object):
         NOTE: Called with self.iterate_complex() after class initiation
         """
         #NOTE: ADD n_c - n_sampled points
-        self.nc += self.n
+        if self.n_sampled == 0:
+            self.nc += self.n
+        else:
+            pass
+
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Build minimiser pool
@@ -865,6 +830,7 @@ class SHGO(object):
             if not self.break_routine:
                 self.find_minima()
 
+        # Algorithm updates
         self.iters_done += 1
         self.n_sampled = self.nc
 
@@ -1135,7 +1101,8 @@ class SHGO(object):
         self.res.fun = self.fun_min_glob[ind_sorted[0]]  # Save global fun value
 
         # Add local func evals to sampling func evals
-        self.res.nfev = self.res.nlfev + self.fn  #TODO:CHECK
+        # Count the number of feasible vertices and add to local function evaluations:
+        self.res.nfev = self.fn + self.res.nlfev  #TODO:CHECK
         return
 
     # Algorithm controls
