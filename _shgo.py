@@ -274,6 +274,10 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
     # Run the algorithm, process results and test success
     shc.construct_complex()
 
+    if not shc.break_routine:
+        if shc.disp:
+            print("Succesfully completed construction of complex.")
+
     # Test post iterations success
     if len(shc.X_min) == 0:
         # If sampling failed to find pool, return lowest sampled point
@@ -284,6 +288,11 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimiser point. "
                               "Lowest sampling point = {}".format(shc.f_lowest))
+
+    # Confirm the routine ran succesfully
+    if not shc.break_routine:
+        shc.res.message = 'Optimization terminated successfully.'
+        shc.res.success = True
 
     # Return the final results
     return shc.res
@@ -492,7 +501,16 @@ class SHGO(object):
         self.x_min_glob = []  # List of coordinate candidates at minima found
 
         self.lx_maps = []  # List of local minimizers mapped
+        # Array structure : [[v_min_1, x_min_1],
+        #                    [v_min_2, x_min_2],
+        #                    ...
+        #                    [v_min_n, x_min_n]]
+        # Where the vertices v_min_i are mapped to corresponding local minima x_min_i
         self.lf_maps = []  # List of local minimizers maps
+        # Structure : [[f_min_1, f_min_1], [f_min_2, f_min_2], ...] etc.
+        self.lres_maps = []  # List of local minimizers map residuals
+        # Structure : [[lres_min_1, lres_min_1], ...] etc.
+        self.lbounds_maps = []  # bounds around lx_maps if any
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
@@ -586,10 +604,7 @@ class SHGO(object):
 
     ## Routine iteration
     def shgo(self):
-
-        if not self.break_routine:
-            if self.disp:
-                print("Succesfully completed construction of complex.")
+        pass
 
             #if self.sampling_method == 'simplicial':
             #    # Build minimiser pool
@@ -605,11 +620,6 @@ class SHGO(object):
         # Sort results and build the global return object
         #if not self.break_routine:
         #    self.sort_result()
-
-        # Confirm the routine ran succesfully
-        if not self.break_routine:
-            self.res.message = 'Optimization terminated successfully.'
-            self.res.success = True
 
         return self.res
 
@@ -653,6 +663,7 @@ class SHGO(object):
         #self.res.nfev += self.HC.V.nfev
         #if self.disp:
         #    print(f'self.res.nfev = {self.res.nfev}')
+        #self.res.nfev += self.HC.V.nfev
         return
 
     def find_minima(self):
@@ -824,11 +835,18 @@ class SHGO(object):
         # Build minimiser pool
         if self.minimize_every_iter:
             if not self.break_routine:
+                # feasible sampling points counted by the triangulation.py routines
+                self.fn = self.HC.V.nfev
+                # Process minimiser pool
                 self.find_minima()
 
         self.iters_done += 1
-        self.fn = self.HC.V.nfev  # nfevs counted by the triangulation.py routines
-        self.n_sampled= len(self.HC.V.cache)
+
+        #self.nfev = self.HC.V.nfev + self.res.nlfev  # nfevs counted by the triangulation.py routines
+        # feasible sampling points counted by the triangulation.py routines
+        self.fn = self.HC.V.nfev
+        #self.n_sampled = len(self.HC.V.cache)
+        self.n_sampled = self.HC.V.nfev  # nevs counted by the triangulation.py routines
 
         return
 
@@ -1117,7 +1135,7 @@ class SHGO(object):
         self.res.fun = self.fun_min_glob[ind_sorted[0]]  # Save global fun value
 
         # Add local func evals to sampling func evals
-        self.res.nfev += self.res.nlfev
+        self.res.nfev = self.res.nlfev + self.fn  #TODO:CHECK
         return
 
     # Algorithm controls
@@ -1128,6 +1146,10 @@ class SHGO(object):
         self.res.message = mes
         return
 
+    def global_evals(self):
+        """Count the number of global evaluations"""
+        if self.sampling_method == 'simplicial':
+            pass
     ## Delauney based sampling functions
     #   Define shgo class methods using arbitrary (ex Sobol) sampling
     def construct_complex_sobol(self):

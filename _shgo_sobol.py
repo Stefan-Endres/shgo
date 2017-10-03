@@ -320,7 +320,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iter=None,
 
 
 # %% Define shgo class using arbitrary sampling
-class SHGOs(object):
+class SHGO(object):
     """
     This class implements the shgo routine
     """
