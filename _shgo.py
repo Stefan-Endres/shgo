@@ -16,7 +16,7 @@ except ImportError:
     from multiprocessing import Pool
 
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
          callback=None, minimizer_kwargs=None, options=None,
          sampling_method='simplicial'):
     # TODO: Update documentation
