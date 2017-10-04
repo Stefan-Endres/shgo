@@ -472,6 +472,10 @@ class SHGO(object):
             self.iterate_complex = self.iterate_hypercube
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
+            #TODO: Improve
+            #if (iters is None) and (n is not None):
+            #    self.iters = None
+
         elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
             self.iterate_complex = self.iterate_delauney
             # Sampling method used
@@ -649,7 +653,6 @@ class SHGO(object):
                 break
             # Iterate complex, process minimisers
             self.iterate_complex()
-
             self.stopping_criteria()
 
         # Build minimiser pool
@@ -688,12 +691,16 @@ class SHGO(object):
                     self.f_lowest = self.HC.V[x].f
                     self.x_lowest = self.HC.V[x].x_a
         else:
-            #self.f_lowest = numpy.min(self.F)
-            self.f_I = numpy.argsort(self.F, axis=-1)
-            self.f_lowest = self.F[self.f_I[0]]
-            self.x_lowest = self.C[self.f_I[0]]
-            #TODO: TEST THESE VALES
-            #self.x_lowest = numpy.min(self.F)
+            if self.fn == 0:
+                self.f_lowest = None
+                self.x_lowest = None
+            else:
+                #self.f_lowest = numpy.min(self.F)
+                self.f_I = numpy.argsort(self.F, axis=-1)
+                self.f_lowest = self.F[self.f_I[0]]
+                self.x_lowest = self.C[self.f_I[0]]
+                #TODO: TEST THESE VALES
+                #self.x_lowest = numpy.min(self.F)
 
     ## Stopping criteria functions:
     def finite_iterations(self):
@@ -726,7 +733,7 @@ class SHGO(object):
 
     def finite_ev(self):
         # Finite evaluations including infeasible sampling points
-        if self.n_sampled >= self.maxfev:
+        if self.n_sampled >= self.maxev:
             self.stop_global = True
         pass
 
@@ -744,8 +751,6 @@ class SHGO(object):
         #if self.minimize_every_iter is False:
         #    self.find_lowest_vertex()
 
-        print(f'f_lowest = {self.f_lowest}')
-        print(f'self.f_min_true  = {self.f_min_true}')
         # Function to stop algorithm at specified percentage error:
         if self.f_lowest == 0.0:
             if self.f_min_true == 0.0:
@@ -775,7 +780,7 @@ class SHGO(object):
         if self.iters is not None:
             self.finite_iterations()
         if self.maxfev is not None:
-            self.finite_fevs()
+            self.finite_fev()
         if self.maxev is not None:
             self.finite_ev()
         if self.maxtime is not None:
@@ -815,7 +820,7 @@ class SHGO(object):
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
         #self.n_sampled = len(self.HC.V.cache)
-        self.n_sampled = self.HC.V.nfev  # nevs counted by the triangulation.py routines
+        self.n_sampled = self.HC.V.size  # nevs counted by the triangulation.py routines
 
         return
 
