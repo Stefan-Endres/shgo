@@ -1155,51 +1155,6 @@ class SHGO(object):
         """Count the number of global evaluations"""
         if self.sampling_method == 'simplicial':
             pass
-    ## Delauney based sampling functions
-    #   Define shgo class methods using arbitrary (ex Sobol) sampling
-    def construct_complex_sobol(self):
-        """
-        Construct a complex based on the Sobol sequence
-        """
-        sample = True
-        while sample:
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-            # Build complex on current sampling set and find minimiser pool
-            self.delaunay_complex_minimisers()
-
-
-            if (len(self.minimizer_pool) == 0) or (self.fn == 0) or (self.fn < (self.dim + 1)):
-                if self.disp:
-                    if len(self.minimizer_pool) == 0:
-                        print('No minimizers found. Increasing sampling space.')
-                    if self.fn == 0:
-                        print('No feasible points found. Increasing sampling space.')
-                n_add = 100
-                if self.maxfev is not None:
-                    n_add = int((self.maxfev - self.fn) / 1.618)
-                    if (n_add < 1) or ((self.n + n_add) >= self.maxfev):
-                        self.res.message = ("Failed to find a minimizer "
-                                            "within the maximum allowed "
-                                            "function evaluations.")
-
-                        if self.disp:
-                            print(self.res.message + " Breaking routine...")
-
-                        self.break_routine = True
-                        self.X_min = [None]
-                        self.res.success = False
-                        sample = False
-
-                self.n += n_add
-                self.res.nfev = self.fn
-
-            else:  # If good values are found stop while loop
-                # Include each sampling point as func evaluation:
-                self.res.nfev = self.fn
-                sample = False
 
     def sampled_surface(self, infty_cons_sampl=False):
         """
