@@ -289,6 +289,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
         shc.break_routine = True
         shc.fail_routine(mes="Failed to find a feasible minimiser point. "
                               "Lowest sampling point = {}".format(shc.f_lowest))
+        shc.res.fun = shc.f_lowest
+        shc.res.x = shc.x_lowest
 
     # Confirm the routine ran succesfully
     if not shc.break_routine:
@@ -930,7 +932,7 @@ class SHGO(object):
             #        break
 
             if self.f_min_true is not None:
-                if abs(lres_f_min.fun - self.f_min_true) <= self.f_tol:
+                if (lres_f_min.fun - self.f_min_true) / abs(self.f_min_true) <= self.f_tol:
                     self.stop_l_iter = True
                     break
             # ======Dev========
