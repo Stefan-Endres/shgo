@@ -857,13 +857,18 @@ class VertexCache:
             #logging.info("New generated vertex at x = {}".format(x))
             #NOTE: Surprisingly high performance increase if logging is commented out
             self.cache[x] = xval
+
+            #TODO: Check
             if self.func is not None:
                 if self.g_cons is not None:
                     #print(f'xval.feasible = {xval.feasible}')
                     if xval.feasible:
                         self.nfev += 1
                         self.size += 1
+                    else:
+                        self.size += 1
                 else:
+                    self.nfev += 1
                     self.size += 1
 
             return self.cache[x]
