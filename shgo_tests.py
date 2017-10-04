@@ -310,7 +310,8 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
 
     def test_f2_1_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
-        run_test(test2_1, n=100, sampling_method='simplicial')
+        #run_test(test2_1, n=100, sampling_method='simplicial')
+        run_test(test2_1, iters=6, sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
@@ -398,6 +399,7 @@ class TestShgoArguments(unittest.TestCase):
         options['f_tol'] = 1e-5
 
         # Specify number of local iterations to perform
+        options['minimize_every_iter'] = True
         options['local_iter'] = 1
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
 
@@ -409,9 +411,11 @@ class TestShgoArguments(unittest.TestCase):
         options['f_min'] = test4_1.expected_fun[0]
         options['f_tol'] = 1e-5
 
-        # Specify number of local iterations to perform
+        # Specify number of local iterations to perform+
+        options['minimize_every_iter'] = True
         options['local_iter'] = 1
-        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='sobol')
+        #run_test(test4_1, n=490, test_atol=1e-5, options=options, sampling_method='sobol')
+        run_test(test4_1, n=300, test_atol=1e-5, options=options, sampling_method='sobol')
 
     def test_5_1_simplicial_argless(self):
         """Test Default simplicial sampling settings on TestFunction 1"""
@@ -443,27 +447,7 @@ class TestShgoArguments(unittest.TestCase):
 
 # Failure test functions
 class TestShgoFailures(unittest.TestCase):
-    def test_1_1_arguments(self):
-        """Ambiguous arguments for stopping criteria,
-        `n` and `iter`"""
-        numpy.testing.assert_raises(IOError,
-                                    SHGO, test1_1.f, test1_1.bounds,
-                                    n=10, iters=3)
-
-    def test_1_2_arguments(self):
-        """Ambiguous arguments for stopping criteria,
-         `n` and options=['f_min']"""
-        numpy.testing.assert_raises(IOError,
-                                    SHGO, test1_1.f, test1_1.bounds,
-                                    n=10, options={'f_min': 1.0})
-
-    def test_1_3_arguments(self):
-        """Ambiguous arguments for stopping criteria,
-        `iter` and options=['f_min']"""
-        numpy.testing.assert_raises(IOError,
-                                    SHGO, test1_1.f, test1_1.bounds,
-                                    iters=3, options={'f_min': 1.0})
-
+    
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
         numpy.testing.assert_raises(IOError,
@@ -483,8 +467,8 @@ class TestShgoFailures(unittest.TestCase):
 
     def test_3_2_no_min_pool_simplicial(self):
         """Check that the routine stops when no minimiser is found
-           after maximum specified function evaluations"""
-        options = {'maxfev': 10,
+           after maximum specified sampling evaluations"""
+        options = {'maxev': 10,
                    'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='simplicial')
@@ -506,8 +490,8 @@ class TestShgoFailures(unittest.TestCase):
 
     def test_5_1_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
-           after maxfev is exceeded."""
-        options = {'maxfev': 100,
+           after maxev is exceeded."""
+        options = {'maxev': 100,
                    'disp': True}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
@@ -518,7 +502,7 @@ class TestShgoFailures(unittest.TestCase):
 
     def test_5_2_infeasible_simplicial(self):
         """Ensures the algorithm terminates on infeasible problems
-           after maxfev is exceeded."""
+           after maxev is exceeded."""
         options = {'maxev': 1000,
                    'disp': True}
 
