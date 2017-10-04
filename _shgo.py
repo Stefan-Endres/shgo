@@ -279,7 +279,8 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
             print("Succesfully completed construction of complex.")
 
     # Test post iterations success
-    if len(shc.X_min) == 0:
+    #if len(shc.X_min) == 0:
+    if shc.lx_maps.size == 0:
         # If sampling failed to find pool, return lowest sampled point
         # with a warning
         # TODO: Implement warning and lowest sampling return
@@ -450,13 +451,17 @@ class SHGO(object):
         self.fn = 0  # Number of feasible sampling points evaluations performed
 
         # Default settings if no sampling criteria.
-        if ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
+        #if ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
+        #    and (self.maxhgrd is None) and (self.f_min_true is None)):
+        if self.iters is None:
+            self.iters = 1
+        if self.n is None:
+            self.n = 100
+            self.nc = self.n
+
+        if not ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
             and (self.maxhgrd is None) and (self.f_min_true is None)):
-                if self.iters is None:
-                    self.iters = 1
-                if self.n is None:
-                    self.n = 100
-                    self.nc = self.n
+            self.iters = None
 
                 #self.iters = 1
 
@@ -479,12 +484,13 @@ class SHGO(object):
                 #self.sampling_points = sampling_method
                 self.sampling = sampling_method
             # Minimiser functions
-            if self.dim < 2:
+            self.minimizers = self.delaunay_complex_minimisers
+            #if self.dim < 2:
                 #self.minimizers = self.minimizers_1D
-                self.minimizers = self.delaunay_complex_minimisers
-            else:
+            #    self.minimizers = self.delaunay_complex_minimisers
+            #else:
                 #self.minimizers = self.delaunay_minimizers
-                self.minimizers = self.delaunay_complex_minimisers
+            #    self.minimizers = self.delaunay_complex_minimisers
 
         # Define stop iteration method(s)
         # TODO: Change to only max values
@@ -498,12 +504,13 @@ class SHGO(object):
         self.fun_min_glob = []  # List of objective function values at minima found
         self.x_min_glob = []  # List of coordinate candidates at minima found
 
-        self.lx_maps = []  # List of local minimizers mapped
+        self.lx_maps = numpy.array([])  # List of local minimizers mapped
         # Array structure : [[v_min_1, x_min_1],
         #                    [v_min_2, x_min_2],
         #                    ...
         #                    [v_min_n, x_min_n]]
         # Where the vertices v_min_i are mapped to corresponding local minima x_min_i
+        #TODO: Make these structures caches
         self.lf_maps = []  # List of local minimizers maps
         # Structure : [[f_min_1, f_min_1], [f_min_2, f_min_2], ...] etc.
         self.lres_maps = []  # List of local minimizers map residuals
@@ -732,21 +739,22 @@ class SHGO(object):
         #  and the tolerance with f_tol = options['f_tol']
 
         # If no minimiser has been found use the lowest sampling value
-        try:
-            if len(self.X_min) == 0:
-                self.find_lowest_vertex()
-        except AttributeError:
-            if self.minimize_every_iter is False:
-                self.find_lowest_vertex()
+        if self.lx_maps.size == 0:
+            self.find_lowest_vertex()
+        #if self.minimize_every_iter is False:
+        #    self.find_lowest_vertex()
 
+        print(f'f_lowest = {self.f_lowest}')
+        print(f'self.f_min_true  = {self.f_min_true}')
         # Function to stop algorithm at specified percentage error:
         if self.f_lowest == 0.0:
             if self.f_min_true == 0.0:
                 if self.f_lowest <= self.f_tol:
                     self.stop_global = True
         else:
-            pe = (self.f_min_true - self.f_lowest) / abs(self.f_lowest)
-            if pe <= self.f_tol:
+            #pe = (self.f_min_true - self.f_lowest) / abs(self.f_lowest)
+            pe = (self.f_lowest - self.f_min_true) / abs(self.f_min_true)
+            if pe <= self.f_tol:  # TODO Ensure pe is not <= -1e-3 (much lower than f*)
                 self.stop_global = True
         return self.stop_global
 
@@ -818,10 +826,11 @@ class SHGO(object):
         NOTE: Called with self.iterate_complex() after class initiation
         """
         #NOTE: ADD n_c - n_sampled points
-        if self.n_sampled == 0:
-            self.nc += self.n
-        else:
-            pass
+        #if self.n_sampled == 0:
+        #    self.nc += self.n
+        #else:
+        #    pass
+        self.nc += self.n
 
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
@@ -862,15 +871,13 @@ class SHGO(object):
 
         self.minimizer_pool_F = []
         self.X_min = []
-        if self.sampling_method == 'simplicial':
-            # normalized tuple in the Vertex cache
-            self.X_min_cache = {}  # Cache used in hypercube sampling
+        # normalized tuple in the Vertex cache
+        self.X_min_cache = {}  # Cache used in hypercube sampling
 
         for v in self.minimizer_pool:
             self.X_min.append(v.x_a)
             self.minimizer_pool_F.append(v.f)
-            if self.sampling_method == 'simplicial':
-                self.X_min_cache[tuple(v.x_a)] = v.x
+            self.X_min_cache[tuple(v.x_a)] = v.x
 
         self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
         self.X_min = numpy.array(self.X_min)
@@ -983,7 +990,7 @@ class SHGO(object):
         return self.Ss
 
     # Local bound functions
-    def contstruct_lcb(self, v_min):
+    def contstruct_lcb_simplicial(self, v_min):
         """
         Construct locally (approximately) convex bounds
 
@@ -1012,6 +1019,24 @@ class SHGO(object):
         if self.disp:
             logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
             logging.info(f'cbounds = {cbounds}')
+        return cbounds
+
+    def contstruct_lcb_delauney(self, v_min):
+        """
+        Construct locally (approximately) convex bounds
+
+        Parameters
+        ----------
+        v_min : Vertex object
+                The minimiser vertex
+        Returns
+        -------
+        cbounds : List of size dim with tuple of bounds for each dimension
+        """
+        cbounds = []
+        for x_b_i in self.bounds:
+            cbounds.append([x_b_i[0], x_b_i[1]])
+        #TODO: USE NEIGHBOURS FROM THE DELAYNEY TRIANGULATION
         return cbounds
 
     # Minimize a starting point locally
@@ -1049,17 +1074,21 @@ class SHGO(object):
             x_min_t_norm = tuple(x_min_t_norm)
 
             self.minimizer_kwargs['bounds'] = \
-                self.contstruct_lcb(self.HC.V[x_min_t_norm])
+                self.contstruct_lcb_simplicial(self.HC.V[x_min_t_norm])
 
             if self.disp:
                 print('bounds in kwarg:')
                 print(self.minimizer_kwargs['bounds'])
+        else:
+        #TODO: self.contstruct_lcb for Sobol sampling
+            self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(x_min)
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
 
         if self.disp:
             print('lres = {}'.format(lres))
+
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
 
@@ -1069,6 +1098,11 @@ class SHGO(object):
 
         # Append minima maps
         self.x_min_glob.append(lres.x)
+        #TODO: Improve:
+        self.lx_maps = numpy.append(self.lx_maps, [x_min, lres.x])
+        self.lf_maps = numpy.append(self.lf_maps, [x_min, lres.x])
+        self.lres_maps = numpy.append(self.lres_maps, lres)
+        self.lbounds_maps = numpy.append(self.lres_maps, self.minimizer_kwargs['bounds'])
         #numpy.append(self.x_min_glob, lres.x, axis=-1)
         try:  # Needed because of the brain dead 1x1 numpy arrays
             self.fun_min_glob.append(lres.fun[0])
@@ -1181,7 +1215,7 @@ class SHGO(object):
         # Generate sampling points
         if self.disp:
             print('Generating sampling points')
-        self.sampling()
+        self.sampling()  #TODO: Improve speed by only generating new points
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
@@ -1210,7 +1244,8 @@ class SHGO(object):
                 self.ax_subspace()
                 self.surface_topo_ref()
                 #self.X_min = self.minimizers()
-                self.X_min = self.minimizers_1D()
+               # self.X_min = self.minimizers_1D()
+                self.minimizers_1D()
 
             else:  # Multivariate functions.
                 if self.disp:
@@ -1220,7 +1255,8 @@ class SHGO(object):
                 if self.disp:
                     print('Triangulation completed, building minimizer pool')
 
-                self.X_min = self.delaunay_minimizers()
+                #self.X_min = self.delaunay_minimizers()
+                self.delaunay_minimizers()
 
             if self.disp:
                 logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
@@ -1228,6 +1264,10 @@ class SHGO(object):
             if self.disp:
                 print('Not enough sampling points found in the feasible domain.')
             self.minimizer_pool = [None]
+            try:
+                self.X_min
+            except AttributeError:
+                self.X_min = []
 
     def sobol_points(self, N, D):
         """
