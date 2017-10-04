@@ -291,6 +291,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
                               "Lowest sampling point = {}".format(shc.f_lowest))
         shc.res.fun = shc.f_lowest
         shc.res.x = shc.x_lowest
+        shc.res.nfev = shc.fn
 
     # Confirm the routine ran succesfully
     if not shc.break_routine:
@@ -654,7 +655,8 @@ class SHGO(object):
             if self.break_routine:
                 break
             # Iterate complex, process minimisers
-            self.iterate_complex()
+            self.iterate()
+            #self.iterate_complex()
             self.stopping_criteria()
 
         # Build minimiser pool
@@ -685,13 +687,18 @@ class SHGO(object):
         return
 
     def find_lowest_vertex(self):
-        # Find the
+        # Find the lowest objective function value on one of
+        # the vertices of the simplicial complex
         if self.sampling_method == 'simplicial':
             self.f_lowest = numpy.inf
             for x in self.HC.V.cache:
+                print(x)
                 if self.HC.V[x].f < self.f_lowest:
                     self.f_lowest = self.HC.V[x].f
                     self.x_lowest = self.HC.V[x].x_a
+            if self.f_lowest == numpy.inf:  #  no feasible point
+                self.f_lowest = None
+                self.x_lowest = None
         else:
             if self.fn == 0:
                 self.f_lowest = None
@@ -794,6 +801,17 @@ class SHGO(object):
 
         return
 
+    def iterate(self):
+        self.iterate_complex()
+
+        # Build minimiser pool
+        if self.minimize_every_iter:
+            if not self.break_routine:
+                self.find_minima()  # Process minimiser pool
+
+        # Algorithm updates
+        self.iters_done += 1
+
     def iterate_hypercube(self):
         """
         Iterate a subdivision of the complex
@@ -808,22 +826,9 @@ class SHGO(object):
         else:
             self.HC.split_generation()
 
-        # Build minimiser pool
-        if self.minimize_every_iter:
-            if not self.break_routine:
-                # feasible sampling points counted by the triangulation.py routines
-                self.fn = self.HC.V.nfev
-                # Process minimiser pool
-                self.find_minima()
-
-        self.iters_done += 1
-
-        #self.nfev = self.HC.V.nfev + self.res.nlfev  # nfevs counted by the triangulation.py routines
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
-        #self.n_sampled = len(self.HC.V.cache)
         self.n_sampled = self.HC.V.size  # nevs counted by the triangulation.py routines
-
         return
 
     def iterate_delauney(self):
@@ -838,17 +843,9 @@ class SHGO(object):
         #else:
         #    pass
         self.nc += self.n
-
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-        # Build minimiser pool
-        if self.minimize_every_iter:
-            if not self.break_routine:
-                self.find_minima()
-
-        # Algorithm updates
-        self.iters_done += 1
         self.n_sampled = self.nc
+        return
 
     ## Hypercube minimizers
     def simplex_minimizers(self):
@@ -1590,8 +1587,6 @@ class SHGO(object):
             logging.info('numpy.shape(self.C)'
                          ' = {}'.format(numpy.shape(self.C)))
         for ind in range(self.fn):
-            if self.disp:
-                logging.info('ind = {}'.format(ind))
             min_bool = self.sample_delaunay_topo(ind)
             if min_bool:
                 self.minimizer_pool.append(ind)
