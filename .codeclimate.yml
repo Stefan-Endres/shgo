@@ -19,6 +19,7 @@ ratings:
   #- lib/**
   #- "**.rb"
   #- "**.go"
-#exclude_paths:
+exclude_paths:
+  - dev*.py
 #- spec/**/*
 #- "**/vendor/**/*"
