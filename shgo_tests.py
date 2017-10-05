@@ -386,7 +386,7 @@ class TestShgoArguments(unittest.TestCase):
         """Test known function minima stopping criteria"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun[0]
+        options['f_min'] = test4_1.expected_fun
         options['f_tol'] = 1e-5
         options['minimize_every_iter'] = True
         #TODO: Make default n higher for faster tests
@@ -397,7 +397,7 @@ class TestShgoArguments(unittest.TestCase):
         """Test Global mode limiting local evalutions"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun[0]
+        options['f_min'] = test4_1.expected_fun
         options['f_tol'] = 1e-5
 
         # Specify number of local iterations to perform
@@ -410,7 +410,7 @@ class TestShgoArguments(unittest.TestCase):
         """Test Global mode limiting local evalutions"""
         options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun[0]
+        options['f_min'] = test4_1.expected_fun
         options['f_tol'] = 1e-5
 
         # Specify number of local iterations to perform+
