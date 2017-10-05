@@ -138,7 +138,7 @@ class Test4(TestFunction):
 test4_1 = Test4(bounds=[(-10, 10),]*7,
                   expected_x=[2.330499, 1.951372, -0.4775414,
                               4.365726, -0.6244870, 1.038131, 1.594227],
-                   expected_fun=[680.6300573]
+                   expected_fun=680.6300573
                   )
 
 class TestLJ(TestFunction):
@@ -336,6 +336,7 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
                  sampling_method='simplicial')
 
 
+
 # Argument test functions
 class TestShgoArguments(unittest.TestCase):
     def test_1_1_simpl_iter(self):
@@ -354,6 +355,7 @@ class TestShgoArguments(unittest.TestCase):
         """Iterative Sobol sampling on TestFunction 2 (univariate)"""
         res = shgo(test2_1.f, test2_1.bounds, g_cons=test2_1.g,
                    n=None, iters=1, sampling_method ='sobol')
+
         numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
@@ -447,7 +449,6 @@ class TestShgoArguments(unittest.TestCase):
 
 # Failure test functions
 class TestShgoFailures(unittest.TestCase):
-
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
         numpy.testing.assert_raises(IOError,

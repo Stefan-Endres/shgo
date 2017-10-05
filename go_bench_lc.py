@@ -132,11 +132,11 @@ class GoRunner:
                 if abs(res.fun - self.function.fglob) < 0.01:
                     success_l = True
                 else:
-                    print(f'iter = {iters}')
-                    print(f'nfev = {nfev}')
-                    print(f'res.fun = {res.fun}')
-                    print(f'res.fun = {res.x}')
-                    print(f'f* = {self.function.fglob}')
+                    print('iter = {}'.format(iters))
+                    print('nfev = {}'.format(nfev))
+                    print('res.fun = {}'.format(res.fun))
+                    print('res.fun = {}'.format(res.x))
+                    print('f* = {}'.format(self.function.fglob))
                     iters += 1
             except ValueError:
                 iters += 1
@@ -201,8 +201,8 @@ class GoRunner:
                     if (res.fun - self.function.fglob) < -1e-6:
                         print("LOWER FUNCTION VALUE FOUND = {res.fun}")
                 else:
-                    print(f'n = {n}')
-                    print(f'nfev = {nfev}')
+                    print('n = {}'.format(n))
+                    print('nfev = {}'.format(nfev))
                     n += 1
             except ValueError:
                 n += 1
@@ -328,8 +328,8 @@ class GoRunner:
                     if (res.fun - self.function.fglob) < -1e-6:
                         print("LOWER FUNCTION VALUE FOUND = {res.fun}")
                 else:
-                    print(f'n = {n}')
-                    print(f'nfev = {nfev}')
+                    print('n = {}'.format(n))
+                    print('nfev = {}'.format(nfev))
                     n += 1
             except ValueError:
                 n += 1
@@ -553,14 +553,9 @@ if __name__ == '__main__':
             print(key + ": " + str(GR.results['All'][solver][key]))
             #print(GR.results['All'][solver])
         print("=" * 60)
-        print(f"""GR.results['All'][{solver}]['average nfev']"""
-               f""" = {GR.results['All'][solver]['average nfev']}""")
-
-        print(f"""GR.results['All'][{solver}]['nlmin']"""
-               f""" = {GR.results['All'][solver]['nlmin']}""")
-
-        print(f"""GR.results['All'][{solver}]['nulmin']"""
-               f""" = {GR.results['All'][solver]['nulmin']}""")
+        print("GR.results['All'][{solver}]['average nfev'] = {}".format(GR.results['All'][solver]['average nfev']))
+        print("GR.results['All'][{solver}]['nlmin'] = {}".format(GR.results['All'][solver]['nlmin']))
+        print("GR.results['All'][{solver}]['nulmin'] = {}".format(GR.results['All'][solver]['nulmin']))
 
         GR.results['All'][solver]['nlmin'] = int(GR.results['All'][solver]['nlmin'])
         GR.results['Average'][solver]['nlmin'] = int(GR.results['Average'][solver]['nlmin'])

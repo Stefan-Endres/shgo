@@ -564,7 +564,7 @@ def sanity_test(test, tol=1e-5):
     if test.g is not None:
         for i, gcons in enumerate(test.g):
             con = gcons(test.expected_x)
-            print(f'cons{i} = {con}')
+            print('cons{} = {}'.format(i, con))
             if con < 0:
                 print("UNFEASIBLE BOUNDS")
                 good = False
@@ -572,10 +572,10 @@ def sanity_test(test, tol=1e-5):
     for i, x_b in enumerate(test.bounds):
         if test.expected_x[i] < x_b[0]:
             good = False
-            print(f'x* = {test.expected_x} is out of lower bounds {x_b[0]}')
+            print('x* = {} is out of lower bounds {}'.format(test.expected_x, x_b[0]))
         if test.expected_x[i] > x_b[1]:
             good = False
-            print(f'x* = {test.expected_x} is out of upper bounds {x_b[1]}')
+            print(f'x* = {} is out of upper bounds {}'.format(test.expected_x, x_b[1]))
     print("="*2)
     print(test.__class__.__name__)
     if good:
@@ -633,8 +633,8 @@ if __name__ == '__main__':
             res = shgo(test.f, test.bounds, g_cons=test.g, iters=iters)
             print(f'iterations = {iters}')
             #print(res)
-            print(f'fun = {res.fun}')
-            print(f'x = {res.x}')
+            print('fun = {}'.format(res.fun))
+            print('x = {}'.format(res.x))
 
     """
     iterations = 6

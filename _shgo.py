@@ -1021,8 +1021,8 @@ class SHGO(object):
                 if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
                     cbounds[i][1] = x_i
         if self.disp:
-            logging.info(f'cbounds found for v_min.x_a = {v_min.x_a} ')
-            logging.info(f'cbounds = {cbounds}')
+            logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
+            logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
     def contstruct_lcb_delauney(self, v_min):
@@ -1153,6 +1153,7 @@ class SHGO(object):
 
     def global_evals(self):
         """Count the number of global evaluations"""
+
         if self.sampling_method == 'simplicial':
             pass
 
