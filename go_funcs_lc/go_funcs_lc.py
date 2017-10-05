@@ -134,8 +134,15 @@ class Horst6(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
         self._bounds = [(0, 10), ] * 3
-        self.fglob = -31.5285
-        self.global_optimum = [5.210677, 5.027908, 0.0]
+
+        # Literature values unfeasible (close to value with wrong constraint)
+        #self.fglob = -31.5285
+        #self.global_optimum = [5.210677, 5.027908, 0.0]
+
+        # shgo feasible value
+        self.fglob = -12.003240034450666  # SHGO best
+        self.global_optimum = [1.36656132, 2.96722951, 0.0]
+
 
         def g1(x):
             return 2.865062 - (0.488509 * x[0] + 0.063565 * x[1] + 0.945686 * x[2])
@@ -150,7 +157,10 @@ class Horst6(Benchmark):
             return 1.584087 - (-0.346896 * x[0] + 0.637939 * x[1] - 0.257623 * x[2])
 
         def g5(x):
-            return 2.198036 - (-0.202821 * x[0] + 0.647361 * x[1] + 0.920135 * x[2])
+            # Paulavius textbook:
+            # return  2.198036 - (-0.202821*x[0] + 0.647361*x[1] + 0.920135*x[2])
+            # https://link.springer.com/content/pdf/10.1007/BF00429750.pdf
+            return 2.198036 - (+0.202821 * x[0] + 0.647361 * x[1] + 0.920135 * x[2])
 
         def g6(x):
             return -1.301853 - (-0.983091 * x[0] - 0.886420 * x[1] - 0.802444 * x[2])

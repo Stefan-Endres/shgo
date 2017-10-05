@@ -3,6 +3,7 @@
 """ execfile('tgo.py')
 """
 from __future__ import division, print_function, absolute_import
+import numpy
 import scipy.spatial
 import scipy.optimize
 from triangulation import *
@@ -15,7 +16,7 @@ except ImportError:
     from multiprocessing import Pool
 
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
          callback=None, minimizer_kwargs=None, options=None,
          sampling_method='simplicial'):
     # TODO: Update documentation
@@ -244,7 +245,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
     (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
 
 
-    References
+    References #TODO
     ----------
     .. [1] Törn, A (1990) "Topographical global optimization", Reports on
            Computer Science and Mathematics Ser. A, No 199, 8p. Abo Akademi
@@ -271,7 +272,31 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=None, iters=None,
                options=options, sampling_method=sampling_method)
 
     # Run the algorithm, process results and test success
-    shc.shgo()
+    shc.construct_complex()
+
+    if not shc.break_routine:
+        if shc.disp:
+            print("Succesfully completed construction of complex.")
+
+    # Test post iterations success
+    #if len(shc.X_min) == 0:
+    if shc.lx_maps.size == 0:
+        # If sampling failed to find pool, return lowest sampled point
+        # with a warning
+        # TODO: Implement warning and lowest sampling return
+        # If no minimiser has been found use the lowest sampling value
+        shc.find_lowest_vertex()
+        shc.break_routine = True
+        shc.fail_routine(mes="Failed to find a feasible minimiser point. "
+                              "Lowest sampling point = {}".format(shc.f_lowest))
+        shc.res.fun = shc.f_lowest
+        shc.res.x = shc.x_lowest
+        shc.res.nfev = shc.fn
+
+    # Confirm the routine ran succesfully
+    if not shc.break_routine:
+        shc.res.message = 'Optimization terminated successfully.'
+        shc.res.success = True
 
     # Return the final results
     return shc.res
@@ -283,26 +308,24 @@ class SHGO(object):
                  iters=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
 
-        # Default options
+        # Input checks
         if (type(sampling_method) is str) and ((sampling_method is not 'sobol')
             and (sampling_method is not 'simplicial')):
             raise IOError("""Unknown sampling_method specified, use either 
                                  'sobol' or 'simplicial' """)
 
-        # Initiate class
+        ## Initiate class
         self.func = func
         #  TODO Assert if func output matches dims. found from bounds
         self.bounds = bounds
-        self.m = len(self.bounds)  # Dimensions
         self.args = args
 
         self.callback = callback
 
-        # Bounds
+        ## Bounds
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
         # Check if bounds are correctly specified
-        # bnderr = numpy.where(abound[:, 0] > abound[:, 1])[0]
         bnderr = abound[:, 0] > abound[:, 1]
         # Set none finite values to large floats
         infind = ~numpy.isfinite(abound)
@@ -314,12 +337,12 @@ class SHGO(object):
 
         self.bounds = abound
 
-        # Constraints
-        self.g_cons = g_cons
+        ## Constraints
         if g_cons is not None:
             if (type(g_cons) is not tuple) and (type(g_cons) is not list):
+                #TODO: Refactor self.g_func back to self.g_cons
                 self.g_func = (g_cons,)
-                self.g_cons = (g_cons,)
+                #self.g_cons = (g_cons,)
             else:
                 self.g_func = g_cons
         else:
@@ -376,117 +399,137 @@ class SHGO(object):
                                                  },
                                      'callback': self.callback
                                      }
-
             if g_cons is not None:
-                self.minimizer_kwargs['constraints'] = self.min_cons
+                if (self.minimizer_kwargs['method'] == 'SLSQP' or
+                                self.minimizer_kwargs['method'] == 'COBYLA'):
+
+                    self.minimizer_kwargs['constraints'] = self.min_cons
+
+            if options is not None:
+                if 'ftol' in options:
+                    self.minimizer_kwargs['options']['ftol'] = \
+                        options['ftol']
+                if 'maxfev' in options:
+                    self.minimizer_kwargs['options']['maxfev'] = \
+                        options['maxfev']
+                if 'disp' in options:
+                    self.minimizer_kwargs['options']['disp'] = \
+                        options['disp']
 
         # Process options dict
         if options is not None:
             self.init_options(options)
         else:  # Default settings:
             self.f_min_true = None
-            self.maxev = None
-            self.maxfev = None
             self.minimize_every_iter = False
             self.local_fglob = None  # dev
+
+            # Algorithm limits
+            self.maxiter = None
+            self.maxfev = None
+            self.maxev = None
+            self.maxtime = None
+            self.f_min_true = None
+            self.maxhgrd = None
+
+            # Objective function knowledge
             self.symmetry = False
-            self.local_iter = False
-            self.disp = False
-            self.max_iter = None
-            self.min_iter = None
+
+            # Algorithm functionality
+            self.local_iter = False  #TODO: Change default value to True
             self.infty_cons_sampl = False
+
+            # Feedback
+            self.disp = False
 
         ## Algorithm controls
         # Global controls
-        self.iters = iters
-        self.n = n
-        self.n_sampled = 0  # To track sampling points already evaluated
-        self.fn = n  # Number of feasible samples remaining
+        self.stop_global = False  # Used in the stopping_criteria method
+        self.break_routine = False  # Break the algorithm globally
+        self.iters = iters  # Iterations to be ran
+        self.iters_done = 0  # Iterations to be ran
+        self.n = n  # Sampling points per iteration
+        self.nc = n  # Sampling points to sample in current iteration
+        self.n_sampled = 0  # To track no. of sampling points already generated
+        self.fn = 0  # Number of feasible sampling points evaluations performed
 
-        # Stop the algorithm if multiple stopping criteria are specified
-        if (self.n is not None) and (self.iters is not None):
-            raise IOError('Ambiguous input: specify either'
-                          """`iters` finite iterations """
-                          """or `n` finite sampling points""")
-        elif (self.n is not None) and (self.f_min_true is not None):
-            raise IOError("""Ambiguous input: specify either """
-                          """`n` finite sampling points"""
-                          """or options['f_min'] known function global minima""")
-        elif (self.iters is not None) and (self.f_min_true is not None):
-            raise IOError("""Ambiguous input: specify either """
-                          """`iters` finite iterations """
-                          """or options['f_min'] known function global minima""")
+        # Default settings if no sampling criteria.
+        #if ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
+        #    and (self.maxhgrd is None) and (self.f_min_true is None)):
+        if self.iters is None:
+            self.iters = 1
+        if self.n is None:
+            self.n = 100
+            self.nc = self.n
+
+        if not ((self.maxiter is None) and (self.maxfev is None) and (self.maxev is None)
+            and (self.maxhgrd is None) and (self.f_min_true is None)):
+            self.iters = None
+
+                #self.iters = 1
+
 
         ## Set complex construction mode based on a provided stopping criteria:
         # Choose complex constructor
         if sampling_method == 'simplicial':
-            self.construct_complex = self.construct_complex_iteratively
-        elif sampling_method == 'sobol':
-            self.construct_complex = self.construct_complex_sobol_iter
-            #if (options is not None) and (self.n is not None):
-            #    if 'infty constraints' in options:
-            #        self.construct_complex = self.construct_complex_sobol_inf
-        elif type(sampling_method) is not str:
-            pass
+            self.iterate_complex = self.iterate_hypercube
+            self.minimizers = self.simplex_minimizers
+            self.sampling_method = sampling_method
+            #TODO: Improve
+            #if (iters is None) and (n is not None):
+            #    self.iters = None
 
-        # Define stop iteration method
-        if (self.iters is not None):
-            self.stop_global = False
-            self.stop_iter_m = self.finite_iterations
-
-        elif (self.n is not None):
-            self.stop_global = False
-            # Define stop iteration method
-            self.stop_iter_m = self.finite_sampling
-            # Choose complex constructor
+        elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
+            self.iterate_complex = self.iterate_delauney
+            # Sampling method used
             if sampling_method == 'sobol':
-                self.construct_complex = self.construct_complex_sobol
+                self.sampling_method = sampling_method
+                #self.sampling_points = self.sampling_sobol
+                self.sampling = self.sampling_sobol
+            else:
+                # A user defined sampling method:
+                #self.sampling_points = sampling_method
+                self.sampling = sampling_method
+            # Minimiser functions
+            self.minimizers = self.delaunay_complex_minimisers
+            #if self.dim < 2:
+                #self.minimizers = self.minimizers_1D
+            #    self.minimizers = self.delaunay_complex_minimisers
+            #else:
+                #self.minimizers = self.delaunay_minimizers
+            #    self.minimizers = self.delaunay_complex_minimisers
 
-        elif (self.f_min_true is not None):
-            self.stop_iter_m = self.finite_iterations
-            if sampling_method == 'sobol':
-                self.n = self.dim + 1  # TODO: Long unittest, fix
-                self.construct_complex = self.construct_complex_sobol
-            elif sampling_method == 'simplicial':
-                if self.iters is None:
-                    self.stop_iter_m = self.finite_iterations
-                    self.iters = 1
+        # Define stop iteration method(s)
+        # TODO: Change to only max values
 
-        elif (sampling_method == 'simplicial') and (self.iters is None):
-            self.stop_iter_m = self.finite_iterations
-            self.iters = 1
-        elif options is not None:
-            if 'f_min' in options:
-                self.stop_global = False
-                self.stop_iter_m = self.finite_precision
-        else:  # Choose a default strategy if none is specified
-            self.n = 100
-            self.stop_iter_m = None
-
-        if (n is None) and (iters is None) and (self.f_min_true is None):
-            self.n = 100
-            self.iters = 1
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
         self.stop_complex_iter = False  # Sampling iterations
-        self.break_routine = False
-
-        self.stop_evaluation = None  # TODO Assign a function based on inputs ex. maxeval or max n
-
-        # SOBOL SAMPLING v SIMPLICIAL
-        # self.sampling = sampling
-        self.sampling_method = sampling_method
 
         # Initiate storage objects used in algorithm classes
-        self.x_min_glob = []
-        self.fun_min_glob = []
+        self.fun_min_glob = []  # List of objective function values at minima found
+        self.x_min_glob = []  # List of coordinate candidates at minima found
+
+        self.lx_maps = numpy.array([])  # List of local minimizers mapped
+        # Array structure : [[v_min_1, x_min_1],
+        #                    [v_min_2, x_min_2],
+        #                    ...
+        #                    [v_min_n, x_min_n]]
+        # Where the vertices v_min_i are mapped to corresponding local minima x_min_i
+        #TODO: Make these structures caches
+        self.lf_maps = []  # List of local minimizers maps
+        # Structure : [[f_min_1, f_min_1], [f_min_2, f_min_2], ...] etc.
+        self.lres_maps = []  # List of local minimizers map residuals
+        # Structure : [[lres_min_1, lres_min_1], ...] etc.
+        self.lbounds_maps = []  # bounds around lx_maps if any
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
-        self.res.nfev = 0  # Include each sampling point as func evaluation
+        self.res.nfev = 0  # Includes each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local jacobian evals for all minimisers
+        return
 
     ## Initiation aids
     def init_options(self, options):
@@ -500,6 +543,17 @@ class SHGO(object):
         -------
 
         """
+        # Default settings:
+        if 'minimize_every_iter' in options:
+            self.minimize_every_iter = options['minimize_every_iter']
+        else:
+            self.minimize_every_iter = False
+
+        # Algorithm limits
+        if 'maxiter' in options:
+            self.maxiter = options['maxiter']
+        else:
+            self.maxiter = None
         if 'maxfev' in options:
             # Maximum number of function evaluations in the feasible domain
             self.maxfev = options['maxfev']
@@ -513,46 +567,10 @@ class SHGO(object):
             self.maxev = options['maxev']
         else:
             self.maxev = None
-
-        if 'disp' in options:
-            self.disp = options['disp']
+        if 'maxtime' in options:
+            self.maxtime = options['maxtime']
         else:
-            self.disp = False
-        if 'symmetry' in options:
-            self.symmetry = True
-        else:
-            self.symmetry = False
-        if 'minimize_every_iter' in options:
-            self.minimize_every_iter = True
-        else:
-            self.minimize_every_iter = False
-        if 'local_iter' in options:  # Only evaluate a few of the best candiates
-            self.local_iter = options['local_iter']
-        else:  # Evaluate all minimisers
-            self.local_iter = False
- ################dev#######################
-        if 'local_fglob' in options:  # TODO: Temporary dev work
-            self.local_fglob = options['local_fglob']
-            if 'local_f_tol' in options:
-                self.local_f_tol = options['local_f_tol']
-            else:
-                self.local_f_tol = 1e-5
-        else:
-            self.local_fglob = None
-################dev#######################
-        if 'min_iter' in options:
-            self.min_iter = options['min_iter']
-        else:
-            self.min_iter = None
-        if 'max_iter' in options:
-            self.max_iter = options['max_iter']
-        else:
-            self.max_iter = None
-        if 'min_hgrd' in options:
-            self.min_hgrd = options['min_hgrd']
-        else:
-            self.min_hgrd = 0
-
+            self.maxtime = None
         if 'f_min' in options:
             self.f_min_true = options['f_min']
             if 'f_tol' in options:
@@ -566,118 +584,312 @@ class SHGO(object):
             self.minimizer_kwargs['options']['ftol'] = \
                 options['ftol']
 
+        if 'maxhgrd' in options:
+            self.maxhgrd = options['maxhgrd']
+        else:
+            self.maxhgrd = None
+
+        # Objective function knowledge
+        if 'symmetry' in options:
+            self.symmetry = True
+        else:
+            self.symmetry = False
+
+        # Algorithm functionality
+        if 'local_iter' in options:  # Only evaluate a few of the best candiates
+            self.local_iter = options['local_iter']
+        else:  # Evaluate all minimisers
+            self.local_iter = False
+
         if 'infty constraints' in options:
             self.infty_cons_sampl = options['infty constraints']
         else:
             self.infty_cons_sampl = False
 
+        # Feedback
         if 'disp' in options:
+            self.disp = options['disp']
             self.minimizer_kwargs['options']['disp'] = options['disp']
-
-        if 'multiproc' in options:
-            self.multiproc = options['multiproc']
-
+        else:
+            self.disp = False
         return
 
     ## Routine iteration
     def shgo(self):
-        # Generate sampling points
+        pass
+
+            #if self.sampling_method == 'simplicial':
+            #    # Build minimiser pool
+            #    self.simplex_minimizers()
+
+
+        #if not self.break_routine:
+            # Minimise the pool of minisers with local minimisation methods
+            # Note that if Options['local_iter'] is an `int` instead of default
+            # value False then only that number of candidates will be minimised
+            #self.minimise_pool(self.local_iter)
+
+        # Sort results and build the global return object
+        #if not self.break_routine:
+        #    self.sort_result()
+
+        return self.res
+
+    ## Iteration properties
+    # Main construction loop:
+    def construct_complex(self):
+        """
+        Construct for `iters` iterations.
+        If uniform sampling is used every iteration ads 'n' sampling points.
+
+        Iterations if a stopping criteria (ex. sampling points or
+        processing time) has been met.
+
+        """
         if self.disp:
-            print('Generating sampling points')
+            print('Splitting first generation')
 
-        # Construct directed complex.
-        if not self.break_routine:
-            self.construct_complex()
+        #self.construct_initial_complex()
+        #self.stopping_criteria()
+        while not self.stop_global:
+            if self.break_routine:
+                break
+            # Iterate complex, process minimisers
+            self.iterate()
+            #self.iterate_complex()
+            self.stopping_criteria()
 
-        if not self.break_routine:
-            if self.disp:
-                print("Succesfully completed construction of complex.")
+        # Build minimiser pool
+        # Final iteration only needed if pools weren't minimised every iteration
+        if not self.minimize_every_iter:
+            if not self.break_routine:
+                self.find_minima()
 
-            if self.sampling_method == 'simplicial':
-                # Build minimiser pool
-                self.simplex_minimizers()
+        return
 
-        if len(self.X_min) == 0:
-            # If sampling failed to find pool, return lowest sampled point
-            # with a warning
-            # TODO: Implement warning and lowest sampling return
-            self.break_routine = True
-            self.fail_routine(mes="Failed to find a feasible minimiser point. "
-                                  "Lowest sampling point =")
-
-        if not self.break_routine:
+    def find_minima(self):
+        """Construct the minimiser pool, map the minimisers to local minima
+           and sort the results into a global return object"""
+        self.minimizers()
+        if len(self.X_min) is not 0:
             # Minimise the pool of minisers with local minimisation methods
             # Note that if Options['local_iter'] is an `int` instead of default
             # value False then only that number of candidates will be minimised
             self.minimise_pool(self.local_iter)
-
-        # Sort results and build the global return object
-        if not self.break_routine:
+            # Sort results and build the global return object
             self.sort_result()
 
-        # Confirm the routine ran succesfully
-        if not self.break_routine:
-            self.res.message = 'Optimization terminated successfully.'
-            self.res.success = True
+            # Lowest values used to report in case of failures
+            self.f_lowest = self.res.fun
+            self.x_lowest = self.res.x
+        else:
+            self.find_lowest_vertex()
+        return
 
-    ## Iteration properties
-    # Stopping criteria functions:
+    def find_lowest_vertex(self):
+        # Find the lowest objective function value on one of
+        # the vertices of the simplicial complex
+        if self.sampling_method == 'simplicial':
+            self.f_lowest = numpy.inf
+            for x in self.HC.V.cache:
+                print(x)
+                if self.HC.V[x].f < self.f_lowest:
+                    self.f_lowest = self.HC.V[x].f
+                    self.x_lowest = self.HC.V[x].x_a
+            if self.f_lowest == numpy.inf:  #  no feasible point
+                self.f_lowest = None
+                self.x_lowest = None
+        else:
+            if self.fn == 0:
+                self.f_lowest = None
+                self.x_lowest = None
+            else:
+                #self.f_lowest = numpy.min(self.F)
+                self.f_I = numpy.argsort(self.F, axis=-1)
+                self.f_lowest = self.F[self.f_I[0]]
+                self.x_lowest = self.C[self.f_I[0]]
+                #TODO: TEST THESE VALES
+                #self.x_lowest = numpy.min(self.F)
+
+    ## Stopping criteria functions:
     def finite_iterations(self):
-        self.iters -= 1
-        if self.iters <= 0:
-            self.stop_global = True
-        elif self.maxev is not None:
-            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
+        if self.iters is not None:
+            if self.iters_done >= self.iters:
                 self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
-        elif self.max_iter is not None:
-            if self.iters >= self.maxev:  # Stop for infeasible sampling
+
+        if self.maxiter is not None:
+            if self.iters_done >= self.maxiter:  # Stop for infeasible sampling
                 self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
+                #self.fail_routine(mes=("Failed to find a feasible "
+                #                       "sampling point within the "
+                #                       "maximum allowed evaluations."))
         return self.stop_global
 
-    def finite_sampling(self):
-        # This is for the simplicial complex since Sobol has it's own finite generation
+    def finite_fev(self):
+        # Finite function evals in the feasible domain
+
         # self.fn -= 1
         # print(f'self.fn = {self.fn}')
-        if self.disp:
-            logging.info('len(self.HC.V.cache)= {}'.format(len(self.HC.V.cache)))
-            logging.info('self.HC.V.nfev = {}'.format(self.HC.V.nfev))
-        if self.HC.V.nfev >= self.n:
+        #if self.disp:
+        #    logging.info(f'len(self.HC.V.cache)= {len(self.HC.V.cache)}')
+        #    logging.info(f'self.HC.V.nfev = {self.HC.V.nfev}')
+        if self.fn >= self.maxfev:
             self.stop_global = True
-        elif self.maxev is not None:
-            if len(self.HC.V.cache) >= self.maxev:  # Stop for infeasible sampling
-                self.stop_global = True
-                self.fail_routine(mes=("Failed to find a feasible "
-                                       "sampling point within the "
-                                       "maximum allowed evaluations."))
-                # elif self.HC.V.nfev >= self.maxfev:  # STOP FOR INFEASIBLE SAMPLING
-                #    self.stop_global = True
-                #    self.fail_routine(mes=("Failed to find a feasible "
-                #                           "sampling point within the "
-                #                           "maximum allowed evaluations."))
-
+            #self.fail_routine(mes=("Failed to find a feasible "
+            #                       "sampling point within the "
+            #                       "maximum allowed evaluations."))
         return self.stop_global
+
+    def finite_ev(self):
+        # Finite evaluations including infeasible sampling points
+        if self.n_sampled >= self.maxev:
+            self.stop_global = True
+        pass
+
+    def finite_time(self):
+        pass
 
     def finite_precision(self):
         # Stop the algorithm if the final function value is known
         # Specify in options (with self.f_min_true = options['f_min'])
         #  and the tolerance with f_tol = options['f_tol']
-        if self.f_lowest == 0:
-            if self.f_lowest <= self.f_tol:
-                self.stop_global = True
+
+        # If no minimiser has been found use the lowest sampling value
+        if self.lx_maps.size == 0:
+            self.find_lowest_vertex()
+        #if self.minimize_every_iter is False:
+        #    self.find_lowest_vertex()
+
+        # Function to stop algorithm at specified percentage error:
+        if self.f_lowest == 0.0:
+            if self.f_min_true == 0.0:
+                if self.f_lowest <= self.f_tol:
+                    self.stop_global = True
         else:
-            pe = (self.f_min_true - self.f_lowest) / abs(self.f_lowest)
-            if pe <= self.f_tol:
+            #pe = (self.f_min_true - self.f_lowest) / abs(self.f_lowest)
+            pe = (self.f_lowest - self.f_min_true) / abs(self.f_min_true)
+            if pe <= self.f_tol:  # TODO Ensure pe is not <= -1e-3 (much lower than f*)
                 self.stop_global = True
         return self.stop_global
 
-    def finite_homology(self):
+    def finite_homology_growth(self):
         pass
+
+    def stopping_criteria(self):
+        """
+        Various stopping criteria ran every iteration
+
+        Returns
+        -------
+
+        stop : bool
+        """
+        if self.maxiter is not None:
+            self.finite_iterations()
+        if self.iters is not None:
+            self.finite_iterations()
+        if self.maxfev is not None:
+            self.finite_fev()
+        if self.maxev is not None:
+            self.finite_ev()
+        if self.maxtime is not None:
+            self.finite_time()
+        if self.f_min_true is not None:
+            self.finite_precision()
+        if self.maxhgrd is not None:
+            self.finite_homology_growth()
+
+        return
+
+    def iterate(self):
+        self.iterate_complex()
+
+        # Build minimiser pool
+        if self.minimize_every_iter:
+            if not self.break_routine:
+                self.find_minima()  # Process minimiser pool
+
+        # Algorithm updates
+        self.iters_done += 1
+
+    def iterate_hypercube(self):
+        """
+        Iterate a subdivision of the complex
+
+        NOTE: Called with self.iterate_complex() after class initiation
+        """
+        # Iterate the complex
+        if self.n_sampled == 0:
+            # Initial triangulation of the hyper-rectangle
+            self.HC = Complex(self.dim, self.func, self.args,
+                              self.symmetry, self.bounds, self.g_func, self.g_args)
+        else:
+            self.HC.split_generation()
+
+        # feasible sampling points counted by the triangulation.py routines
+        self.fn = self.HC.V.nfev
+        self.n_sampled = self.HC.V.size  # nevs counted by the triangulation.py routines
+        return
+
+    def iterate_delauney(self):
+        """
+        Build a complex of delauney triangulated points
+
+        NOTE: Called with self.iterate_complex() after class initiation
+        """
+        #NOTE: ADD n_c - n_sampled points
+        #if self.n_sampled == 0:
+        #    self.nc += self.n
+        #else:
+        #    pass
+        self.nc += self.n
+        self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
+        self.n_sampled = self.nc
+        return
+
+    ## Hypercube minimizers
+    def simplex_minimizers(self):
+        """
+        Returns the indexes of all minimizers
+        """
+        self.minimizer_pool = []
+        # TODO: Can easily be parralized
+        for x in self.HC.V.cache:
+            if self.HC.V[x].minimiser():
+                if self.disp:
+                    logging.info('=' * 60)
+                    logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x_a))
+                    logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
+                    logging.info('=' * 30)
+
+                if self.HC.V[x] not in self.minimizer_pool:
+                    self.minimizer_pool.append(self.HC.V[x])
+
+                if self.disp:
+                    logging.info('Neighbours:')
+                    logging.info('=' * 30)
+                    for vn in self.HC.V[x].nn:
+                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
+
+                    logging.info('=' * 60)
+
+        self.minimizer_pool_F = []
+        self.X_min = []
+        # normalized tuple in the Vertex cache
+        self.X_min_cache = {}  # Cache used in hypercube sampling
+
+        for v in self.minimizer_pool:
+            self.X_min.append(v.x_a)
+            self.minimizer_pool_F.append(v.f)
+            self.X_min_cache[tuple(v.x_a)] = v.x
+
+        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
+        self.X_min = numpy.array(self.X_min)
+
+        # TODO: Only do this if global mode
+        self.sort_min_pool()
+
+        return self.X_min
 
     ## Local minimisation
     # Minimiser pool processing
@@ -710,14 +922,16 @@ class SHGO(object):
         while not self.stop_l_iter:
             # ======Dev========
             # Global stopping criteria:
-            if self.local_fglob is not None:
-                if abs(lres_f_min.fun - self.local_fglob) <= self.local_f_tol:
-                    self.stop_l_iter = True
-                    break
+            #if self.local_fglob is not None:
+            #if self.local_fglob is not None:
+            #    if abs(lres_f_min.fun - self.local_fglob) <= self.local_f_tol:
+            #        self.stop_l_iter = True
+            #        break
 
             if self.f_min_true is not None:
-                if abs(lres_f_min.fun - self.f_min_true) <= self.f_tol:
+                if (lres_f_min.fun - self.f_min_true) / abs(self.f_min_true) <= self.f_tol:
                     self.stop_l_iter = True
+                    break
             # ======Dev========
 
 
@@ -780,7 +994,7 @@ class SHGO(object):
         return self.Ss
 
     # Local bound functions
-    def contstruct_lcb(self, v_min):
+    def contstruct_lcb_simplicial(self, v_min):
         """
         Construct locally (approximately) convex bounds
 
@@ -809,6 +1023,24 @@ class SHGO(object):
         if self.disp:
             logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
             logging.info('cbounds = {}'.format(cbounds))
+        return cbounds
+
+    def contstruct_lcb_delauney(self, v_min):
+        """
+        Construct locally (approximately) convex bounds
+
+        Parameters
+        ----------
+        v_min : Vertex object
+                The minimiser vertex
+        Returns
+        -------
+        cbounds : List of size dim with tuple of bounds for each dimension
+        """
+        cbounds = []
+        for x_b_i in self.bounds:
+            cbounds.append([x_b_i[0], x_b_i[1]])
+        #TODO: USE NEIGHBOURS FROM THE DELAYNEY TRIANGULATION
         return cbounds
 
     # Minimize a starting point locally
@@ -846,20 +1078,36 @@ class SHGO(object):
             x_min_t_norm = tuple(x_min_t_norm)
 
             self.minimizer_kwargs['bounds'] = \
-                self.contstruct_lcb(self.HC.V[x_min_t_norm])
+                self.contstruct_lcb_simplicial(self.HC.V[x_min_t_norm])
 
             if self.disp:
                 print('bounds in kwarg:')
                 print(self.minimizer_kwargs['bounds'])
+        else:
+        #TODO: self.contstruct_lcb for Sobol sampling
+            self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(x_min)
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
 
         if self.disp:
             print('lres = {}'.format(lres))
+
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
+
+        # Convert containers to lists
+        self.x_min_glob = list(self.x_min_glob)
+        self.fun_min_glob = list(self.fun_min_glob)
+
+        # Append minima maps
         self.x_min_glob.append(lres.x)
+        #TODO: Improve:
+        self.lx_maps = numpy.append(self.lx_maps, [x_min, lres.x])
+        self.lf_maps = numpy.append(self.lf_maps, [x_min, lres.x])
+        self.lres_maps = numpy.append(self.lres_maps, lres)
+        self.lbounds_maps = numpy.append(self.lres_maps, self.minimizer_kwargs['bounds'])
+        #numpy.append(self.x_min_glob, lres.x, axis=-1)
         try:  # Needed because of the brain dead 1x1 numpy arrays
             self.fun_min_glob.append(lres.fun[0])
         except (IndexError, TypeError):
@@ -891,7 +1139,8 @@ class SHGO(object):
         self.res.fun = self.fun_min_glob[ind_sorted[0]]  # Save global fun value
 
         # Add local func evals to sampling func evals
-        self.res.nfev += self.res.nlfev
+        # Count the number of feasible vertices and add to local function evaluations:
+        self.res.nfev = self.fn + self.res.nlfev  #TODO:CHECK
         return
 
     # Algorithm controls
@@ -902,144 +1151,11 @@ class SHGO(object):
         self.res.message = mes
         return
 
-    ## Iterative hypercube sampling
-    def construct_initial_complex(self):
-        if self.disp:
-            print('Building initial complex')
+    def global_evals(self):
+        """Count the number of global evaluations"""
 
-        self.HC = Complex(self.dim, self.func, self.args,
-                          self.symmetry, self.bounds, self.g_func, self.g_args)
-        return
-
-    def iterate(self):
-        """
-        Iterate a subdivision of the complex
-         (globally biased)
-        """
-        self.HC.split_generation()
-        return
-
-    def construct_complex_iteratively(self):
-        """
-        Stop iterations when stopping criteria (sampling points or
-        processing time) have been met.
-
-        """
-        self.construct_initial_complex()
-
-        if self.disp:
-            print('Splitting first generation')
-
-        while not self.stop_iter_m():
-            self.iterate()
-
-            # Specify in options['minimize_every_iter'] = True to use
-            if self.minimize_every_iter:  # TODO: TEST THIS ROUTINE
-                self.simplex_minimizers()
-                if len(self.X_min) is not 0:
-                    self.minimise_pool(self.local_iter)
-                    self.sort_result()
-                    self.f_lowest = self.res.fun
-
-        # Algorithm updates
-        # Count the number of vertices and add to function evaluations:
-        self.res.nfev += self.HC.V.nfev
-        if self.disp:
-            print('self.res.nfev = {}'.format(self.res.nfev))
-        return
-
-    def simplex_minimizers(self):
-        """
-        Returns the indexes of all minimizers
-        """
-        self.minimizer_pool = []
-        # TODO: Can easily be parralized
-        for x in self.HC.V.cache:
-            if self.HC.V[x].minimiser():
-                if self.disp:
-                    logging.info('=' * 60)
-                    logging.info('v.x = {} is minimiser'.format(self.HC.V[x].x_a))
-                    logging.info('v.f = {} is minimiser'.format(self.HC.V[x].f))
-                    logging.info('=' * 30)
-
-                if self.HC.V[x] not in self.minimizer_pool:
-                    self.minimizer_pool.append(self.HC.V[x])
-
-                if self.disp:
-                    logging.info('Neighbours:')
-                    logging.info('=' * 30)
-                    for vn in self.HC.V[x].nn:
-                        logging.info('x = {} || f = {}'.format(vn.x, vn.f))
-
-                    logging.info('=' * 60)
-
-        self.minimizer_pool_F = []
-        self.X_min = []
         if self.sampling_method == 'simplicial':
-            # normalized tuple in the Vertex cache
-            self.X_min_cache = {}  # Cache used in hypercube sampling
-
-        for v in self.minimizer_pool:
-            self.X_min.append(v.x_a)
-            self.minimizer_pool_F.append(v.f)
-            if self.sampling_method == 'simplicial':
-                self.X_min_cache[tuple(v.x_a)] = v.x
-
-        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)
-        self.X_min = numpy.array(self.X_min)
-
-        # TODO: Only do this if global mode
-        self.sort_min_pool()
-
-        return self.X_min
-
-    ## Delauney based sampling functions
-    #   Define shgo class methods using arbitrary (ex Sobol) sampling
-
-    def construct_complex_sobol(self):
-        """
-        Construct a complex based on the Sobol sequence
-        """
-        sample = True
-        while sample:
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-            # Build complex on current sampling set and find minimiser pool
-            self.complex_minimisers()
-
-            # TODO: Keep sampling until n feasible points in non-linear constraints
-            # self.fn < self.n ---> self.n - self.fn
-            if (len(self.minimizer_pool) == 0) or (self.fn == 0) or (self.fn < (self.dim + 1)):
-                if self.disp:
-                    if len(self.minimizer_pool) == 0:
-                        print('No minimizers found. Increasing sampling space.')
-                    if self.fn == 0:
-                        print('No feasible points found. Increasing sampling space.')
-                n_add = 100
-                if self.maxfev is not None:
-                    n_add = int((self.maxfev - self.fn) / 1.618)
-                    if (n_add < 1) or ((self.n + n_add) >= self.maxfev):
-                        self.res.message = ("Failed to find a minimizer "
-                                            "within the maximum allowed "
-                                            "function evaluations.")
-
-                        if self.disp:
-                            print(self.res.message + " Breaking routine...")
-
-                        self.break_routine = True
-                        self.X_min = [None]
-                        self.res.success = False
-                        sample = False
-
-                self.n += n_add
-                self.res.nfev = self.fn
-
-            else:  # If good values are found stop while loop
-                # Include each sampling point as func evaluation:
-                self.res.nfev = self.fn
-                sample = False
+            pass
 
     def sampled_surface(self, infty_cons_sampl=False):
         """
@@ -1056,14 +1172,17 @@ class SHGO(object):
         """
         # TODO: Add unittest where infty_cons_sampl = True
 
-        self.sampling()
+        # Generate sampling points
+        if self.disp:
+            print('Generating sampling points')
+        self.sampling()  #TODO: Improve speed by only generating new points
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
-            if self.g_cons is not None:
+            if self.g_func is not None:
                 self.sampling_subspace()
             else:
-                self.fn = self.n
+                pass
 
         # Sort remaining samples
         self.sorted_samples()
@@ -1071,9 +1190,11 @@ class SHGO(object):
         # Find objective function references
         self.fun_ref()
 
+        self.n_sampled = self.nc
+
         return
 
-    def complex_minimisers(self):
+    def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
         if self.fn >= (self.dim + 1):
             if self.dim < 2:  # Scalar objective functions
@@ -1082,7 +1203,9 @@ class SHGO(object):
 
                 self.ax_subspace()
                 self.surface_topo_ref()
-                self.X_min = self.minimizers()
+                #self.X_min = self.minimizers()
+               # self.X_min = self.minimizers_1D()
+                self.minimizers_1D()
 
             else:  # Multivariate functions.
                 if self.disp:
@@ -1092,7 +1215,8 @@ class SHGO(object):
                 if self.disp:
                     print('Triangulation completed, building minimizer pool')
 
-                self.X_min = self.delaunay_minimizers()
+                #self.X_min = self.delaunay_minimizers()
+                self.delaunay_minimizers()
 
             if self.disp:
                 logging.info("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
@@ -1100,151 +1224,10 @@ class SHGO(object):
             if self.disp:
                 print('Not enough sampling points found in the feasible domain.')
             self.minimizer_pool = [None]
-
-    def construct_complex_sobol_iter(self, n_growth_init=None):
-        """
-        Construct a complex based on the Sobol sequence
-        """
-        # Construct initial sampling pool
-        self.n = self.dim + 1  # Minimum vertexes required to build complex
-
-        self.n = self.dim ** 2 + 2
-        if n_growth_init is None:
-            n_growth_init = 2 * self.n  # TODO: TESTING THIS
-
-        if self.disp:
-            logging.info("self.dim = {}".format(self.dim))
-            logging.info("Constructing initial complex"
-                         " with self.n = {}".format(self.n))
-        # ^Run initial contructor for table top avoidance
-        #    logging.info('Run initial contructor for table top avoidance')
-        #    self.sampling()
-        #    logging.info('self.C = {}'.format(self.C))
-        #    self.construct_complex_sobol()
-        #    logging.info('First Sobol iteration grown')
-        #    self.processed_n = self.n
-
-        # Start iterative complex growth
-        self.processed_n = 0
-        self.X_min_all = []
-        self.minimizer_pool_F_all = []
-        grow_complex = True
-        # homology_group_differential = n_growth_init
-        n_pool = n_growth_init
-        n_growth = 0
-        homology_group_prev = 0  # len(self.minimizer_pool)
-        homology_group_differential = 0
-        #    self.n = n_growth_init
-
-        while grow_complex:
-
-            ###########HEAD##############
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            #self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-
-            #########################
-            sample_loop = True
-            # Sample untill enough points in subspace is found
-            self.n_cons = self.n  # Desired sampling points
-
-            # Generate sampling points, evaluate constraints and find
-            # objective function values at feasible points
-            # self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
-            while sample_loop:
-
-                self.sampling()
-                #    self.C = self.C[self.processed_n:, :]
-
-                # Find subspace of feasible points
-                if self.g_cons is not None:
-                    self.sampling_subspace()
-                else:
-                    self.fn = self.n
-
-                if numpy.shape(self.C)[0] < self.n_cons:
-                    self.n += 1
-                    # logging.info('Subspace search increased to '
-                    #             'self.n = {}'.format(self.n ))
-                else:
-                    sample_loop = False
-
-            # Reset to actual sampling points used
-            self.n = self.n_cons
-
-            # Sort remaining samples
-            self.sorted_samples()
-
-            # Find objective function references
-            self.fun_ref()
-            ##########END############
-
-
-
-            # Build complex on current sampling set and find minimiser pool
-            self.complex_minimisers()
-
-            if not len(self.minimizer_pool) == 0:
-                # self.X_min_all.append(self.X_min)
-                self.minimizer_pool_F_all.append(self.minimizer_pool_F)
-                homology_group = len(self.minimizer_pool)
-            else:
-                homology_group = 0
-
-            if self.disp:
-                logging.info('homology_group ='
-                             ' {}'.format(homology_group))
-                logging.info('homology_group_differential ='
-                             ' {}'.format(homology_group_differential))
-                logging.info('n_pool ='
-                             ' {}'.format(n_pool))
-
-            if homology_group > homology_group_prev:
-                hgd_new = self.n - n_growth
-
-                homology_group_differential = max(hgd_new, # TODO: Should not be max?
-                                                  homology_group_differential)
-                homology_group_prev = homology_group
-
-                if self.fn < n_growth_init:
-                    n_pool += homology_group_differential
-                else:
-                    n_pool = homology_group_differential  # * self.dim
-                # ^^ Should be set equal to this?
-                n_growth = self.n
-            else:
-                n_pool -= 1
-                self.n += 1
-
-            if n_pool == 0:
-                grow_complex = False
-            self.processed_n = self.fn  # self.n
-
-            # Global mode check:
-            if self.stop_iter_m is not None:
-                if self.f_min_true is not None:
-                    if self.stop_iter_m():
-                        grow_complex = False
-
-        # Break if no final minima found
-        # logging.info('self.X_min = {}'.format(self.X_min))
-        if len(self.X_min) == 0:
-            self.break_routine = True
-            self.res.message = 'No minimizers found in iterative growth mode'
-            self.res.success = False
-            if self.disp:
-                print("Failed to find non-zero set of minimzers in iterative"
-                      "growrth mode complex construction")
-
-        # After the complex is completed count the function evaluations used:
-        if self.dim > 1:
-            logging.info('self.Tri.points = {}'.format(len(self.Tri.points)))
-            self.res.nfev = len(self.Tri.points)
-            # logging.info('self.Tri.points '
-            #             '= {}'.format(self.Tri.points))
-        else:
-            # Include each sampling point as func evaluation:
-            self.res.nfev = self.fn
+            try:
+                self.X_min
+            except AttributeError:
+                self.X_min = []
 
     def sobol_points(self, N, D):
         """
@@ -1263,7 +1246,6 @@ class SHGO(object):
             unsigned = "uint64"
             # swallow header
             buffer = next(f)
-
             L = int(numpy.log(N) // numpy.log(2.0)) + 1
 
             C = numpy.ones(N, dtype=unsigned)
@@ -1319,18 +1301,14 @@ class SHGO(object):
 
         return points
 
-    def sampling(self, method='sobol'):
+    def sampling_sobol(self):
         """
         Generates uniform sampling points in a hypercube and scales the points
         to the bound limits.
         """
         # Generate sampling points.
-        #  TODO Assert if func output matches dims. found from bounds
-        self.m = len(self.bounds)  # Dimensions
-
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        if method == 'sobol':
-            self.C = self.sobol_points(self.n, self.m)
+        self.C = self.sobol_points(self.nc, self.dim)
 
         # Distribute over bounds
         # TODO: Find a better way to do this
@@ -1354,7 +1332,7 @@ class SHGO(object):
                 if self.disp:
                     print(self.res.message)
 
-        self.fn = numpy.shape(self.C)[0]
+        #self.fn = numpy.shape(self.C)[0]
         return
 
     def sorted_samples(self):  # Validated
@@ -1371,7 +1349,7 @@ class SHGO(object):
         self.Ci = []
         self.Xs_i = []
         self.Ii = []
-        for i in range(self.m):
+        for i in range(self.dim):
             self.Ci.append(self.C[:, i])
             self.Ii.append(self.I[:, i])
             self.Xs_i.append(self.Xs[:, i])
@@ -1381,16 +1359,20 @@ class SHGO(object):
     def fun_ref(self):
         """
         Find the objective function output reference table
+        TODO: Replace with cached wrapper
         """
         # TODO: This process can be pooled
         # Obj. function returns to be used as reference table.:
-        if self.n_sampled > 0:  # Store old function evaluations
+        f_cache_bool = False
+        if self.fn > 0:  # Store old function evaluations
             Ftemp = self.F
+            fn_old = self.fn
+            f_cache_bool = True
 
         self.F = numpy.zeros(numpy.shape(self.C)[0])
         # NOTE: It might be easier to replace this with a cached
         #      objective function
-        for i in range(self.n_sampled, numpy.shape(self.C)[0]):
+        for i in range(self.fn, numpy.shape(self.C)[0]):
             eval_f = True
             if self.g_func is not None:
                 for g in self.g_func:
@@ -1401,11 +1383,13 @@ class SHGO(object):
 
             if eval_f:
                 self.F[i] = self.func(self.C[i, :], *self.args)
+                self.fn += 1
 
-        if self.n_sampled > 0:  # Restore saved function evaluations
-            self.F[0:self.n_sampled] = Ftemp
+        if f_cache_bool:
+            if fn_old > 0:  # Restore saved function evaluations
+                self.F[0:fn_old] = Ftemp
 
-        self.n_sampled = numpy.shape(self.C)[0]
+        #self.fn = numpy.shape(self.C)[0]
 
         return self.F
 
@@ -1431,7 +1415,7 @@ class SHGO(object):
         self.Xi_ind_pos = []
         self.Xi_ind_topo_i = []
 
-        for i in range(self.m):
+        for i in range(self.dim):
             for x, I_ind in zip(self.Ii[i], range(len(self.Ii[i]))):
                 if x == ind:
                     self.Xi_ind_pos.append(I_ind)
@@ -1478,10 +1462,11 @@ class SHGO(object):
 
         return self.Xi_ind_topo
 
-    def minimizers(self):
+    def minimizers_1D(self):
         """
         Returns the indexes of all minimizers
         """
+        #TODO: Add capability to minimize limited subset like >1D
         self.minimizer_pool = []
         # TODO: Can be parralized
         for ind in range(self.fn):
@@ -1554,12 +1539,10 @@ class SHGO(object):
         # TODO: Can easily be parralized
         if self.disp:
             logging.info('self.fn = {}'.format(self.fn))
-            logging.info('self.n = {}'.format(self.n))
+            logging.info('self.nc = {}'.format(self.nc))
             logging.info('numpy.shape(self.C)'
                          ' = {}'.format(numpy.shape(self.C)))
         for ind in range(self.fn):
-            if self.disp:
-                logging.info('ind = {}'.format(ind))
             min_bool = self.sample_delaunay_topo(ind)
             if min_bool:
                 self.minimizer_pool.append(ind)
@@ -1580,3 +1563,44 @@ class SHGO(object):
 if __name__ == '__main__':
     import doctest
     # doctest.testmod()
+
+    # Dev testing!
+    if 1:
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
+
+
+        def g(x):
+            return -(numpy.sum(x, axis=0) - 6.0)
+
+
+        bounds = [(-1, 6), (-1, 6)]
+        options = {}
+        shc = SHGO(f, bounds, g_cons=g,
+                   n=50,
+                   iters=2,
+                   #callback=callback, minimizer_kwargs=minimizer_kwargs,
+                   options=options,
+                   sampling_method='simplicial')
+
+        shc.construct_initial_complex()
+        shc.iterate_complex()
+        #shc.shgo()
+        #print(shc.res)
+
+        shc2 = SHGO(f, bounds, g_cons=g,
+                   n=50,
+                   iters=2,
+                   #callback=callback, minimizer_kwargs=minimizer_kwargs,
+                   options=options,
+                   sampling_method='sobol')
+
+        shc2.construct_initial_complex()
+        shc2.iterate_complex()
+
+        print(shgo(f, bounds, g_cons=g,
+                   n=50,
+                   iters=2,
+                   #callback=callback, minimizer_kwargs=minimizer_kwargs,
+                   options=options,
+                   sampling_method='sobol'))

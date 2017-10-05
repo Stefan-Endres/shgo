@@ -39,7 +39,7 @@ class Damavandi(Benchmark):
         self._bounds = list(zip([0.0] * self.N, [14.0] * self.N))
 
         self.global_optimum = [[2 for _ in range(self.N)]]
-        self.fglob = np.nan
+        self.fglob = 0.0#np.nan
 
     def fun(self, x, *args):
         self.nfev += 1

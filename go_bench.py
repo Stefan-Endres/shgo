@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import scipy.optimize
 from _shgo import *
-from _shgo_sobol import shgo as shgo_sobol
+#from _shgo_sobol import shgo as shgo_sobol
 from _tgo import *
 from go_funcs.go_benchmark import Benchmark
 import go_funcs
@@ -36,6 +36,8 @@ args = parser.parse_args()
 excluded = ['Cola', 'Paviani', 'Xor',
             #"Bukin06",  # <--- Working, but fail on all solvers + high nfev
             'Benchmark',  # Not a GO function
+            'LennardJonesN', 'TIP4P',  # New function not in the original suite
+            'matrix'  # Numpy tests ???
             ]
 
 class GoRunner:
@@ -84,14 +86,17 @@ class GoRunner:
 
         t0 = time.time()
         # Add exception handling here?
-        res = shgo(self.function.fun, self.function._bounds)#,
+        res = shgo(self.function.fun, self.function._bounds,
+                   n=200,
+                   #iter=3,
+                   sampling_method='simplicial')#,
                    #,n=5000)#, n=50, crystal_mode=False)
         runtime = time.time() - t0
 
         # Prepare Return dictionary
         self.results[self.name]['shgo'] = \
             {'nfev': self.function.nfev,
-             'nlmin': len(res.xl),  #TODO: Find no. unique local minima
+             'nlmin': len(res.xl),
              'nulmin': self.unique_minima(res.xl),
              'runtime': runtime,
              'success': self.function.success(res.x),
@@ -105,8 +110,7 @@ class GoRunner:
 
         t0 = time.time()
         # Add exception handling here?
-        res = shgo_sobol(self.function.fun, self.function._bounds)#,
-                   #,n=5000)#, n=50, crystal_mode=False)
+        res = shgo(self.function.fun, self.function._bounds, n=100, sampling_method='sobol')
         runtime = time.time() - t0
 
         # Prepare Return dictionary
@@ -316,3 +320,167 @@ Total runtime: 3.6703944206237793
 ============================================================
 ============================================================
 '''
+
+"""
+CONSISTENCY TEST 28.08.2017
+
+TEST 0 with old funcs
+Results for shgo_sobol
+==============================
+nfev: 117245
+nlmin: 1041
+nulmin: 950
+success rate: 80.42328042328042
+success count: 152
+eval count: 189
+Total runtime: 3.899496078491211
+name: shgo_sobol
+
+
+
+TEST 1  with new funcs
+Results for shgo_sobol
+==============================
+nfev: 117253
+nlmin: 1037
+nulmin: 946
+success rate: 80.42328042328042
+success count: 152
+eval count: 189
+Total runtime: 3.7815604209899902
+name: shgo_sobol
+
+
+TEST 2  with new funcs
+Results for shgo_sobol
+==============================
+nfev: 117383
+nlmin: 1039
+nulmin: 948
+success rate: 80.42328042328042
+success count: 152
+eval count: 189
+Total runtime: 3.786623477935791
+name: shgo_sobol
+"""
+
+
+
+
+"""
+============================================================
+========================================================================================================================
+========================================================================================================================
+========================================================================================================================
+============================================================
+
+"""
+
+"""
+
+PERFORMANCE TEST 28.08.2017
+
+TEST 0 with iter=1 on simplicial
+============================================================
+Results for shgo
+==============================
+nfev: 55742
+nlmin: 337
+nulmin: 323
+success rate: 53.591160220994475
+success count: 97
+eval count: 181
+Total runtime: 4.5354509353637695
+name: shgo
+============================================================
+============================================================
+Results for shgo_sobol
+==============================
+nfev: 111372
+nlmin: 986
+nulmin: 898
+success rate: 80.33707865168539
+success count: 143
+eval count: 178
+Total runtime: 3.5806477069854736
+name: shgo_sobol
+============================================================
+============================================================
+Results for tgo
+==============================
+nfev: 94959
+nlmin: 835
+nulmin: 694
+success rate: 80.33707865168539
+success count: 143
+eval count: 178
+Total runtime: 2.1270735263824463
+name: tgo
+============================================================
+============================================================
+Results for de
+==============================
+nfev: 1030253
+nlmin: 0
+nulmin: 0
+success rate: 86.51685393258427
+success count: 154
+eval count: 178
+Total runtime: 40.487993240356445
+name: de
+============================================================
+============================================================
+Results for bh
+==============================
+nfev: 1434992
+nlmin: 0
+nulmin: 0
+success rate: 58.42696629213483
+success count: 104
+eval count: 178
+Total runtime: 23.928292274475098
+name: bh
+============================================================
+
+"""
+
+
+"""
+============================================================
+Results for shgo
+==============================
+nfev: 4360113
+nlmin: 14938
+nulmin: 12597
+success rate: 80.0
+success count: 148
+eval count: 185
+Total runtime: 657.9505994319916
+name: shgo
+============================================================
+============================================================
+Results for shgo_sobol
+==============================
+nfev: 116107
+nlmin: 1018
+nulmin: 927
+success rate: 80.32786885245902
+success count: 147
+eval count: 183
+Total runtime: 6.303086280822754
+name: shgo_sobol
+============================================================
+============================================================
+Results for tgo
+==============================
+nfev: 100931
+nlmin: 871
+nulmin: 725
+success rate: 81.4207650273224
+success count: 149
+eval count: 183
+Total runtime: 3.7384634017944336
+name: tgo
+============================================================
+
+"""

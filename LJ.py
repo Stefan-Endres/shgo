@@ -174,8 +174,8 @@ options = {'symmetry': True,
            'crystal_iter': 11}
 
 t0 = time.time()
-res = shgo(LJ.fun, LJ._bounds, options=options, crystal_mode=True,
-               sampling_method='simplicial')
+#TODO: UPDATE ARGUMENTS
+res = shgo(LJ.fun, LJ._bounds, options=options, sampling_method='simplicial')
 tshgo = time.time() - t0
 
 #shgo(test.f, test.bounds, args=args, g_cons=test.g,

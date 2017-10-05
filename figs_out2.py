@@ -1,4 +1,9 @@
 from _shgo_sobol import *
+import matplotlib
+from matplotlib import pyplot as plot
+matplotlib.rcParams['text.usetex'] = True
+matplotlib.rcParams['text.latex.unicode'] = True
+
 def f(x):  # Alpine2
     prod = 1
     for i in range(numpy.shape(x)[0]):
@@ -180,15 +185,13 @@ def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
     if 1:  # Simplex shades for Sperner proof
         # Fills
         # define corner points
-        x = [SHc.C[8][0], SHc.C[3][0], 0]
-        y = [SHc.C[8][1], SHc.C[3][1], 2.5]
-        plt.fill(x, y, color='grey', lw=2, alpha=0.5, hatch="""\ \ """)
+
 
         plt.plot([SHc.C[7][0], 0], [SHc.C[7][1], 2.5], 'k--', mew=1.5, markersize=5)  # line
 
         x4 = [SHc.C[8][0], SHc.C[3][0], SHc.C[7][0],  0, SHc.C[0][0]]
         y4 = [SHc.C[8][1], SHc.C[3][1], 2.5,         2.5, SHc.C[0][1]]
-        plt.fill(x4, y4, color='grey', lw=1, alpha=0.2,  hatch= "/ ")
+        plt.fill(x4, y4, color='C3', lw=1, alpha=0.2,  hatch= "/ ")
 
 
         #vel = SHc.C[9][0] - SHc.C[1][0]
@@ -199,7 +202,7 @@ def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
 
         x2 = [v2[0], v1[0], SHc.C[14][0]]
         y2 = [v2[1], v1[1], SHc.C[14][1]]
-        plt.fill(x2, y2, color='grey', lw=2, alpha=0.8, hatch='|')
+        plt.fill(x2, y2, color='C1', lw=2, alpha=0.3, hatch='|')
 
         x3 = [SHc.C[9][0], SHc.C[10][0], SHc.C[5][0]]
         y3 = [SHc.C[9][1], SHc.C[10][1], SHc.C[5][1]]
@@ -208,6 +211,10 @@ def build_complex(n=11, lb1=-3, lb2=-3, ub1=3, ub2=3, labels=True):
 
         #ax.annotate('$\mathbf{1}$', xy=(SHc.C[5]) - [0.2,0.2], fontsize=20, fontweight='bold', color='blue')  # ,
 
+        x = [SHc.C[8][0], SHc.C[3][0], 0]
+        y = [SHc.C[8][1], SHc.C[3][1], 2.5]
+        plt.fill(x, y, color='C0', lw=2, alpha=0.3, hatch="""\ \ """)
+        
 
         for xl in SHc.res.xl:
             plt.plot(xl[0], xl[1], 'go', markersize=10, alpha=0.5)

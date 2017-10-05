@@ -66,7 +66,7 @@ class Eckerle4(Benchmark):
         self._bounds = list(zip([0., 1., 10.],
                            [20, 20., 600.]))
         self.global_optimum = [[1.5543827178, 4.0888321754, 4.5154121844e2]]
-        self.fglob = 1.4635887487E-03
+        self.fglob = 1.4635887487e-3
 
         self.a = asarray([1.5750000E-04, 1.6990000E-04, 2.3500000E-04,
                           3.1020000E-04, 4.9170000E-04, 8.7100000E-04,
