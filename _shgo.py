@@ -341,19 +341,19 @@ class SHGO(object):
         if g_cons is not None:
             if (type(g_cons) is not tuple) and (type(g_cons) is not list):
                 #TODO: Refactor self.g_func back to self.g_cons
-                self.g_func = (g_cons,)
+                self.g_cons = (g_cons,)
                 #self.g_cons = (g_cons,)
             else:
-                self.g_func = g_cons
+                self.g_cons = g_cons
         else:
-            self.g_func = None
+            self.g_cons = None
 
         self.g_args = g_args
 
         # Define constraint function used in local minimisation
         if g_cons is not None:
             self.min_cons = []
-            for g in self.g_func:
+            for g in self.g_cons:
                 self.min_cons.append({'type': 'ineq',
                                       'fun': g})
 
@@ -822,7 +822,7 @@ class SHGO(object):
         if self.n_sampled == 0:
             # Initial triangulation of the hyper-rectangle
             self.HC = Complex(self.dim, self.func, self.args,
-                              self.symmetry, self.bounds, self.g_func, self.g_args)
+                              self.symmetry, self.bounds, self.g_cons, self.g_args)
         else:
             self.HC.split_generation()
 
@@ -1179,7 +1179,7 @@ class SHGO(object):
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
-            if self.g_func is not None:
+            if self.g_cons is not None:
                 self.sampling_subspace()
             else:
                 pass
@@ -1321,7 +1321,7 @@ class SHGO(object):
     def sampling_subspace(self):
         """Find subspace of feasible points from g_func definition"""
         # Subspace of feasible points.
-        for g in self.g_func:
+        for g in self.g_cons:
             self.C = self.C[g(self.C.T, *self.g_args) >= 0.0]
             if self.C.size == 0:
                 self.res.message = ('No sampling point found within the '
@@ -1374,8 +1374,8 @@ class SHGO(object):
         #      objective function
         for i in range(self.fn, numpy.shape(self.C)[0]):
             eval_f = True
-            if self.g_func is not None:
-                for g in self.g_func:
+            if self.g_cons is not None:
+                for g in self.g_cons:
                     if g(self.C[i, :], *self.args) < 0.0:
                         self.F[i] = numpy.inf
                         eval_f = False
