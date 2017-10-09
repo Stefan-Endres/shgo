@@ -15,6 +15,7 @@ ratings:
   paths:
   - _shgo.py
   - triangulation.py
+  - shgo_tests.py
   #- app/**
   #- lib/**
   #- "**.rb"
