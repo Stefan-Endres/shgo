@@ -274,7 +274,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
             print("Succesfully completed construction of complex.")
 
     # Test post iterations success
-    if shc.lx_maps.size == 0:
+    if len(shc.LMC.xl_maps) == 0:
         # If sampling failed to find pool, return lowest sampled point
         # with a warning
         shc.find_lowest_vertex()
@@ -482,18 +482,8 @@ class SHGO(object):
         self.fun_min_glob = []  # List of objective function values at minima found
         self.x_min_glob = []  # List of coordinate candidates at minima found
 
-        self.lx_maps = numpy.array([])  # List of local minimizers mapped
-        # Array structure : [[v_min_1, x_min_1],
-        #                    [v_min_2, x_min_2],
-        #                    ...
-        #                    [v_min_n, x_min_n]]
-        # Where the vertices v_min_i are mapped to corresponding local minima x_min_i
-        # TODO: Make these structures caches
-        self.lf_maps = []  # List of local minimizers maps
-        # Structure : [[f_min_1, f_min_1], [f_min_2, f_min_2], ...] etc.
-        self.lres_maps = []  # List of local minimizers map residuals
-        # Structure : [[lres_min_1, lres_min_1], ...] etc.
-        self.lbounds_maps = []  # bounds around lx_maps if any
+        # Cache of local minimizers mapped
+        self.LMC = LMapCache()
 
         # Initialize return object
         self.res = scipy.optimize.OptimizeResult()
@@ -688,7 +678,7 @@ class SHGO(object):
         #  and the tolerance with f_tol = options['f_tol']
 
         # If no minimiser has been found use the lowest sampling value
-        if self.lx_maps.size == 0:
+        if len(self.LMC.xl_maps) == 0:
             self.find_lowest_vertex()
 
         # Function to stop algorithm at specified percentage error:
@@ -981,6 +971,14 @@ class SHGO(object):
             The local optimization result represented as a `OptimizeResult`
             object.
         """
+        # Use minima maps if vertex was already run
+        print(f'self.LMC.v_maps = {self.LMC.v_maps}')
+        #if x_min in self.LMC.v_maps:
+        if self.LMC[x_min].lres is not None:
+            return self.LMC[x_min].lres
+
+        # TODO: Check discarded bound rules
+
         if self.callback is not None:
             print('Callback for '
                   'minimizer starting at {}:'.format(x_min))
@@ -1022,11 +1020,8 @@ class SHGO(object):
 
         # Append minima maps
         self.x_min_glob.append(lres.x)
-        self.lx_maps = numpy.append(self.lx_maps, [x_min, lres.x])
-        self.lf_maps = numpy.append(self.lf_maps, [x_min, lres.x])
-        self.lres_maps = numpy.append(self.lres_maps, lres)
-        self.lbounds_maps = numpy.append(self.lres_maps,
-                                         self.minimizer_kwargs['bounds'])
+        self.LMC[x_min]
+        self.LMC.add_res(x_min, lres, bounds=self.minimizer_kwargs['bounds'])
 
         try:  # Needed because of the brain dead 1x1 numpy arrays
             self.fun_min_glob.append(lres.fun[0])
@@ -1474,6 +1469,67 @@ class SHGO(object):
         else:
             self.X_min = []  # Empty pool breaks main routine
         return self.X_min
+
+class LMap:
+    def __init__(self, v):
+        self.v = v
+        self.x_min = None
+        self.lres_min = None
+        self.f_min = None
+        self.lbounds = []
+
+    def __hash__(self):
+        #return hash(tuple(self.x))
+        return hash(self.x)
+
+class LMap:
+    def __init__(self, v):
+        self.v = v
+        self.x_l = None
+        self.lres = None
+        self.f_min = None
+        self.lbounds = []
+
+    def __hash__(self):
+        #return hash(tuple(self.x))
+        return hash(self.x)
+
+class LMapCache:
+    def __init__(self):
+        self.cache = {}
+
+        # Lists for search queries
+        self.v_maps = []
+        self.xl_maps = []
+        self.f_maps = []
+        self.lbound_maps = []
+
+    def __getitem__(self, v):
+        v = numpy.ndarray.tolist(v)
+        v = tuple(v[0])
+        #try:  # Needed because of the brain dead 1x1 numpy arrays
+        try:
+            return self.cache[v]
+        except KeyError:
+            xval = LMap(v)
+            self.cache[v] = xval
+
+            return self.cache[v]
+
+    def add_res(self, v, lres, bounds=None):
+        v = numpy.ndarray.tolist(v)
+        v = tuple(v[0])
+        self.cache[v].x_l = lres.x
+        self.cache[v].lres = lres
+        self.cache[v].f_min = lres.fun
+        self.cache[v].lbounds = bounds
+
+        # Cache lists for search queries
+        self.v_maps.append(v)
+        self.xl_maps.append(lres.x)
+        self.f_maps.append(lres.fun)
+        self.lbound_maps.append(bounds)
+
 
 
 if __name__ == '__main__':
