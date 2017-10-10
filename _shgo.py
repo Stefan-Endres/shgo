@@ -1473,25 +1473,12 @@ class SHGO(object):
 class LMap:
     def __init__(self, v):
         self.v = v
-        self.x_min = None
-        self.lres_min = None
-        self.f_min = None
-        self.lbounds = []
-
-    def __hash__(self):
-        #return hash(tuple(self.x))
-        return hash(self.x)
-
-class LMap:
-    def __init__(self, v):
-        self.v = v
         self.x_l = None
         self.lres = None
         self.f_min = None
         self.lbounds = []
 
     def __hash__(self):
-        #return hash(tuple(self.x))
         return hash(self.x)
 
 class LMapCache:
