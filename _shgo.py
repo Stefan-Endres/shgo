@@ -441,7 +441,6 @@ class SHGO(object):
         self.n = n  # Sampling points per iteration
         self.nc = n  # Sampling points to sample in current iteration
         self.n_prc = 0  # Number of processed points (used to track Delaunay iters)
-        #TODO: Test if we can replace self.n_prc with self.n_sampled
         self.n_sampled = 0  # To track no. of sampling points already generated
         self.fn = 0  # Number of feasible sampling points evaluations performed
 
@@ -1133,10 +1132,6 @@ class SHGO(object):
                 if self.iters == 1:
                     self.delaunay_triangulation(grow=False)
                 else:
-                    print(f'self.fn = {self.fn}')
-                    print(f'self.n = {self.n}')
-                    print(f'self.dim = {self.dim}')
-                    print(f'self.C = {self.C}')
                     self.delaunay_triangulation(grow=True, n_prc=self.n_prc)
                     self.n_prc = self.C.shape[0]
 
@@ -1419,13 +1414,9 @@ class SHGO(object):
         if not grow:
             self.Tri = Delaunay(self.C)
         else:
-            print("GROW")
             if hasattr(self, 'T'):
-                print("GROW 2")
                 self.Tri.add_points(self.C[n_prc:, :])
             else:
-                print("GROW 3")
-                print(f'n_prc = {n_prc}')
                 self.Tri = Delaunay(self.C, incremental=True)
 
             #try:
