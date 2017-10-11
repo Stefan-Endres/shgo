@@ -286,7 +286,8 @@ class TestShgoSobolTestFunctions(unittest.TestCase):
 
     def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
-        run_test(test4_1, n=500)
+        #run_test(test4_1, n=500)
+        run_test(test4_1, n=800)
 
     #def test_t911(self):
     #    """1D tabletop function"""

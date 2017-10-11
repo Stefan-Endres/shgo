@@ -440,6 +440,8 @@ class SHGO(object):
         self.iters_done = 0  # Iterations to be ran
         self.n = n  # Sampling points per iteration
         self.nc = n  # Sampling points to sample in current iteration
+        self.n_prc = 0  # Number of processed points (used to track Delaunay iters)
+        #TODO: Test if we can replace self.n_prc with self.n_sampled
         self.n_sampled = 0  # To track no. of sampling points already generated
         self.fn = 0  # Number of feasible sampling points evaluations performed
 
@@ -972,7 +974,8 @@ class SHGO(object):
             object.
         """
         # Use minima maps if vertex was already run
-        print(f'self.LMC.v_maps = {self.LMC.v_maps}')
+        if self.disp:
+            logging.info(f'Vertex minimiser maps = {self.LMC.v_maps}')
         #if x_min in self.LMC.v_maps:
         if self.LMC[x_min].lres is not None:
             return self.LMC[x_min].lres
@@ -1111,7 +1114,10 @@ class SHGO(object):
 
     def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
-        if self.fn >= (self.dim + 1):
+        #if self.fn >= (self.dim + 1):
+        if self.fn >= (self.dim + 2):
+            #TODO: Check on strange Qhull error where the number of vertices
+            # required for an initial simplex is higher than n + 1?
             if self.dim < 2:  # Scalar objective functions
                 if self.disp:
                     print('Constructing 1D minimizer pool')
@@ -1124,8 +1130,16 @@ class SHGO(object):
                 if self.disp:
                     print('Constructing Gabrial graph and minimizer pool')
 
-                self.delaunay_triangulation(grow=False)
-                # self.delaunay_triangulation(grow=True)
+                if self.iters == 1:
+                    self.delaunay_triangulation(grow=False)
+                else:
+                    print(f'self.fn = {self.fn}')
+                    print(f'self.n = {self.n}')
+                    print(f'self.dim = {self.dim}')
+                    print(f'self.C = {self.C}')
+                    self.delaunay_triangulation(grow=True, n_prc=self.n_prc)
+                    self.n_prc = self.C.shape[0]
+
                 if self.disp:
                     print('Triangulation completed, building minimizer pool')
 
@@ -1405,10 +1419,19 @@ class SHGO(object):
         if not grow:
             self.Tri = Delaunay(self.C)
         else:
-            try:
+            print("GROW")
+            if hasattr(self, 'T'):
+                print("GROW 2")
                 self.Tri.add_points(self.C[n_prc:, :])
-            except AttributeError:  # TODO: Fix in main algorithm
+            else:
+                print("GROW 3")
+                print(f'n_prc = {n_prc}')
                 self.Tri = Delaunay(self.C, incremental=True)
+
+            #try:
+            #    self.Tri.add_points(self.C[n_prc:, :])
+            #except AttributeError:  # TODO: Fix in main algorithm
+            #    self.Tri = Delaunay(self.C, incremental=True)
 
         return self.Tri
 
