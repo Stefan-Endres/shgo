@@ -388,7 +388,7 @@ class TestShgoArguments(unittest.TestCase):
         options = {}
         # Specify known function value
         options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-5
+        options['f_tol'] = 1e-6
         options['minimize_every_iter'] = True
         #TODO: Make default n higher for faster tests
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
@@ -399,7 +399,7 @@ class TestShgoArguments(unittest.TestCase):
         options = {}
         # Specify known function value
         options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-5
+        options['f_tol'] = 1e-6
 
         # Specify number of local iterations to perform
         options['minimize_every_iter'] = True
@@ -412,7 +412,7 @@ class TestShgoArguments(unittest.TestCase):
         options = {}
         # Specify known function value
         options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-5
+        options['f_tol'] = 1e-6
 
         # Specify number of local iterations to perform+
         options['minimize_every_iter'] = True

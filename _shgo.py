@@ -8,16 +8,14 @@ import scipy.spatial
 import scipy.optimize
 from triangulation import *
 from sobol_seq import *
+from time import time
 
 
 def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
          callback=None, minimizer_kwargs=None, options=None,
          sampling_method='simplicial'):
-    # TODO: Update documentation
-
     # sampling_method: str, options = 'sobol', 'simplicial'
     """
-
     Finds the global minimum of a function using simplicial homology global
     optimisation.
 
@@ -75,35 +73,92 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
         Extra keyword arguments to be passed to the minimizer
         ``scipy.optimize.minimize`` Some important options could be:
 
-            method : str
+            * method : str
                 The minimization method (e.g. ``SLSQP``)
-            args : tuple
+            * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).
 
             options : {ftol: 1e-12}
 
     options : dict, optional
-        A dictionary of solver options.
+        A dictionary of solver options. Many of the options specified for the
+        global routine are also passed to the scipy.optimize.minimize routine.
+        The options that are also passed to the local routine are marked with an
+        (L)
 
+        Stopping criteria, the algorithm will terminate if any of the specified
+        criteria are met. However, the default algorithm does not require any to
+        be specified:
 
-        TODO: Explain minimiserkwargs dict
+        * maxfev : int (L)
+            Maximum number of function evaluations in the feasible domain.
+            (Note only methods that support this option will terminate
+            the routine at precisely exact specified value. Otherwise the
+            criterion will only terminate during a global iteration)
+        * f_min
+            Specify the minimum objective function value, if it is known.
+        * f_tol : float
+            Precision goal for the value of f in the stopping
+            criterion. Note that the global routine will also
+            terminate if a sampling point in the global routine is
+            within this tolerance.
+        * maxiter : int
+            Maximum number of iterations to perform.
+        * maxev : int
+            Maximum number of sampling evaluations to perform (includes
+            searching in infeasible points).
+        * maxtime : float
+            Maximum processing runtime allowed
+        * maxhgrd : int
+            Maximum homology group rank differential. The homology group of the
+            objective function is calculated (approximately) during every
+            iteration. The rank of this group has a one-to-one correspondence
+            with the number of locally convex subdomains in the objective
+            function (after adequate sampling points each of these subdomains
+            contain a unique global minima). If the difference in the hgr is 0
+            between iterations for ``maxhgrd`` specified iterations the
+            algorithm will terminate.
 
-        All methods in scipy.optimize.minimize
-        accept the following generic options:
+        Objective function knowledge:
 
-            * maxiter : int
-                Maximum number of iterations to perform.
-            * disp : bool
-                Set to True to print convergence messages.
+        * symmetry : bool
+           Specify True if the objective function contains symmetric variables.
+           The search space (and therfore performance) is decreased by O(n!).
 
-        The following options are also used in the global routine:
+        Algorithm settings:
 
-                    maxfev : int
-                        Maximum number of iterations to perform in local solvers.
-                        (Note only methods that support this option will terminate
-                        tgo at the exact specified value)
-    sampling_method
+        * minimize_every_iter : bool
+            If True then promising global sampling points will be passed to a
+            local minimisation routine every iteration. If False then only the
+            final minimiser pool will be run.
+        * local_iter : int
+            Only evaluate a few of the best minimiser pool candiates every
+            iteration. If False all potential points are passed to the local
+            minimsation routine.
+        * infty_constraints: bool
+            If True then any sampling points generated which are outside will
+            the feasible domain will be saved and given an objective function
+            value of numpy.inf. If False then these points will be discarded.
+            Using this functionality could lead to higher performance with
+            respect to function evaluations before the global minimum is found,
+            specifying False will use less memory at the cost of a slight
+            decrease in performance.
+
+        Feedback:
+
+        * disp : bool (L)
+            Set to True to print convergence messages.
+
+\
+    sampling_method : str or function, optional
+        Current built in sampling method options are ``sobol`` and
+        ``simplicial``.
+        User defined sampling functions must accept two arguments of ``n``
+        sampling points of dimension ``dim`` per call and output an array of s
+        ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
+        example function.
+
 
     Returns
     -------
@@ -115,19 +170,40 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
         ``xl`` an ordered list of local minima solutions,
         ``funl`` the function output at the corresponding local solutions,
         ``success`` a Boolean flag indicating if the optimizer exited
-        successfully and
+        successfully,
         ``message`` which describes the cause of the termination,
         ``nfev`` the total number of objective function evaluations including
-        the sampling calls.
+        the sampling calls,
         ``nlfev`` the total number of objective function evaluations
-        culminating from all local search optimisations.
+        culminating from all local search optimisations,
+        ``nit`` number of iterations performed by the global routine.
 
     Notes
     -----
-    Global optimization using
+    Global optimization using simplicial homology global optimisation [1].
+    Appropriate for solving general purpose NLP and blackbox optimisation
+    problems to global optimality (low dimensional problems).
 
-    These points are generated using the
-    Sobol (1967) [3] sequence.
+    In general, the optimization problems are of the form::
+
+        minimize f(x) subject to
+
+        g_i(x) >= 0,  i = 1,...,m
+        h_j(x)  = 0,  j = 1,...,p
+
+    where x is a vector of one or more variables.
+    ``f(x)`` is the objective function ``R^n -> R``
+    ``g_i(x)`` are the inequality constraints.
+    ``h_j(x)`` are the equality constrains.
+
+    Optionally, the lower and upper bounds for each element in x can also be
+    specified using the `bounds` argument.
+
+    While most of the theoretical advantages of shgo are only proven for when
+    ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
+     converge to the global optimum for the more general case where ``f(x)`` is
+     non-continuous, non-convex and non-smooth `iff` the default sampling method
+     is used [1].
 
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is inputted to ``scipy.optimize.minimize``. By default
@@ -135,16 +211,12 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
     ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
     are defined for the problem since the other methods do not use constraints.
 
-    Performance can sometimes be improved by either increasing or decreasing
-    the amount of sampling points ``n`` depending on the system. Increasing the
-    amount of sampling points can lead to a lower amount of minimisers found
-    which requires fewer local optimisations.
-
+    The `sobol` method points are generated using the Sobol (1967) [2] sequence.
     The primitive polynomials and various sets of initial direction numbers for
-    generating Sobol sequences is provided by [4] by Frances Kuo and
-    Stephen Joe. The original program sobol.cc is available and described at
-    http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
-    Carl Sandrock 2016-03-31
+    generating Sobol sequences is provided by [3] by Frances Kuo and
+    Stephen Joe. The original program sobol.cc (MIT) is available and described
+    at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
+    Carl Sandrock 2016-03-31.
 
     Examples
     --------
@@ -210,7 +282,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
     (10, 60)
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from [5] (Hock and Schittkowski problem 18):
+    following example from [4] (Hock and Schittkowski problem 18):
 
     Minimize: f = 0.01 * (x_1)**2 + (x_2)**2
 
@@ -239,22 +311,17 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
     (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
 
 
-    References #TODO
+    References
     ----------
-    .. [1] Törn, A (1990) "Topographical global optimization", Reports on
-           Computer Science and Mathematics Ser. A, No 199, 8p. Abo Akademi
-           University, Sweden
-    .. [2] Henderson, N, de Sá Rêgo, M, Sacco, WF, Rodrigues, RA Jr. (2015) "A
-           new look at the topographical global optimization method and its
-           application to the phase stability analysis of mixtures",
-           Chemical Engineering Science, 127, 151-174
-    .. [3] Sobol, IM (1967) "The distribution of points in a cube and the
+    .. [1] Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
+           optimisation"
+    .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
            approximate evaluation of integrals. USSR Comput. Math. Math. Phys.
            7, 86-112.
-    .. [4] S. Joe and F. Y. Kuo (2008) "Constructing Sobol sequences with
+    .. [3] S. Joe and F. Y. Kuo (2008) "Constructing Sobol sequences with
            better  two-dimensional projections", SIAM J. Sci. Comput. 30,
            2635-2654
-    .. [5] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
+    .. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
            programming codes." Lecture Notes in Economics and mathematical
            Systems, 187. Springer-Verlag, New York.
            http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
@@ -360,20 +427,6 @@ class SHGO(object):
             if 'bounds' not in minimizer_kwargs:
                 self.minimizer_kwargs['bounds'] = self.bounds
 
-            if 'options' not in minimizer_kwargs:
-                minimizer_kwargs['options'] = {'ftol': 1e-12}
-
-                if options is not None:
-                    if 'ftol' in options:
-                        self.minimizer_kwargs['options']['ftol'] = \
-                            options['ftol']
-                    if 'maxfev' in options:
-                        self.minimizer_kwargs['options']['maxfev'] = \
-                            options['maxfev']
-                    if 'disp' in options:
-                        self.minimizer_kwargs['options']['disp'] = \
-                            options['disp']
-
             if 'callback' not in minimizer_kwargs:
                 minimizer_kwargs['callback'] = self.callback
 
@@ -396,9 +449,9 @@ class SHGO(object):
                     self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
-                if 'ftol' in options:
+                if 'f_tol' in options:
                     self.minimizer_kwargs['options']['ftol'] = \
-                        options['ftol']
+                        options['f_tol']
                 if 'maxfev' in options:
                     self.minimizer_kwargs['options']['maxfev'] = \
                         options['maxfev']
@@ -513,6 +566,7 @@ class SHGO(object):
 
         # Algorithm limits
         if 'maxiter' in options:
+            # Maximum number of iterations to perform.
             self.maxiter = options['maxiter']
         else:
             self.maxiter = None
@@ -530,10 +584,13 @@ class SHGO(object):
         else:
             self.maxev = None
         if 'maxtime' in options:
+            # Maximum processing runtime allowed
             self.maxtime = options['maxtime']
+            self.init = time.time()
         else:
             self.maxtime = None
         if 'f_min' in options:
+            # Specify the minimum objective function value, if it is known.
             self.f_min_true = options['f_min']
             if 'f_tol' in options:
                 self.f_tol = options['f_tol']
@@ -543,8 +600,7 @@ class SHGO(object):
             self.f_min_true = None
 
         if 'ftol' in options:
-            self.minimizer_kwargs['options']['ftol'] = \
-                options['ftol']
+            self.minimizer_kwargs['options']['ftol'] = options['ftol']
 
         if 'maxhgrd' in options:
             self.maxhgrd = options['maxhgrd']
@@ -563,8 +619,9 @@ class SHGO(object):
         else:  # Evaluate all minimisers
             self.local_iter = False
 
-        if 'infty constraints' in options:
-            self.infty_cons_sampl = options['infty constraints']
+        if 'infty_constraints' in options:  #TODO: Write unittests for this
+            # If True then
+            self.infty_cons_sampl = options['infty_constraints']
         else:
             self.infty_cons_sampl = False
 
@@ -603,6 +660,7 @@ class SHGO(object):
             if not self.break_routine:
                 self.find_minima()
 
+        self.res.nit = self.iters_done
         return
 
     def find_minima(self):
@@ -671,7 +729,8 @@ class SHGO(object):
         pass
 
     def finite_time(self):
-        pass
+        if (time.time() - self.init) >= self.maxtime:
+            self.stop_global = True
 
     def finite_precision(self):
         # Stop the algorithm if the final function value is known
@@ -694,7 +753,7 @@ class SHGO(object):
         return self.stop_global
 
     def finite_homology_growth(self):
-        pass
+        pass  #TODO:
 
     def stopping_criteria(self):
         """
@@ -1092,7 +1151,7 @@ class SHGO(object):
         # Generate sampling points
         if self.disp:
             print('Generating sampling points')
-        self.sampling()  # TODO: Improve speed by only generating new points
+        self.sampling(self.nc, self.dim)  # TODO: Improve speed by only generating new points
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
@@ -1226,14 +1285,14 @@ class SHGO(object):
 
         return points
 
-    def sampling_sobol(self):
+    def sampling_sobol(self, n, dim):
         """
         Generates uniform sampling points in a hypercube and scales the points
         to the bound limits.
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        self.C = self.sobol_points(self.nc, self.dim)
+        self.C = self.sobol_points(n, dim)
 
         # Distribute over bounds
         for i in range(len(self.bounds)):
