@@ -974,7 +974,7 @@ class SHGO(object):
         """
         # Use minima maps if vertex was already run
         if self.disp:
-            logging.info(f'Vertex minimiser maps = {self.LMC.v_maps}')
+            logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
         #if x_min in self.LMC.v_maps:
         if self.LMC[x_min].lres is not None:
             return self.LMC[x_min].lres
