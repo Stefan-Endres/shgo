@@ -138,10 +138,15 @@ options : dict, optional
     * disp : bool (L)
         Set to True to print convergence messages.
 
-\
+
 sampling_method : str or function, optional
     Current built in sampling method options are ``sobol`` and
-    ``simplicial``.
+    ``simplicial``. The default ``simplicial`` uses less memory and provides
+    the theoretical guarantee of convergence to the global minimum in finite
+    time. The ``sobol`` method is faster in terms of sampling point
+    generation at the cost of higher memory resources and the loss of
+    guaranteed convergence. It is more appropriate for most "easier"
+    problems where the convergence is relatively fast.
     User defined sampling functions must accept two arguments of ``n``
     sampling points of dimension ``dim`` per call and output an array of s
     ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
@@ -228,9 +233,11 @@ converted to large float numbers.
 array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 
 Next we consider the Eggholder function, a problem with several local
-minima and one global minimum.
+minima and one global minimum. We will demonstrate the use of arguments and
+the capabilities of shgo.
 (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
+```python
 >>> from scipy.optimize import shgo
 >>> import numpy as np
 >>> def eggholder(x):
@@ -240,37 +247,65 @@ minima and one global minimum.
 ...             )
 ...
 >>> bounds = [(-512, 512), (-512, 512)]
->>> result = shgo(eggholder, bounds)
->>> result.x, result.fun
-(array([ 512.        ,  404.23180542]), -959.64066272085051)
+```
+shgo has two built-in low discrepancy sampling sequences. First we will
+input 30 initial sampling points of the Sobol sequence
 
-``tgo`` also has a return for any other local minima that was found, these
+```python
+>>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
+>>> result.x, result.fun
+(array([ 512.    ,  404.23180542]), -959.64066272085051)
+```
+
+``shgo`` also has a return for any other local minima that was found, these
  can be called using:
 
+```python
 >>> result.xl, result.funl
-(array([[ 512.        ,  404.23180542],
-       [-456.88574619, -382.6233161 ],
-       [ 283.07593402, -487.12566542],
-       [ 324.99187533,  216.0475439 ],
-       [-105.87688985,  423.15324143],
-       [-242.97923629,  274.38032063],
-       [-414.8157022 ,   98.73012628],
-       [ 150.2320956 ,  301.31377513],
-       [  91.00922754, -391.28375925],
-       [ 361.66626134, -106.96489228]]),
-       array([-959.64066272, -786.52599408, -718.16745962, -582.30628005,
-       -565.99778097, -559.78685655, -557.85777903, -493.9605115 ,
-       -426.48799655, -419.31194957]))
+(array([[ 512.   ,  404.23180542],
+   [ 283.07593402, -487.12566542],
+   [-294.66820039, -462.01964031],
+   [-105.87688985,  423.15324143],
+   [-242.97923629,  274.38032063],
+   [-506.25823477,    6.3131022 ],
+   [-408.71981195, -156.10117154],
+   [ 150.23210485,  301.31378508],
+   [  91.00922754, -391.28375925],
+   [ 202.8966344 , -269.38042147],
+   [ 361.66625957, -106.96490692],
+   [-219.40615102, -244.06022436],
+   [ 151.59603137, -100.61082677]]),
+   array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,
+   -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,
+   -426.48799655, -421.15571437, -419.31194957, -410.98477763,
+   -202.53912972]))
+   ```
 
-Now suppose we want to find a larger amount of local minima, this can be
-accomplished for example by increasing the amount of sampling points...
+These results are useful in applications where there are many global minima
+and the values of other global minima are desired or where the local minima
+can provide insight into the system such are for example morphologies
+in physical chemistry [6]
 
->>> result_2 = shgo(eggholder, bounds, n=1000)
+Now suppose we want to find a larger number of local minima, this can be
+accomplished for example by increasing the amount of sampling points or the
+number of iterations. We'll increase the number of sampling points to 60 and
+the number of iterations to 3 increased from the default 1 for a total of
+60 x 3 = 180 initial sampling points.
+
+```python
+>>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
 >>> len(result.xl), len(result_2.xl)
-(10, 60)
+(13, 33)
+```
+
+Note that there is a difference between specifying argumetns for
+ex. ``n=180, iters=1`` and ``n=60, iters=3``.
+In the first case the promising points contained in the minimiser pool
+is processed only once. In the latter case it is processed every 60 sampling
+points for a total of 3 times.
 
 To demonstrate solving problems with non-linear constraints consider the
-following example from [4] (Hock and Schittkowski problem 18):
+following example from [4] (Hock and Schittkowski problem 18)::
 
 Minimize: f = 0.01 * (x_1)**2 + (x_2)**2
 
@@ -282,6 +317,7 @@ Subject to: x_1 * x_2 - 25.0 >= 0,
 Approx. Answer:
     f([(250)**0.5 , (2.5)**0.5]) = 5.0
 
+```python
 >>> from scipy.optimize import shgo
 >>> def f(x):
 ...     return 0.01 * (x[0])**2 + (x[1])**2
@@ -297,19 +333,22 @@ Approx. Answer:
 >>> result = shgo(f, bounds, g_cons=g)
 >>> result.x, result.fun
 (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
-
+```
 
 References
 ----------
 .. [1] Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
-       optimisation"
+       optimisation".
 .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
-       approximate evaluation of integrals. USSR Comput. Math. Math. Phys.
+       approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
        7, 86-112.
-.. [3] S. Joe and F. Y. Kuo (2008) "Constructing Sobol sequences with
+.. [3] Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with
        better  two-dimensional projections", SIAM J. Sci. Comput. 30,
-       2635-2654
+       2635-2654.
 .. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
-       programming codes." Lecture Notes in Economics and mathematical
+       programming codes", Lecture Notes in Economics and mathematical
        Systems, 187. Springer-Verlag, New York.
        http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
+.. [5] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
+       dynamics from the potential energy landscape",
+       Journal of Chemical Physics, 142(13), 2015.
