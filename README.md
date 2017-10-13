@@ -332,7 +332,7 @@ input 30 initial sampling points of the Sobol sequence
 These results are useful in applications where there are many global minima
 and the values of other global minima are desired or where the local minima
 can provide insight into the system such are for example morphologies
-in physical chemistry [6]
+in physical chemistry [5]
 
 Now suppose we want to find a larger number of local minima, this can be
 accomplished for example by increasing the amount of sampling points or the
