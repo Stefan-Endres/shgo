@@ -5,31 +5,47 @@
 
 
 Finds the global minimum of a function using simplicial homology global
-optimisation.
+optimisation. The general form of an optimisation problem is given by:
+```
+minimize f(x) subject to
+
+g_i(x) >= 0,  i = 1,...,m
+h_j(x)  = 0,  j = 1,...,p
+```
 
 Parameters
 ----------
-func : callable
-    The objective function to be minimized.  Must be in the form
-    ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-    and ``args`` is a  tuple of any additional fixed parameters needed to
-    completely specify the function.
+    func : callable
 
-bounds : sequence
-    Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-    defining the lower and upper bounds for the optimizing argument of
-    `func`. It is required to have ``len(bounds) == len(x)``.
-    ``len(bounds)`` is used to determine the number of parameters in ``x``.
-    Use ``None`` for one of min or max when there is no bound in that
-    direction. By default bounds are ``(None, None)``.
+The objective function to be minimized.  Must be in the form
+``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
+and ``args`` is a  tuple of any additional fixed parameters needed to
+completely specify the function.
 
-args : tuple, optional
-    Any additional fixed parameters needed to completely specify the
-    objective function.
+---
 
-g_cons : sequence of callable functions, optional
-    Function(s) used to define a limited subset to defining the feasible
-    set of solutions in R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+    bounds : sequence
+
+Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+defining the lower and upper bounds for the optimizing argument of
+`func`. It is required to have ``len(bounds) == len(x)``.
+``len(bounds)`` is used to determine the number of parameters in ``x``.
+Use ``None`` for one of min or max when there is no bound in that
+direction. By default bounds are ``(None, None)``.
+
+---
+
+    args : tuple, optional
+    
+Any additional fixed parameters needed to completely specify the
+objective function.
+
+---
+
+    g_cons : sequence of callable functions, optional
+
+Function(s) used to define a limited subset to defining the feasible
+set of solutions in R^n in the form g(x) <= 0 applied as g : R^n -> R^m
 
     NOTE: If the ``constraints`` sequence used in the local optimization
           problem is not defined in ``minimizer_kwargs`` and a constrained
@@ -40,44 +56,62 @@ g_cons : sequence of callable functions, optional
            functions in ``g_cons`` need to be added to ``minimizer_kwargs``
            too).
 
-g_args : sequence of tuples, optional
-    Any additional fixed parameters needed to completely specify the
-    feasible set functions ``g_cons``.
-    ex. g_cons = (f1(x, *args1), f2(x, *args2))
-    then
-        g_args = (args1, args2)
+---
 
-n : int, optional
-    Number of sampling points used in the construction of the simplicial complex.
+    g_args : sequence of tuples, optional
 
-iters : int, optional
-    Number of iterations used in the construction of the simplicial complex.
+Any additional fixed parameters needed to completely specify the
+feasible set functions ``g_cons``.
+ex. g_cons = (f1(x, *args1), f2(x, *args2))
+then
+    g_args = (args1, args2)
 
-callback : callable, optional
-    Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-    current parameter vector.
+---
 
-minimizer_kwargs : dict, optional
-    Extra keyword arguments to be passed to the minimizer
-    ``scipy.optimize.minimize`` Some important options could be:
+    n : int, optional
+    
+Number of sampling points used in the construction of the simplicial complex.
 
-        * method : str
-            The minimization method (e.g. ``SLSQP``)
-        * args : tuple
-            Extra arguments passed to the objective function (``func``) and
-            its derivatives (Jacobian, Hessian).
+---
 
-        options : {ftol: 1e-12}
+    iters : int, optional
 
-options : dict, optional
-    A dictionary of solver options. Many of the options specified for the
-    global routine are also passed to the scipy.optimize.minimize routine.
-    The options that are also passed to the local routine are marked with an
-    (L)
+Number of iterations used in the construction of the simplicial complex.
 
-    Stopping criteria, the algorithm will terminate if any of the specified
-    criteria are met. However, the default algorithm does not require any to
-    be specified:
+---
+
+    callback : callable, optional
+    
+Called after each iteration, as ``callback(xk)``, where ``xk`` is the
+current parameter vector.
+
+---
+
+    minimizer_kwargs : dict, optional
+    
+Extra keyword arguments to be passed to the minimizer
+``scipy.optimize.minimize`` Some important options could be:
+
+    * method : str
+        The minimization method (e.g. ``SLSQP``)
+    * args : tuple
+        Extra arguments passed to the objective function (``func``) and
+        its derivatives (Jacobian, Hessian).
+
+    options : {ftol: 1e-12}
+    
+---
+
+    options : dict, optional
+    
+A dictionary of solver options. Many of the options specified for the
+global routine are also passed to the scipy.optimize.minimize routine.
+The options that are also passed to the local routine are marked with an
+(L)
+
+Stopping criteria, the algorithm will terminate if any of the specified
+criteria are met. However, the default algorithm does not require any to
+be specified:
 
     * maxfev : int (L)
         Maximum number of function evaluations in the feasible domain.
@@ -108,13 +142,13 @@ options : dict, optional
         between iterations for ``maxhgrd`` specified iterations the
         algorithm will terminate.
 
-    Objective function knowledge:
+Objective function knowledge:
 
     * symmetry : bool
        Specify True if the objective function contains symmetric variables.
        The search space (and therfore performance) is decreased by O(n!).
 
-    Algorithm settings:
+Algorithm settings:
 
     * minimize_every_iter : bool
         If True then promising global sampling points will be passed to a
@@ -133,24 +167,26 @@ options : dict, optional
         specifying False will use less memory at the cost of a slight
         decrease in performance.
 
-    Feedback:
+Feedback:
 
     * disp : bool (L)
         Set to True to print convergence messages.
 
+---
 
-sampling_method : str or function, optional
-    Current built in sampling method options are ``sobol`` and
-    ``simplicial``. The default ``simplicial`` uses less memory and provides
-    the theoretical guarantee of convergence to the global minimum in finite
-    time. The ``sobol`` method is faster in terms of sampling point
-    generation at the cost of higher memory resources and the loss of
-    guaranteed convergence. It is more appropriate for most "easier"
-    problems where the convergence is relatively fast.
-    User defined sampling functions must accept two arguments of ``n``
-    sampling points of dimension ``dim`` per call and output an array of s
-    ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
-    example function.
+    sampling_method : str or function, optional
+
+Current built in sampling method options are ``sobol`` and
+``simplicial``. The default ``simplicial`` uses less memory and provides
+the theoretical guarantee of convergence to the global minimum in finite
+time. The ``sobol`` method is faster in terms of sampling point
+generation at the cost of higher memory resources and the loss of
+guaranteed convergence. It is more appropriate for most "easier"
+problems where the convergence is relatively fast.
+User defined sampling functions must accept two arguments of ``n``
+sampling points of dimension ``dim`` per call and output an array of s
+ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
+example function.
 
 
 Returns
@@ -341,18 +377,21 @@ Approx. Answer:
 
 References
 ----------
-.. [1] Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
+1. Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
        optimisation".
-.. [2] Sobol, IM (1967) "The distribution of points in a cube and the
+       
+2. Sobol, IM (1967) "The distribution of points in a cube and the
        approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
        7, 86-112.
-.. [3] Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with
+       
+3. Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with
        better  two-dimensional projections", SIAM J. Sci. Comput. 30,
        2635-2654.
-.. [4] Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
+       
+4. Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
        programming codes", Lecture Notes in Economics and mathematical
-       Systems, 187. Springer-Verlag, New York.
-       http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
-.. [5] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
+       Systems, 187. Springer-Verlag, New York. http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
+       
+5.  Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
        dynamics from the potential energy landscape",
        Journal of Chemical Physics, 142(13), 2015.
