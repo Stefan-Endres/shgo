@@ -216,21 +216,25 @@ Examples
 First consider the problem of minimizing the Rosenbrock function. This
 function is implemented in `rosen` in `scipy.optimize`
 
+```python
 >>> from scipy.optimize import rosen, shgo
 >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
 >>> result = shgo(rosen, bounds)
 >>> result.x, result.fun
 (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
+```
 
 Note that bounds determine the dimensionality of the objective
 function and is therefore a required input, however you can specify
 empty bounds using ``None`` or objects like numpy.inf which will be
 converted to large float numbers.
 
+```python
 >>> bounds = [(None, None), (None, None), (None, None), (None, None)]
 >>> result = shgo(rosen, bounds)
 >>> result.x
 array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
+```
 
 Next we consider the Eggholder function, a problem with several local
 minima and one global minimum. We will demonstrate the use of arguments and
