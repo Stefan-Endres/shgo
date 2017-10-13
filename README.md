@@ -5,13 +5,21 @@
 
 
 Finds the global minimum of a function using simplicial homology global
-optimisation. The general form of an optimisation problem is given by:
+optimisation. Appropriate for solving general purpose NLP and blackbox optimisation
+problems to global optimality (low dimensional problems).
+The general form of an optimisation problem is given by:
+
 ```
 minimize f(x) subject to
 
 g_i(x) >= 0,  i = 1,...,m
 h_j(x)  = 0,  j = 1,...,p
 ```
+
+where x is a vector of one or more variables.
+``f(x)`` is the objective function ``R^n -> R``
+``g_i(x)`` are the inequality constraints.
+``h_j(x)`` are the equality constrains.
 
 Parameters
 ----------
@@ -209,11 +217,11 @@ res : OptimizeResult
 
 Notes
 -----
-Global optimization using simplicial homology global optimisation [1].
+Global optimisation using simplicial homology global optimisation [1].
 Appropriate for solving general purpose NLP and blackbox optimisation
 problems to global optimality (low dimensional problems).
 
-In general, the optimization problems are of the form::
+In general, the optimisation problems are of the form::
 
     minimize f(x) subject to
 
@@ -230,9 +238,9 @@ specified using the `bounds` argument.
 
 While most of the theoretical advantages of shgo are only proven for when
 ``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
- converge to the global optimum for the more general case where ``f(x)`` is
- non-continuous, non-convex and non-smooth `iff` the default sampling method
- is used [1].
+converge to the global optimum for the more general case where ``f(x)`` is
+non-continuous, non-convex and non-smooth iff the default sampling method
+is used [1].
 
 The local search method may be specified using the ``minimizer_kwargs``
 parameter which is inputted to ``scipy.optimize.minimize``. By default
