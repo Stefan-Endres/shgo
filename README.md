@@ -307,12 +307,12 @@ points for a total of 3 times.
 To demonstrate solving problems with non-linear constraints consider the
 following example from [4] (Hock and Schittkowski problem 18)::
 
-Minimize: f = 0.01 * (x_1)**2 + (x_2)**2
+    minimize: f = 0.01 * (x_1)**2 + (x_2)**2
 
-Subject to: x_1 * x_2 - 25.0 >= 0,
-            (x_1)**2 + (x_2)**2 - 25.0 >= 0,
-            2 <= x_1 <= 50,
-            0 <= x_2 <= 50.
+    Subject to: x_1 * x_2 - 25.0 >= 0,
+                (x_1)**2 + (x_2)**2 - 25.0 >= 0,
+                2 <= x_1 <= 50,
+                0 <= x_2 <= 50.
 
 Approx. Answer:
     f([(250)**0.5 , (2.5)**0.5]) = 5.0
