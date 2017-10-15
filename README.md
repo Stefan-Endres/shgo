@@ -203,9 +203,10 @@ example function.
 
 Returns
 -------
-res : OptimizeResult
-    The optimization result represented as a `OptimizeResult` object.
-    Important attributes are:
+    res : OptimizeResult
+
+The optimization result represented as a `OptimizeResult` object.
+Important attributes are:
     ``x`` the solution array corresponding to the global minimum,
     ``fun`` the function output at the global solution,
     ``xl`` an ordered list of local minima solutions,
