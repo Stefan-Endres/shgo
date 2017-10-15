@@ -46,29 +46,37 @@ objective function.
 
 ---
 
-    g_cons : sequence of callable functions, optional
+    constraints : dict or sequence of dict, optional
 
-Function(s) used to define a limited subset to defining the feasible
-set of solutions in R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+Constraints definition.
+Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+                            h(x) == 0 applied as h : R^n -> R^p
 
-    NOTE: If the ``constraints`` sequence used in the local optimization
-          problem is not defined in ``minimizer_kwargs`` and a constrained
-          method is used then the ``g_cons`` will be used.
-          (Defining a ``constraints`` sequence in ``minimizer_kwargs``
-           means that ``g_cons`` will not be added so if equality
-           constraints and so forth need to be added then the inequality
-           functions in ``g_cons`` need to be added to ``minimizer_kwargs``
-           too).
+Each constraint is defined in a dictionary with fields:
 
----
+    * type : str
+        Constraint type: 'eq' for equality, 'ineq' for inequality.
+    * fun : callable
+        The function defining the constraint.
+    * jac : callable, optional
+        The Jacobian of `fun` (only for SLSQP).
+    * args : sequence, optional
+        Extra arguments to be passed to the function and Jacobian.
 
-    g_args : sequence of tuples, optional
+Equality constraint means that the constraint function result is to
+be zero whereas inequality means that it is to be non-negative.
+Note that COBYLA only supports inequality constraints.
 
-Any additional fixed parameters needed to completely specify the
-feasible set functions ``g_cons``.
-ex. g_cons = (f1(x, *args1), f2(x, *args2))
-then
-    g_args = (args1, args2)
+NOTE:   Only the COBYLA and SLSQP local minimize methods currently
+        support constraint arguments. If the ``constraints`` sequence
+        used in the local optimization problem is not defined in
+        ``minimizer_kwargs`` and a constrained method is used then the
+        global ``constraints`` will be used.
+        (Defining a ``constraints`` sequence in ``minimizer_kwargs``
+        means that ``constraints`` will not be added so if equality
+        constraints and so forth need to be added then the inequality
+        functions in ``constraints`` need to be added to
+        ``minimizer_kwargs`` too).
 
 ---
 

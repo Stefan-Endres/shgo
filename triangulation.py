@@ -750,8 +750,8 @@ class Vertex:
         if func is not None:
             if g_cons is not None:
                 self.feasible = True
-                for g in g_cons:
-                    if g(self.x_a, *g_cons_args) < 0.0:
+                for ind, g in enumerate(g_cons):
+                    if g(self.x_a, *g_cons_args[ind]) < 0.0:
                         self.f = numpy.inf
                         self.feasible = False
                 if self.feasible:

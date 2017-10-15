@@ -21,12 +21,30 @@ class TestFunction(object):
         self.expected_xl = expected_xl
         self.expected_funl = expected_funl
 
+def wrap_constraints(g):
+    cons = []
+    if g is not None:
+        if (type(g) is not tuple) and (type(g) is not list):
+            g = (g,)
+        else:
+            pass
+        for g in g:
+            cons.append({'type': 'ineq',
+                         'fun': g})
+        cons = tuple(cons)
+    else:
+        cons = None
+    return cons
+
 class Test1(TestFunction):
     def f(self, x):
         return x[0]**2 + x[1]**2
 
-    def g(self, x):
+    def g(x):
        return -(numpy.sum(x, axis=0) - 6.0)
+
+    cons = wrap_constraints(g)
+    print(cons)
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
                 expected_x=[0, 0])
@@ -42,8 +60,10 @@ class Test2(TestFunction):
     def f(self, x):
         return (x - 30) * numpy.sin(x)
 
-    def g(self, x):
+    def g(x):
         return 58 - numpy.sum(x, axis=0)
+
+    cons = wrap_constraints(g)
 
 test2_1 = Test2(bounds=[(0, 60)],
                 expected_x=[1.53567906],
@@ -101,6 +121,8 @@ class Test3(TestFunction):
 
     g = (g1, g2)
 
+    cons = wrap_constraints(g)
+
 test3_1 = Test3(bounds=[(2, 50), (0, 50)],
                 expected_x=[250**0.5, 2.5**0.5],
                 expected_fun=[5.0]
@@ -135,6 +157,8 @@ class Test4(TestFunction):
 
     g = (g1, g2, g3, g4)
 
+    cons = wrap_constraints(g)
+
 test4_1 = Test4(bounds=[(-10, 10),]*7,
                   expected_x=[2.330499, 1.951372, -0.4775414,
                               4.365726, -0.6244870, 1.038131, 1.594227],
@@ -166,6 +190,7 @@ class TestLJ(TestFunction):
         return s
 
     g = None
+    cons = wrap_constraints(g)
 
 N = 6
 boundsLJ = list(zip([-4.0] * 6, [4.0] * 6))
@@ -188,6 +213,7 @@ class TestTable(TestFunction):
             return 100
 
     g = None
+    cons = wrap_constraints(g)
 
 test_table = TestTable(bounds=[(-10, 10), (-10, 10)],
                        expected_fun=[50],
@@ -213,6 +239,7 @@ class TestInfeasible(TestFunction):
         return -(-x[0] + x[1] - 1)
 
     g = (g1, g2, g3, g4)
+    cons = wrap_constraints(g)
 
 test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  expected_fun=None,
@@ -224,9 +251,8 @@ def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol'):
 
-
-    res = shgo(test.f, test.bounds, args=args, g_cons=test.g,
-               g_args=g_args, n=n, iters=iters, callback=callback,
+    res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
+               n=n, iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs, options=options,
                sampling_method=sampling_method)
 
@@ -354,7 +380,7 @@ class TestShgoArguments(unittest.TestCase):
 
     def test_2_2_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 2 (univariate)"""
-        res = shgo(test2_1.f, test2_1.bounds, g_cons=test2_1.g,
+        res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
                    n=None, iters=1, sampling_method ='sobol')
 
         numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5, atol=1e-5)
@@ -422,18 +448,18 @@ class TestShgoArguments(unittest.TestCase):
 
     def test_5_1_simplicial_argless(self):
         """Test Default simplicial sampling settings on TestFunction 1"""
-        res = shgo(test1_1.f, test1_1.bounds, g_cons=test1_1.g)
+        res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons)
         numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
 
     def test_5_2_sobol_argless(self):
         """Test Default sobol sampling settings on TestFunction 1"""
-        res = shgo(test1_1.f, test1_1.bounds, g_cons=test1_1.g, sampling_method='sobol')
+        res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons, sampling_method='sobol')
         numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5, atol=1e-5)
 
     def test_6_1_simplicial_max_iter(self):
         """Test that maximum iteration option works on TestFunction 3"""
         options = {'max_iter': 2}
-        res = shgo(test3_1.f, test3_1.bounds, g_cons=test3_1.g,
+        res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
         print(res)
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
@@ -442,7 +468,7 @@ class TestShgoArguments(unittest.TestCase):
     def test_6_2_simplicial_min_iter(self):
         """Test that maximum iteration option works on TestFunction 3"""
         options = {'min_iter': 2}
-        res = shgo(test3_1.f, test3_1.bounds, g_cons=test3_1.g,
+        res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
         print(res)
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
@@ -498,7 +524,7 @@ class TestShgoFailures(unittest.TestCase):
                    'disp': True}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
-                   g_cons=test_infeasible.g,  n=100,  options=options,
+                   constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='sobol')
 
         numpy.testing.assert_equal(False, res.success)
@@ -510,7 +536,7 @@ class TestShgoFailures(unittest.TestCase):
                    'disp': True}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
-                   g_cons=test_infeasible.g, n=100, options=options,
+                   constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='simplicial')
         print(res)
 

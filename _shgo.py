@@ -11,9 +11,8 @@ from sobol_seq import *
 from time import time
 
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), h_cons=None, h_args=(),
-         n=100, iters=1, callback=None, minimizer_kwargs=None, options=None,
-         sampling_method='simplicial'):
+def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
+         minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     # sampling_method: str, options = 'sobol', 'simplicial'
     """
     Finds the global minimum of a function using simplicial homology global
@@ -39,25 +38,36 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), h_cons=None, h_args=(),
         Any additional fixed parameters needed to completely specify the
         objective function.
 
-    g_cons : sequence of callable functions, optional
-        Function(s) used to define a limited subset to defining the feasible
-        set of solutions in R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+    constraints : dict or sequence of dict, optional
+        Constraints definition.
+        Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+                                    h(x) == 0 applied as h : R^n -> R^p
 
-        NOTE: If the ``constraints`` sequence used in the local optimization
-              problem is not defined in ``minimizer_kwargs`` and a constrained
-              method is used then the ``g_cons`` will be used.
-              (Defining a ``constraints`` sequence in ``minimizer_kwargs``
-               means that ``g_cons`` will not be added so if equality
-               constraints and so forth need to be added then the inequality
-               functions in ``g_cons`` need to be added to ``minimizer_kwargs``
-               too).
+        Each constraint is defined in a dictionary with fields:
 
-    g_args : sequence of tuples, optional
-        Any additional fixed parameters needed to completely specify the
-        feasible set functions ``g_cons``.
-        ex. g_cons = (f1(x, *args1), f2(x, *args2))
-        then
-            g_args = (args1, args2)
+            type : str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun : callable
+                The function defining the constraint.
+            jac : callable, optional
+                The Jacobian of `fun` (only for SLSQP).
+            args : sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.
+        Note that COBYLA only supports inequality constraints.
+
+        NOTE:   Only the COBYLA and SLSQP local minimize methods currently
+                support constraint arguments. If the ``constraints`` sequence
+                used in the local optimization problem is not defined in
+                ``minimizer_kwargs`` and a constrained method is used then the
+                global ``constraints`` will be used.
+                (Defining a ``constraints`` sequence in ``minimizer_kwargs``
+                means that ``constraints`` will not be added so if equality
+                constraints and so forth need to be added then the inequality
+                functions in ``constraints`` need to be added to
+                ``minimizer_kwargs`` too).
 
     n : int, optional
         Number of sampling points used in the construction of the simplicial complex.
@@ -360,7 +370,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), h_cons=None, h_args=(),
     """
 
     # Initiate SHGO class
-    shc = SHGO(func, bounds, args=args, g_cons=g_cons, g_args=g_args, n=n,
+    shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,
                iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs,
                options=options, sampling_method=sampling_method)
@@ -395,7 +405,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), h_cons=None, h_args=(),
 
 # %% Define the base SHGO class inherited by the different methods
 class SHGO(object):
-    def __init__(self, func, bounds, args=(), g_cons=None, g_args=(), n=None,
+    def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='sobol'):
 
@@ -430,22 +440,26 @@ class SHGO(object):
         self.bounds = abound
 
         ## Constraints
-        if g_cons is not None:
-            if (type(g_cons) is not tuple) and (type(g_cons) is not list):
-                self.g_cons = (g_cons,)
-            else:
-                self.g_cons = g_cons
+        # Process constraint dict sequence:
+        if constraints is not None:
+            self.min_cons = constraints
+            self.g_cons = []
+            self.g_args = []
+            if (type(constraints) is not tuple) and (type(constraints) is not list):
+                constraints = (constraints,)
+
+            for cons in constraints:
+                if cons['type'] is 'ineq':
+                    self.g_cons.append(cons['fun'])
+                    try:
+                        self.g_args.append(cons['args'])
+                    except KeyError:
+                        self.g_args.append(())
+            self.g_cons = tuple(self.g_cons)
+            self.g_args = tuple(self.g_args)
         else:
             self.g_cons = None
-
-        self.g_args = g_args
-
-        # Define constraint function used in local minimisation
-        if g_cons is not None:
-            self.min_cons = []
-            for g in self.g_cons:
-                self.min_cons.append({'type': 'ineq',
-                                      'fun': g})
+            self.g_args = None
 
         # Define local minimization keyword arguments
         if minimizer_kwargs is not None:
@@ -475,7 +489,7 @@ class SHGO(object):
                                                  },
                                      'callback': self.callback
                                      }
-            if g_cons is not None:
+            if self.g_cons is not None:
                 if (self.minimizer_kwargs['method'] == 'SLSQP' or
                             self.minimizer_kwargs['method'] == 'COBYLA'):
                     self.minimizer_kwargs['constraints'] = self.min_cons
@@ -1336,8 +1350,8 @@ class SHGO(object):
     def sampling_subspace(self):
         """Find subspace of feasible points from g_func definition"""
         # Subspace of feasible points.
-        for g in self.g_cons:
-            self.C = self.C[g(self.C.T, *self.g_args) >= 0.0]
+        for ind, g in enumerate(self.g_cons):
+            self.C = self.C[g(self.C.T, *self.g_args[ind]) >= 0.0]
             if self.C.size == 0:
                 self.res.message = ('No sampling point found within the '
                                     + 'feasible set. Increasing sampling '
