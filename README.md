@@ -333,7 +333,7 @@ in physical chemistry [5]
 Now suppose we want to find a larger number of local minima, this can be
 accomplished for example by increasing the amount of sampling points or the
 number of iterations. We'll increase the number of sampling points to 60 and
-the number of iterations to 3 increased from the default 1 for a total of
+the number of iterations to 3 increased from the default 100 for a total of
 60 x 3 = 180 initial sampling points.
 
 ```python

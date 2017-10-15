@@ -11,8 +11,8 @@ from sobol_seq import *
 from time import time
 
 
-def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
-         callback=None, minimizer_kwargs=None, options=None,
+def shgo(func, bounds, args=(), g_cons=None, g_args=(), h_cons=None, h_args=(),
+         n=100, iters=1, callback=None, minimizer_kwargs=None, options=None,
          sampling_method='simplicial'):
     # sampling_method: str, options = 'sobol', 'simplicial'
     """
@@ -296,7 +296,7 @@ def shgo(func, bounds, args=(), g_cons=None, g_args=(), n=100, iters=1,
     Now suppose we want to find a larger number of local minima, this can be
     accomplished for example by increasing the amount of sampling points or the
     number of iterations. We'll increase the number of sampling points to 60 and
-    the number of iterations to 3 increased from the default 1 for a total of
+    the number of iterations to 3 increased from the default 100 for a total of
     60 x 3 = 180 initial sampling points.
 
     >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
