@@ -359,14 +359,14 @@ points for a total of 3 times.
 To demonstrate solving problems with non-linear constraints consider the
 following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
-minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
+    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-Subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
-            12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
-                -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                              20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
-            x_1 + x_2 + x_3 + x_4 - 1                               == 0,
-            1 >= x_i >= 0 for all i
+    Subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
+                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
+                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+                1 >= x_i >= 0 for all i
 
 Approx. Answer [4]:
     f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
