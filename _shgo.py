@@ -249,7 +249,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     empty bounds using ``None`` or objects like numpy.inf which will be
     converted to large float numbers.
 
-    >>> bounds = [(None, None), (None, None), (None, None), (None, None)]
+    >>> bounds = [(None, None), ]*4
     >>> result = shgo(rosen, bounds)
     >>> result.x
     array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
@@ -313,40 +313,63 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> len(result.xl), len(result_2.xl)
     (13, 33)
 
-    Note that there is a difference between specifying argumetns for
+    Note that there is a difference between specifying arguments for
     ex. ``n=180, iters=1`` and ``n=60, iters=3``.
     In the first case the promising points contained in the minimiser pool
     is processed only once. In the latter case it is processed every 60 sampling
     points for a total of 3 times.
 
     To demonstrate solving problems with non-linear constraints consider the
-    following example from [4] (Hock and Schittkowski problem 18)::
+    following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
-    Minimize: f = 0.01 * (x_1)**2 + (x_2)**2
+    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-    Subject to: x_1 * x_2 - 25.0 >= 0,
-                (x_1)**2 + (x_2)**2 - 25.0 >= 0,
-                2 <= x_1 <= 50,
-                0 <= x_2 <= 50.
+    Subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
+                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
+                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+                1 >= x_i >= 0 for all i
 
-    Approx. Answer:
-        f([(250)**0.5 , (2.5)**0.5]) = 5.0
+    Approx. Answer [4]:
+        f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
     >>> from scipy.optimize import shgo
-    >>> def f(x):
-    ...     return 0.01 * (x[0])**2 + (x[1])**2
+    >>> def f(x):  # (cattle-feed)
+    ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
     ...
     >>> def g1(x):
-    ...     return x[0] * x[1] - 25.0
+    ...     return 2.3*x[0] + 5.6*x[1] + 11.1*x[2] + 1.3*x[3] - 5  # >=0
     ...
     >>> def g2(x):
-    ...     return x[0]**2 + x[1]**2 - 25.0
+    ...     return (12*x[0] + 11.9*x[1] +41.8*x[2] + 52.1*x[3] - 21
+    ...             -1.645 *(0.28*x[0]**2 + 0.19*x[1]**2
+    ...                      +20.5*x[2]**2 + 0.62*x[3]**2)**0.5
+    ...             ) # >=0
     ...
-    >>> g = (g1, g2)
-    >>> bounds = [(2, 50), (0, 50)]
-    >>> result = shgo(f, bounds, g_cons=g)
-    >>> result.x, result.fun
-    (array([ 15.81138847,   1.58113881]), 4.9999999999996252)
+    >>> def h1(x):
+    ...     return x[0] + x[1] + x[2] + x[3] - 1  # == 0
+    ...
+    >>> cons = ({'type': 'ineq', 'fun': g1},
+    ...         {'type': 'ineq', 'fun': g2},
+    ...         {'type': 'eq', 'fun': h1})
+    >>> bounds = [(0, 1.0),]*4
+    >>> res = shgo(f, bounds, iters=2, constraints=cons)
+    >>> res
+         fun: 29.894378159142136
+        funl: array([ 29.89437816])
+     message: 'Optimization terminated successfully.'
+        nfev: 119
+         nit: 2
+       nlfev: 40
+       nljev: 0
+     success: True
+           x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
+             5.17765506e-02])
+          xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
+              5.17765506e-02]])
+    >>> g1(res.x), g2(res.x), h1(res.x)
+    (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
 
 
     References
