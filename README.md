@@ -82,7 +82,7 @@ NOTE:   Only the COBYLA and SLSQP local minimize methods currently
 
     n : int, optional
     
-Number of sampling points used in the construction of the simplicial complex.
+Number of sampling points used in the construction of the simplicial complex. Note that this argument is only used for ``sobol`` and other arbitrary sampling_methods.
 
 ---
 
@@ -362,11 +362,14 @@ following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
     minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
 
-    Subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+
                 12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
                     -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
                                   20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+
                 x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+
                 1 >= x_i >= 0 for all i
 
 Approx. Answer [4]:
@@ -374,6 +377,7 @@ Approx. Answer [4]:
 
 ```python
     >>> from scipy.optimize import shgo
+    >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
     ...
@@ -382,8 +386,8 @@ Approx. Answer [4]:
     ...
     >>> def g2(x):
     ...     return (12*x[0] + 11.9*x[1] +41.8*x[2] + 52.1*x[3] - 21
-    ...             -1.645 *(0.28*x[0]**2 + 0.19*x[1]**2
-    ...                      +20.5*x[2]**2 + 0.62*x[3]**2)**0.5
+    ...             - 1.645 * np.sqrt(0.28*x[0]**2 + 0.19*x[1]**2
+    ...                             + 20.5*x[2]**2 + 0.62*x[3]**2)
     ...             ) # >=0
     ...
     >>> def h1(x):
