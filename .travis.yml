@@ -40,7 +40,11 @@ install:
   - if [[ "${TRAVIS_PYTHON_VERSION%.*}" == "2" ]]; then
       conda install functools32;
     fi
+  - pip install coveralls
 
 # Run test
 script:
   - python -m unittest shgo_tests
+  - coverage run shgo_tests.py
+after_success:
+  - coveralls

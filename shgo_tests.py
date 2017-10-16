@@ -44,7 +44,6 @@ class Test1(TestFunction):
        return -(numpy.sum(x, axis=0) - 6.0)
 
     cons = wrap_constraints(g)
-    print(cons)
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
                 expected_x=[0, 0])
@@ -247,7 +246,7 @@ test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  )
 
 
-def run_test(test, args=(), g_args=(), test_atol=1e-5, n=100, iters=None,
+def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol'):
 
@@ -461,7 +460,6 @@ class TestShgoArguments(unittest.TestCase):
         options = {'max_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        print(res)
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
@@ -470,7 +468,6 @@ class TestShgoArguments(unittest.TestCase):
         options = {'min_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        print(res)
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
@@ -489,7 +486,6 @@ class TestShgoFailures(unittest.TestCase):
                    'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='sobol')
-        print(res)
         numpy.testing.assert_equal(False, res.success)
         #numpy.testing.assert_equal(9, res.nfev)
         numpy.testing.assert_equal(12, res.nfev)
@@ -501,7 +497,6 @@ class TestShgoFailures(unittest.TestCase):
                    'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='simplicial')
-        #print(res)
         numpy.testing.assert_equal(False, res.success)
 
     def test_4_1_bound_err(self):
@@ -538,7 +533,6 @@ class TestShgoFailures(unittest.TestCase):
         res = shgo(test_infeasible.f, test_infeasible.bounds,
                    constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='simplicial')
-        print(res)
 
         numpy.testing.assert_equal(False, res.success)
 
@@ -551,6 +545,4 @@ class TestShgoFailures(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    pass
-    #TestTgo=tgo_suite()
-    #unittest.TextTestRunner(verbosity=2).run(TestTgo)
+    unittest.main()

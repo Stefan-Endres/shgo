@@ -51,7 +51,7 @@ class Complex:
         self.hgrd = 0  # Complex group rank differential
         #self.hgr = self.C0.hg_n
 
-        # Build initial graph #TODO: This could be saved
+        # Build initial graph
         self.graph_map()
 
         self.performance = []

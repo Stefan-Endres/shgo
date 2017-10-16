@@ -1,3 +1,10 @@
+dev*.py
+_tgo.py
+htmlcov
+min_map_dev.py
+.ipynb_checkpoints/
+
+
 # Editor temporary/working/backup files #
 #########################################
 .#*
