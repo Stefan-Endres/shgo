@@ -1,4 +1,8 @@
+.. image:: https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master
+    :target: https://travis-ci.org/Stefan-Endres/shgo
 |Build Status| |Build Status|
+.. image:: https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master
+    :target: https://coveralls.io/r/Stefan-Endres/shgo?branch=master
 
 Finds the global minimum of a function using simplicial homology global
 optimisation. Appropriate for solving general purpose NLP and blackbox
@@ -256,7 +260,7 @@ Global optimisation using simplicial homology global optimisation [1].
 Appropriate for solving general purpose NLP and blackbox optimisation
 problems to global optimality (low dimensional problems).
 
-In general, the optimisation problems are of the form::
+In general, the optimisation problems are of the form:
 
 ::
 
@@ -346,7 +350,12 @@ input 30 initial sampling points of the Sobol sequence
 ``shgo`` also has a return for any other local minima that was found,
 these can be called using:
 
-``python >>> result.xl, result.funl (array([[ 512.   ,  404.23180542],    [ 283.07593402, -487.12566542],    [-294.66820039, -462.01964031],    [-105.87688985,  423.15324143],    [-242.97923629,  274.38032063],    [-506.25823477,    6.3131022 ],    [-408.71981195, -156.10117154],    [ 150.23210485,  301.31378508],    [  91.00922754, -391.28375925],    [ 202.8966344 , -269.38042147],    [ 361.66625957, -106.96490692],    [-219.40615102, -244.06022436],    [ 151.59603137, -100.61082677]]),    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097,    -559.78685655, -557.36868733, -507.87385942, -493.9605115 ,    -426.48799655, -421.15571437, -419.31194957, -410.98477763,    -202.53912972]))``
+.. code:: python
+
+    >>> result.xl
+    array([[ 512., 404.23180542], [ 283.07593402, -487.12566542], [-294.66820039, -462.01964031], [-105.87688985,  423.15324143], [-242.97923629,  274.38032063], [-506.25823477, 6.3131022 ], [-408.71981195, -156.10117154], [150.23210485,  301.31378508], [91.00922754, -391.28375925], [ 202.8966344, -269.38042147], [361.66625957, -106.96490692], [-219.40615102, -244.06022436], [ 151.59603137, -100.61082677]])
+    >>> result.funl 
+    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097, -559.78685655, -557.36868733, -507.87385942, -493.9605115, -426.48799655, -421.15571437, -419.31194957, -410.98477763, -202.53912972])
 
 These results are useful in applications where there are many global
 minima and the values of other global minima are desired or where the
@@ -373,7 +382,7 @@ of 3 times.
 
 To demonstrate solving problems with non-linear constraints consider the
 following example from Hock and Schittkowski problem 73 (cattle-feed)
-[4]::
+[4]:
 
 ::
 
