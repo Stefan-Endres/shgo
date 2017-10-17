@@ -27,6 +27,7 @@ function ``R^n -> R`` ``g_i(x)`` are the inequality constraints.
 Installation
 ------------
 .. code::
+
     pip install shgo
 
 
