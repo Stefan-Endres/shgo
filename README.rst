@@ -4,6 +4,9 @@
 .. image:: https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master
     :target: https://coveralls.io/r/Stefan-Endres/shgo?branch=master
 
+Description
+-----------
+
 Finds the global minimum of a function using simplicial homology global
 optimisation. Appropriate for solving general purpose NLP and blackbox
 optimisation problems to global optimality (low dimensional problems).
@@ -19,6 +22,161 @@ The general form of an optimisation problem is given by:
 where x is a vector of one or more variables. ``f(x)`` is the objective
 function ``R^n -> R`` ``g_i(x)`` are the inequality constraints.
 ``h_j(x)`` are the equality constrains.
+
+
+Installation
+------------
+.. code::
+    pip install shgo
+
+
+Examples
+--------
+
+First consider the problem of minimizing the Rosenbrock function. This
+function is implemented in ``rosen`` in ``scipy.optimize``
+
+.. code:: python
+
+    >>> from scipy.optimize import rosen
+    >>> from shgo import shgo
+    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+    >>> result = shgo(rosen, bounds)
+    >>> result.x, result.fun
+    (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
+
+Note that bounds determine the dimensionality of the objective function
+and is therefore a required input, however you can specify empty bounds
+using ``None`` or objects like numpy.inf which will be converted to
+large float numbers.
+
+.. code:: python
+
+    >>> bounds = [(None, None), ]*4
+    >>> result = shgo(rosen, bounds)
+    >>> result.x
+    array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
+
+Next we consider the Eggholder function, a problem with several local
+minima and one global minimum. We will demonstrate the use of arguments
+and the capabilities of shgo.
+(https://en.wikipedia.org/wiki/Test\_functions\_for\_optimization)
+
+.. code:: python
+
+    >>> from shgo import shgo
+    >>> import numpy as np
+    >>> def eggholder(x):
+    ...     return (-(x[1] + 47.0)
+    ...             * np.sin(np.sqrt(abs(x[0]/2.0 + (x[1] + 47.0))))
+    ...             - x[0] * np.sin(np.sqrt(abs(x[0] - (x[1] + 47.0))))
+    ...             )
+    ...
+    >>> bounds = [(-512, 512), (-512, 512)]
+
+shgo has two built-in low discrepancy sampling sequences. First we will
+input 30 initial sampling points of the Sobol sequence
+
+.. code:: python
+
+    >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
+    >>> result.x, result.fun
+    (array([ 512.    ,  404.23180542]), -959.64066272085051)
+
+``shgo`` also has a return for any other local minima that was found,
+these can be called using:
+
+.. code:: python
+
+    >>> result.xl
+    array([[ 512., 404.23180542], [ 283.07593402, -487.12566542], [-294.66820039, -462.01964031], [-105.87688985,  423.15324143], [-242.97923629,  274.38032063], [-506.25823477, 6.3131022 ], [-408.71981195, -156.10117154], [150.23210485,  301.31378508], [91.00922754, -391.28375925], [ 202.8966344, -269.38042147], [361.66625957, -106.96490692], [-219.40615102, -244.06022436], [ 151.59603137, -100.61082677]])
+    >>> result.funl
+    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097, -559.78685655, -557.36868733, -507.87385942, -493.9605115, -426.48799655, -421.15571437, -419.31194957, -410.98477763, -202.53912972])
+
+These results are useful in applications where there are many global
+minima and the values of other global minima are desired or where the
+local minima can provide insight into the system such are for example
+morphologies in physical chemistry [5]
+
+Now suppose we want to find a larger number of local minima, this can be
+accomplished for example by increasing the amount of sampling points or
+the number of iterations. We'll increase the number of sampling points
+to 60 and the number of iterations to 3 increased from the default 100
+for a total of 60 x 3 = 180 initial sampling points.
+
+.. code:: python
+
+    >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
+    >>> len(result.xl), len(result_2.xl)
+    (13, 33)
+
+Note that there is a difference between specifying arguments for ex.
+``n=180, iters=1`` and ``n=60, iters=3``. In the first case the
+promising points contained in the minimiser pool is processed only once.
+In the latter case it is processed every 60 sampling points for a total
+of 3 times.
+
+To demonstrate solving problems with non-linear constraints consider the
+following example from Hock and Schittkowski problem 73 (cattle-feed)
+[4]:
+
+::
+
+    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
+
+    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
+
+                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
+                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
+                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
+
+                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
+
+                1 >= x_i >= 0 for all i
+
+Approx. Answer [4]: f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) =
+29.894378
+
+.. code:: python
+
+        >>> from scipy.optimize import shgo
+        >>> import numpy as np
+        >>> def f(x):  # (cattle-feed)
+        ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
+        ...
+        >>> def g1(x):
+        ...     return 2.3*x[0] + 5.6*x[1] + 11.1*x[2] + 1.3*x[3] - 5  # >=0
+        ...
+        >>> def g2(x):
+        ...     return (12*x[0] + 11.9*x[1] +41.8*x[2] + 52.1*x[3] - 21
+        ...             - 1.645 * np.sqrt(0.28*x[0]**2 + 0.19*x[1]**2
+        ...                             + 20.5*x[2]**2 + 0.62*x[3]**2)
+        ...             ) # >=0
+        ...
+        >>> def h1(x):
+        ...     return x[0] + x[1] + x[2] + x[3] - 1  # == 0
+        ...
+        >>> cons = ({'type': 'ineq', 'fun': g1},
+        ...         {'type': 'ineq', 'fun': g2},
+        ...         {'type': 'eq', 'fun': h1})
+        >>> bounds = [(0, 1.0),]*4
+        >>> res = shgo(f, bounds, iters=2, constraints=cons)
+        >>> res
+             fun: 29.894378159142136
+            funl: array([ 29.89437816])
+         message: 'Optimization terminated successfully.'
+            nfev: 119
+             nit: 2
+           nlfev: 40
+           nljev: 0
+         success: True
+               x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
+                 5.17765506e-02])
+              xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
+                  5.17765506e-02]])
+        >>> g1(res.x), g2(res.x), h1(res.x)
+        (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
+
 
 Parameters
 ----------
@@ -294,153 +452,6 @@ direction numbers for generating Sobol sequences is provided by [3] by
 Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is
 available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/
 translated to Python 3 by Carl Sandrock 2016-03-31.
-
-Examples
---------
-
-First consider the problem of minimizing the Rosenbrock function. This
-function is implemented in ``rosen`` in ``scipy.optimize``
-
-.. code:: python
-
-    >>> from scipy.optimize import rosen
-    >>> from shgo import shgo
-    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
-    >>> result = shgo(rosen, bounds)
-    >>> result.x, result.fun
-    (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
-
-Note that bounds determine the dimensionality of the objective function
-and is therefore a required input, however you can specify empty bounds
-using ``None`` or objects like numpy.inf which will be converted to
-large float numbers.
-
-.. code:: python
-
-    >>> bounds = [(None, None), ]*4
-    >>> result = shgo(rosen, bounds)
-    >>> result.x
-    array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
-
-Next we consider the Eggholder function, a problem with several local
-minima and one global minimum. We will demonstrate the use of arguments
-and the capabilities of shgo.
-(https://en.wikipedia.org/wiki/Test\_functions\_for\_optimization)
-
-.. code:: python
-
-    >>> from shgo import shgo
-    >>> import numpy as np
-    >>> def eggholder(x):
-    ...     return (-(x[1] + 47.0)
-    ...             * np.sin(np.sqrt(abs(x[0]/2.0 + (x[1] + 47.0))))
-    ...             - x[0] * np.sin(np.sqrt(abs(x[0] - (x[1] + 47.0))))
-    ...             )
-    ...
-    >>> bounds = [(-512, 512), (-512, 512)]
-
-shgo has two built-in low discrepancy sampling sequences. First we will
-input 30 initial sampling points of the Sobol sequence
-
-.. code:: python
-
-    >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
-    >>> result.x, result.fun
-    (array([ 512.    ,  404.23180542]), -959.64066272085051)
-
-``shgo`` also has a return for any other local minima that was found,
-these can be called using:
-
-.. code:: python
-
-    >>> result.xl
-    array([[ 512., 404.23180542], [ 283.07593402, -487.12566542], [-294.66820039, -462.01964031], [-105.87688985,  423.15324143], [-242.97923629,  274.38032063], [-506.25823477, 6.3131022 ], [-408.71981195, -156.10117154], [150.23210485,  301.31378508], [91.00922754, -391.28375925], [ 202.8966344, -269.38042147], [361.66625957, -106.96490692], [-219.40615102, -244.06022436], [ 151.59603137, -100.61082677]])
-    >>> result.funl 
-    array([-959.64066272, -718.16745962, -704.80659592, -565.99778097, -559.78685655, -557.36868733, -507.87385942, -493.9605115, -426.48799655, -421.15571437, -419.31194957, -410.98477763, -202.53912972])
-
-These results are useful in applications where there are many global
-minima and the values of other global minima are desired or where the
-local minima can provide insight into the system such are for example
-morphologies in physical chemistry [5]
-
-Now suppose we want to find a larger number of local minima, this can be
-accomplished for example by increasing the amount of sampling points or
-the number of iterations. We'll increase the number of sampling points
-to 60 and the number of iterations to 3 increased from the default 100
-for a total of 60 x 3 = 180 initial sampling points.
-
-.. code:: python
-
-    >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
-    >>> len(result.xl), len(result_2.xl)
-    (13, 33)
-
-Note that there is a difference between specifying arguments for ex.
-``n=180, iters=1`` and ``n=60, iters=3``. In the first case the
-promising points contained in the minimiser pool is processed only once.
-In the latter case it is processed every 60 sampling points for a total
-of 3 times.
-
-To demonstrate solving problems with non-linear constraints consider the
-following example from Hock and Schittkowski problem 73 (cattle-feed)
-[4]:
-
-::
-
-    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
-
-    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
-
-                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
-                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
-
-                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
-
-                1 >= x_i >= 0 for all i
-
-Approx. Answer [4]: f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) =
-29.894378
-
-.. code:: python
-
-        >>> from scipy.optimize import shgo
-        >>> import numpy as np
-        >>> def f(x):  # (cattle-feed)
-        ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
-        ...
-        >>> def g1(x):
-        ...     return 2.3*x[0] + 5.6*x[1] + 11.1*x[2] + 1.3*x[3] - 5  # >=0
-        ...
-        >>> def g2(x):
-        ...     return (12*x[0] + 11.9*x[1] +41.8*x[2] + 52.1*x[3] - 21
-        ...             - 1.645 * np.sqrt(0.28*x[0]**2 + 0.19*x[1]**2
-        ...                             + 20.5*x[2]**2 + 0.62*x[3]**2)
-        ...             ) # >=0
-        ...
-        >>> def h1(x):
-        ...     return x[0] + x[1] + x[2] + x[3] - 1  # == 0
-        ...
-        >>> cons = ({'type': 'ineq', 'fun': g1},
-        ...         {'type': 'ineq', 'fun': g2},
-        ...         {'type': 'eq', 'fun': h1})
-        >>> bounds = [(0, 1.0),]*4
-        >>> res = shgo(f, bounds, iters=2, constraints=cons)
-        >>> res
-             fun: 29.894378159142136
-            funl: array([ 29.89437816])
-         message: 'Optimization terminated successfully.'
-            nfev: 119
-             nit: 2
-           nlfev: 40
-           nljev: 0
-         success: True
-               x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-                 5.17765506e-02])
-              xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-                  5.17765506e-02]])
-        >>> g1(res.x), g2(res.x), h1(res.x)
-        (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
 
 References
 ----------
