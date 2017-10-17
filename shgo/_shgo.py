@@ -9,8 +9,8 @@ from time import time
 import numpy
 import scipy.optimize
 import scipy.spatial
-from .triangulation import *
-
+from shgo.triangulation import *
+from shgo.sobol_seq import *
 from shgo.sobol_seq import *
 
 

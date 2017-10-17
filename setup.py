@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='shgo',
-      version='0.3.2',
+      version='0.3.3',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres',

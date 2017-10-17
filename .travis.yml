@@ -43,8 +43,6 @@ install:
   - pip install coveralls
   - python setup.py install
 
-
-
 # Run test
 script:
   - python -m unittest shgo.shgo_tests
