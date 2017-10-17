@@ -41,6 +41,8 @@ install:
       conda install functools32;
     fi
   - pip install coveralls
+  # Install shgo
+  - python setup.py install
 
 # Run test
 script:
