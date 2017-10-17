@@ -766,7 +766,6 @@ class SHGO(object):
         if self.sampling_method == 'simplicial':
             self.f_lowest = numpy.inf
             for x in self.HC.V.cache:
-                print(x)
                 if self.HC.V[x].f < self.f_lowest:
                     self.f_lowest = self.HC.V[x].f
                     self.x_lowest = self.HC.V[x].x_a
