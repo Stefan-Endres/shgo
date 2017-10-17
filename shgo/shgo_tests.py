@@ -5,11 +5,12 @@ NOTE: For TestTgoFuncs test_f1 and test_f2 adequately test the
       functionality of the algorithm, the rest can be omitted to
       increase speed.
 """
-import unittest
-import numpy
-from _shgo import *
 import logging
 import sys
+import unittest
+
+from shgo._shgo import *
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class TestFunction(object):

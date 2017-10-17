@@ -3,12 +3,15 @@
 """ execfile('tgo.py')
 """
 from __future__ import division, print_function, absolute_import
-import numpy
-import scipy.spatial
-import scipy.optimize
-from triangulation import *
-from sobol_seq import *
+
 from time import time
+
+import numpy
+import scipy.optimize
+import scipy.spatial
+from triangulation import *
+
+from shgo.sobol_seq import *
 
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
@@ -1668,5 +1671,5 @@ class LMapCache:
 
 
 if __name__ == '__main__':
-    import doctest
+    pass
     # doctest.testmod()
