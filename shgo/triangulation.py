@@ -482,7 +482,7 @@ class Complex:
                     cells += 1
 
         #self.hgr = self.hgr/cells * 100
-        logging.info('self.hgr = {}'.format(self.hgr))
+        #logging.info('self.hgr = {}'.format(self.hgr))
         self.hgrd = self.hgr - p_hgr  # Complex group rank differential
         return self.hgr
 

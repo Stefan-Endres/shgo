@@ -243,7 +243,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     First consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`
 
-    >>> from scipy.optimize import rosen, shgo
+    >>> from scipy.optimize import rosen
+    >>> from shgo import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
@@ -264,7 +265,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the capabilities of shgo.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -342,7 +343,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Approx. Answer [4]:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]

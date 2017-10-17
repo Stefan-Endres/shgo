@@ -303,7 +303,8 @@ function is implemented in ``rosen`` in ``scipy.optimize``
 
 .. code:: python
 
-    >>> from scipy.optimize import rosen, shgo
+    >>> from scipy.optimize import rosen
+    >>> from shgo import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
@@ -328,7 +329,7 @@ and the capabilities of shgo.
 
 .. code:: python
 
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
