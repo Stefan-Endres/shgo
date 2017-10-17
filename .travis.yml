@@ -33,7 +33,7 @@ before_install:
   - conda update -q conda
   - conda info -a
 
-# Install packages
+# Install packages # Install shgo
 install:
   - conda env create --file environment.yml python=$TRAVIS_PYTHON_VERSION
   - source activate shgo
@@ -41,8 +41,9 @@ install:
       conda install functools32;
     fi
   - pip install coveralls
-  # Install shgo
   - python setup.py install
+
+
 
 # Run test
 script:
