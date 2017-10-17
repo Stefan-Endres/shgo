@@ -11,7 +11,6 @@ import scipy.optimize
 import scipy.spatial
 from shgo.triangulation import *
 from shgo.sobol_seq import *
-from shgo.sobol_seq import *
 
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
@@ -1292,7 +1291,7 @@ class SHGO(object):
                 self.X_min = []
 
     @staticmethod
-    def sobol_points(n, d):
+    def sobol_points_old(n, d):
         """
         sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
         Carl Sandrock 2016-03-31 (MIT lic)
@@ -1354,13 +1353,14 @@ class SHGO(object):
             return points
 
     @staticmethod
-    def sobol_points_wrap(N, D):
+    def sobol_points(n, d):
         """
         Wrapper for sobol_seq.i4_sobol_generate
 
         Generate N sampling points in D dimensions
         """
-        points = i4_sobol_generate(D, N, skip=0)
+        #TODO Investigate slight differences in sequence generation patterns
+        points = i4_sobol_generate(d, n, skip=0)
 
         return points
 
