@@ -44,7 +44,7 @@ install:
 
 # Run test
 script:
-  - python -m unittest shgo_tests
-  - coverage run shgo_tests.py
+  - python -m unittest shho.shgo_tests
+  - coverage run ./shgo/shgo_tests.py
 after_success:
   - coveralls
