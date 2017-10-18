@@ -1,11 +1,12 @@
 from setuptools import setup
 
 # Get the long description from the README file
-with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()
+def readme():
+    with open('README.rst') as f:
+        return f.read()
 
 setup(name='shgo',
-      version='0.3.3',
+      version='0.3.4',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres',
@@ -16,7 +17,7 @@ setup(name='shgo',
           'scipy',
           'numpy'
       ],
-      long_description=long_description,
+      long_description=readme(),
       keywords='optimization',
       classifiers=[
           # How mature is this project? Common values are
