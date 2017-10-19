@@ -13,18 +13,14 @@
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Build Status](https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master)](https://coveralls.io/r/Stefan-Endres/shgo?branch=master)
 
-Finds the global minimum of a function using simplicial homology global
-optimisation. Appropriate for solving general purpose NLP and blackbox optimisation
-problems to global optimality (low dimensional problems).
-The general form of an optimisation problem is given by:
+Finds the global minimum of a function using simplicial homology global optimisation. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems). The general form of an optimisation problem is given by:
 
-```
 \begin{eqnarray} \nonumber
-  \min_x && f(x),  x \in \Re^n \\ \nonumber
+  \min_x && f(x),  x \in \mathbb{R}^n \\ \nonumber
    \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m\\ \nonumber
    && h_j(x) = 0,  ~\forall j = 1,...,p
 \end{eqnarray}
-```
+
 
 where $x$ is a vector of one or more variables.
 $f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
@@ -46,44 +42,30 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 
 
 ## Introduction
-Global optimisation using simplicial homology global optimisation [1].
-Appropriate for solving general purpose NLP and blackbox optimisation
-problems to global optimality (low dimensional problems).
+Global optimisation using simplicial homology global optimisation [1]. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems).
 
 In general, the optimisation problems are of the form::
 
-\begin{eqnarray}
-  \min_x && f(x), \\\\\\
-   \text{subject to } && c_E(x) = 0,\\\\\\
-   && c_I(x) \le 0,
+\begin{eqnarray} \nonumber
+  \min_x && f(x),  x \in \mathbb{R}^n \\ \nonumber
+   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m\\ \nonumber
+   && h_j(x) = 0,  ~\forall j = 1,...,p
 \end{eqnarray}
 
-where x is a vector of one or more variables.
-``f(x)`` is the objective function ``R^n -> R``
-``g_i(x)`` are the inequality constraints.
-``h_j(x)`` are the equality constrains.
+where $x$ is a vector of one or more variables.
+$f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
 
-Optionally, the lower and upper bounds for each element in x can also be
-specified using the `bounds` argument.
+$g_i(x)$ are the inequality constraints $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
 
-While most of the theoretical advantages of shgo are only proven for when
-``f(x)`` is a Lipschitz smooth function. The algorithm is also proven to
-converge to the global optimum for the more general case where ``f(x)`` is
-non-continuous, non-convex and non-smooth iff the default sampling method
-is used [1].
+$h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
 
-The local search method may be specified using the ``minimizer_kwargs``
-parameter which is inputted to ``scipy.optimize.minimize``. By default
-the ``SLSQP`` method is used. In general it is recommended to use the
-``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
-are defined for the problem since the other methods do not use constraints.
+Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $x$ can also be specified using the `bounds` argument.
 
-The `sobol` method points are generated using the Sobol (1967) [2] sequence.
-The primitive polynomials and various sets of initial direction numbers for
-generating Sobol sequences is provided by [3] by Frances Kuo and
-Stephen Joe. The original program sobol.cc (MIT) is available and described
-at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
-Carl Sandrock 2016-03-31.
+While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where ``f(x)`` is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
+
+The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
+
+The `sobol` method points are generated using the Sobol (1967) [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
 
 ### Installation
 
@@ -98,13 +80,13 @@ Latest:
 ```
 
 
-Examples
---------
+###  Elementary examples
 
-#### Rosen
+#### Rosenbrock function
 
-First consider the problem of minimizing the Rosenbrock function. This
-function is implemented in `rosen` in `scipy.optimize`
+##### Bounded variables
+
+First consider the problem of minimizing the [Rosenbrock function](https://en.wikipedia.org/wiki/Test_functions_for_optimization). This function is implemented in `rosen` in `scipy.optimize`
 
 ```python
 >>> from scipy.optimize import rosen, shgo
@@ -114,10 +96,9 @@ function is implemented in `rosen` in `scipy.optimize`
 (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
 ```
 
-Note that bounds determine the dimensionality of the objective
-function and is therefore a required input, however you can specify
-empty bounds using ``None`` or objects like numpy.inf which will be
-converted to large float numbers.
+##### Unbounded variables
+
+Note that bounds determine the dimensionality of the objective function and is therefore a required  nput, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
 
 ```python
 >>> bounds = [(None, None), ]*4
@@ -126,10 +107,9 @@ converted to large float numbers.
 array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 ```
 
-Next we consider the Eggholder function, a problem with several local
-minima and one global minimum. We will demonstrate the use of arguments and
-the capabilities of shgo.
-(https://en.wikipedia.org/wiki/Test_functions_for_optimization)
+#### Eggholder function
+
+Next we consider the [Eggholder function](https://en.wikipedia.org/wiki/Test_functions_for_optimization), a problem with several local minima and one global minimum. We will demonstrate the use of some of the arguments and capabilities of shgo.
 
 ```python
 >>> from scipy.optimize import shgo
@@ -142,8 +122,8 @@ the capabilities of shgo.
 ...
 >>> bounds = [(-512, 512), (-512, 512)]
 ```
-shgo has two built-in low discrepancy sampling sequences. First we will
-input 30 initial sampling points of the Sobol sequence
+
+shgo has two built-in low discrepancy sampling sequences. The default ``simplicial`` and the ``sobol`` sequence. First we will input 30 initial sampling points of the Sobol sequence
 
 ```python
 >>> result = shgo(eggholder, bounds, n=30, sampling_method='sobol')
@@ -151,8 +131,7 @@ input 30 initial sampling points of the Sobol sequence
 (array([ 512.    ,  404.23180542]), -959.64066272085051)
 ```
 
-``shgo`` also has a return for any other local minima that was found, these
- can be called using:
+``shgo`` also has a return for any other local minima that was found, these  can be called using:
 
 ```python
 >>> result.xl, result.funl
@@ -175,16 +154,9 @@ input 30 initial sampling points of the Sobol sequence
    -202.53912972]))
    ```
 
-These results are useful in applications where there are many global minima
-and the values of other global minima are desired or where the local minima
-can provide insight into the system such are for example morphologies
-in physical chemistry [5]
+These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [5].
 
-Now suppose we want to find a larger number of local minima, this can be
-accomplished for example by increasing the amount of sampling points or the
-number of iterations. We'll increase the number of sampling points to 60 and
-the number of iterations to 3 increased from the default 100 for a total of
-60 x 3 = 180 initial sampling points.
+Now suppose we want to find a larger number of local minima (or hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
 
 ```python
 >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
@@ -192,29 +164,22 @@ the number of iterations to 3 increased from the default 100 for a total of
 (13, 33)
 ```
 
-Note that there is a difference between specifying arguments for
-ex. ``n=180, iters=1`` and ``n=60, iters=3``.
-In the first case the promising points contained in the minimiser pool
-is processed only once. In the latter case it is processed every 60 sampling
-points for a total of 3 times.
+Note that there is a difference between specifying arguments for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the promising points contained in the minimiser pool is processed only once. In the latter case it is processed every 60 sampling points for a total of 3 iterations.
 
-To demonstrate solving problems with non-linear constraints consider the
-following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
+To demonstrate solving problems with non-linear constraints consider the following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
-    minimize: f = 24.55 * x_1 + 26.75 * x_2 + 39 * x_3 + 40.50 * x_4
+\begin{eqnarray} \nonumber
+  \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 &\\ \nonumber
+   \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0 \\ \nonumber
+   && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21
+                    -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
+                                  20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\ \nonumber
+&& x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\ \nonumber
+&& 0 \le x_i  ~~ \forall i
+\end{eqnarray}
 
-    subject to: 2.3 * x_1 + 5.6 * x_2 + 11.1 * x_3 + 1.3 * x_4 - 5      >= 0,
-
-                12 * x_1 + 11.9 * x_2 + 41.8 * x_3 + 52.1 * x_4 - 21
-                    -1.645 * sqrt(0.28 * x_1**2 + 0.19 * x_2**2 +
-                                  20.5 * x_3**2 + 0.62 * x_4**2)        >= 0,
-
-                x_1 + x_2 + x_3 + x_4 - 1                               == 0,
-
-                1 >= x_i >= 0 for all i
-
-Approx. Answer [4]:
-    f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
+Approx. answer [4]:
+    $f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378$
 
 ```python
     >>> from scipy.optimize import shgo
