@@ -20,13 +20,13 @@ where x is a vector of one or more variables.
 
 
 ### Table of Contents
-**[Introduction](#introduction)**<br>
-**[Installation](#installation)**<br>
-**[Examples](#examples)**<br>
+- **[Introduction](#introduction)**<br>
+- **[Installation](#installation)**<br>
+- **[Examples](#examples)**<br>
     * **[Rosen](#rosen)**<br>
-**[Parameters](#parameters)**<br>
-**[Returns](#returns)**<br>
-**[References](#references)**<br>
+- **[Parameters](#parameters)**<br>
+- **[Returns](#returns)**<br>
+- **[References](#references)**<br>
 
 
 
