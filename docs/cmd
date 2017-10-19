@@ -1,2 +1,4 @@
-sudo python -m readme2tex --username stefan-endres --project shgo --output README.md READOTHER.md
- 
+sudo python -m readme2tex --htmlize --svgdir svgs/ --username stefan-endres --project shgo/docs --output README.md READOTHER.md
+
+
+sudo python -m readme2tex --htmlize --nocdn --username stefan-endres --project shgo/docs --output README.md READOTHER.md
