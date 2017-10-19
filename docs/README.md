@@ -13,7 +13,11 @@
 
 Finds the global minimum of a function using simplicial homology global optimisation. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems). The general form of an optimisation problem is given by:
 
-
+\begin{eqnarray}
+  \min_x && f(x),  x \in \mathbb{R}^n \\
+   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\
+   && h_j(x) = 0,  ~\forall j = 1,...,p
+\end{eqnarray}
 
 
 where $x$ is a vector of one or more variables.
