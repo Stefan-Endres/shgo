@@ -92,8 +92,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
             * args : tuple
                 Extra arguments passed to the objective function (``func``) and
                 its derivatives (Jacobian, Hessian).
-
-            options : {ftol: 1e-12}
+            * options : dict, optional
+                Note that by default the tolerance is specified as
+                ``{ftol: 1e-12}``
 
     options : dict, optional
         A dictionary of solver options. Many of the options specified for the

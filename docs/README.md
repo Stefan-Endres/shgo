@@ -15,7 +15,7 @@
 
 Finds the global minimum of a function using simplicial homology global optimisation. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems). The general form of an optimisation problem is given by:
 
-\begin{eqnarray}
+\begin{eqnarray} \nonumber
   \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
    \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\ \nonumber
    && h_j(x) = 0,  ~\forall j = 1,...,p
@@ -61,7 +61,7 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 
 Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $x$ can also be specified using the `bounds` argument.
 
-While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where ``f(x)`` is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
+While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
 
 The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
@@ -71,12 +71,12 @@ The `sobol` method points are generated using the Sobol (1967) [2] sequence. The
 
 Stable:
 ```
-\$ pip install shgo
+$ pip install shgo
 ```
 
 Latest:
 ```
-\$ pip install shgo
+$ pip install shgo
 ```
 
 
@@ -174,12 +174,12 @@ To demonstrate solving problems with non-linear constraints consider the followi
    && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21
                     -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
                                   20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\\\\\ \nonumber
-&& x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\ \nonumber
+&& x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\\\\\ \nonumber
 && 0 \le x_i  ~~ \forall i
 \end{eqnarray}
 
 Approx. answer [4]:
-    $f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378$
+    $f([0.6355216, -0.12e^{-11}, 0.3127019, 0.05177655]) = 29.894378$
 
 ```python
     >>> from scipy.optimize import shgo
