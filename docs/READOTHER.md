@@ -37,7 +37,12 @@ problems to global optimality (low dimensional problems).
 
 In general, the optimisation problems are of the form::
 
-<p align="center"><img src="https://rawgit.com/stefan-endres/shgo/None/svgs/520b74060f244e6dad63dbff6c53b721.svg?invert_in_darkmode" align=middle width=389.70525pt height=46.620915pt/></p>
+$$
+    min f(x) subject to
+
+    g_i(x) \ge 0,  i = 1,...,m
+    h_j(x)  = 0,  j = 1,...,p
+$$
 
 where x is a vector of one or more variables.
 ``f(x)`` is the objective function ``R^n -> R``
