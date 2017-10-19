@@ -2,3 +2,9 @@ sudo python -m readme2tex --htmlize --svgdir svgs/ --username stefan-endres --pr
 
 
 sudo python -m readme2tex --htmlize --nocdn --username stefan-endres --project shgo/docs --output README.md READOTHER.md
+
+
+https://github.com/Stefan-Endres/shgo/blob/master/docs/svgs/
+
+sudo python -m readme2tex --htmlize --nocdn --username stefan-endres --project shgo/docs --output README.md READOTHER.md
+sudo chmod a=rw README.md

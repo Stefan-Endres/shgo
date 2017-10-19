@@ -37,7 +37,11 @@ problems to global optimality (low dimensional problems).
 
 In general, the optimisation problems are of the form::
 
-<p align="center"><img src="svgs/520b74060f244e6dad63dbff6c53b721.svg?invert_in_darkmode" align=middle width=389.70525pt height=46.620915pt/></p>
+\begin{eqnarray}
+  \min_x && f(x), \\\\\\
+   \text{subject to } && c_E(x) = 0,\\\\\\
+   && c_I(x) \le 0,
+\end{eqnarray}
 
 where x is a vector of one or more variables.
 ``f(x)`` is the objective function ``R^n -> R``
