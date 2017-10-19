@@ -18,210 +18,18 @@ where x is a vector of one or more variables.
 ``g_i(x)`` are the inequality constraints.
 ``h_j(x)`` are the equality constrains.
 
-Parameters
-----------
-    func : callable
 
-The objective function to be minimized.  Must be in the form
-``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-and ``args`` is a  tuple of any additional fixed parameters needed to
-completely specify the function.
-
----
-
-    bounds : sequence
-
-Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
-defining the lower and upper bounds for the optimizing argument of
-`func`. It is required to have ``len(bounds) == len(x)``.
-``len(bounds)`` is used to determine the number of parameters in ``x``.
-Use ``None`` for one of min or max when there is no bound in that
-direction. By default bounds are ``(None, None)``.
-
----
-
-    args : tuple, optional
-    
-Any additional fixed parameters needed to completely specify the
-objective function.
-
----
-
-    constraints : dict or sequence of dict, optional
-
-Constraints definition.
-Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
-                            h(x) == 0 applied as h : R^n -> R^p
-
-Each constraint is defined in a dictionary with fields:
-
-    * type : str
-        Constraint type: 'eq' for equality, 'ineq' for inequality.
-    * fun : callable
-        The function defining the constraint.
-    * jac : callable, optional
-        The Jacobian of `fun` (only for SLSQP).
-    * args : sequence, optional
-        Extra arguments to be passed to the function and Jacobian.
-
-Equality constraint means that the constraint function result is to
-be zero whereas inequality means that it is to be non-negative.
-Note that COBYLA only supports inequality constraints.
-
-NOTE:   Only the COBYLA and SLSQP local minimize methods currently
-        support constraint arguments. If the ``constraints`` sequence
-        used in the local optimization problem is not defined in
-        ``minimizer_kwargs`` and a constrained method is used then the
-        global ``constraints`` will be used.
-        (Defining a ``constraints`` sequence in ``minimizer_kwargs``
-        means that ``constraints`` will not be added so if equality
-        constraints and so forth need to be added then the inequality
-        functions in ``constraints`` need to be added to
-        ``minimizer_kwargs`` too).
-
----
-
-    n : int, optional
-    
-Number of sampling points used in the construction of the simplicial complex. Note that this argument is only used for ``sobol`` and other arbitrary sampling_methods.
-
----
-
-    iters : int, optional
-
-Number of iterations used in the construction of the simplicial complex.
-
----
-
-    callback : callable, optional
-    
-Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-current parameter vector.
-
----
-
-    minimizer_kwargs : dict, optional
-    
-Extra keyword arguments to be passed to the minimizer
-``scipy.optimize.minimize`` Some important options could be:
-
-    * method : str
-        The minimization method (e.g. ``SLSQP``)
-    * args : tuple
-        Extra arguments passed to the objective function (``func``) and
-        its derivatives (Jacobian, Hessian).
-
-    options : {ftol: 1e-12}
-    
----
-
-    options : dict, optional
-    
-A dictionary of solver options. Many of the options specified for the
-global routine are also passed to the scipy.optimize.minimize routine.
-The options that are also passed to the local routine are marked with an
-(L)
-
-Stopping criteria, the algorithm will terminate if any of the specified
-criteria are met. However, the default algorithm does not require any to
-be specified:
-
-    * maxfev : int (L)
-        Maximum number of function evaluations in the feasible domain.
-        (Note only methods that support this option will terminate
-        the routine at precisely exact specified value. Otherwise the
-        criterion will only terminate during a global iteration)
-    * f_min
-        Specify the minimum objective function value, if it is known.
-    * f_tol : float
-        Precision goal for the value of f in the stopping
-        criterion. Note that the global routine will also
-        terminate if a sampling point in the global routine is
-        within this tolerance.
-    * maxiter : int
-        Maximum number of iterations to perform.
-    * maxev : int
-        Maximum number of sampling evaluations to perform (includes
-        searching in infeasible points).
-    * maxtime : float
-        Maximum processing runtime allowed
-    * maxhgrd : int
-        Maximum homology group rank differential. The homology group of the
-        objective function is calculated (approximately) during every
-        iteration. The rank of this group has a one-to-one correspondence
-        with the number of locally convex subdomains in the objective
-        function (after adequate sampling points each of these subdomains
-        contain a unique global minima). If the difference in the hgr is 0
-        between iterations for ``maxhgrd`` specified iterations the
-        algorithm will terminate.
-
-Objective function knowledge:
-
-    * symmetry : bool
-       Specify True if the objective function contains symmetric variables.
-       The search space (and therfore performance) is decreased by O(n!).
-
-Algorithm settings:
-
-    * minimize_every_iter : bool
-        If True then promising global sampling points will be passed to a
-        local minimisation routine every iteration. If False then only the
-        final minimiser pool will be run.
-    * local_iter : int
-        Only evaluate a few of the best minimiser pool candiates every
-        iteration. If False all potential points are passed to the local
-        minimsation routine.
-    * infty_constraints: bool
-        If True then any sampling points generated which are outside will
-        the feasible domain will be saved and given an objective function
-        value of numpy.inf. If False then these points will be discarded.
-        Using this functionality could lead to higher performance with
-        respect to function evaluations before the global minimum is found,
-        specifying False will use less memory at the cost of a slight
-        decrease in performance.
-
-Feedback:
-
-    * disp : bool (L)
-        Set to True to print convergence messages.
-
----
-
-    sampling_method : str or function, optional
-
-Current built in sampling method options are ``sobol`` and
-``simplicial``. The default ``simplicial`` uses less memory and provides
-the theoretical guarantee of convergence to the global minimum in finite
-time. The ``sobol`` method is faster in terms of sampling point
-generation at the cost of higher memory resources and the loss of
-guaranteed convergence. It is more appropriate for most "easier"
-problems where the convergence is relatively fast.
-User defined sampling functions must accept two arguments of ``n``
-sampling points of dimension ``dim`` per call and output an array of s
-ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
-example function.
+### Table of Contents
+**[Introduction](#Introduction)**<br>
+**[Installation](#Installation)**<br>
+**[Examples](#Examples)**<br>
+**[Parameters](#Parameters)**<br>
+**[Returns](#Returns)**<br>
+**[References](#References)**<br>
 
 
-Returns
--------
-    res : OptimizeResult
 
-The optimization result represented as a `OptimizeResult` object.
-Important attributes are:
-    ``x`` the solution array corresponding to the global minimum,
-    ``fun`` the function output at the global solution,
-    ``xl`` an ordered list of local minima solutions,
-    ``funl`` the function output at the corresponding local solutions,
-    ``success`` a Boolean flag indicating if the optimizer exited
-    successfully,
-    ``message`` which describes the cause of the termination,
-    ``nfev`` the total number of objective function evaluations including
-    the sampling calls,
-    ``nlfev`` the total number of objective function evaluations
-    culminating from all local search optimisations,
-    ``nit`` number of iterations performed by the global routine.
-
-Notes
+Introduction
 -----
 Global optimisation using simplicial homology global optimisation [1].
 Appropriate for solving general purpose NLP and blackbox optimisation
@@ -260,6 +68,13 @@ generating Sobol sequences is provided by [3] by Frances Kuo and
 Stephen Joe. The original program sobol.cc (MIT) is available and described
 at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
 Carl Sandrock 2016-03-31.
+
+Installation
+------------
+.. code::
+
+    pip install shgo
+
 
 Examples
 --------
@@ -415,6 +230,211 @@ Approx. Answer [4]:
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
 ```
+
+
+Parameters
+----------
+    func : callable
+
+The objective function to be minimized.  Must be in the form
+``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
+and ``args`` is a  tuple of any additional fixed parameters needed to
+completely specify the function.
+
+---
+
+    bounds : sequence
+
+Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+defining the lower and upper bounds for the optimizing argument of
+`func`. It is required to have ``len(bounds) == len(x)``.
+``len(bounds)`` is used to determine the number of parameters in ``x``.
+Use ``None`` for one of min or max when there is no bound in that
+direction. By default bounds are ``(None, None)``.
+
+---
+
+    args : tuple, optional
+
+Any additional fixed parameters needed to completely specify the
+objective function.
+
+---
+
+    constraints : dict or sequence of dict, optional
+
+Constraints definition.
+Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
+                            h(x) == 0 applied as h : R^n -> R^p
+
+Each constraint is defined in a dictionary with fields:
+
+    * type : str
+        Constraint type: 'eq' for equality, 'ineq' for inequality.
+    * fun : callable
+        The function defining the constraint.
+    * jac : callable, optional
+        The Jacobian of `fun` (only for SLSQP).
+    * args : sequence, optional
+        Extra arguments to be passed to the function and Jacobian.
+
+Equality constraint means that the constraint function result is to
+be zero whereas inequality means that it is to be non-negative.
+Note that COBYLA only supports inequality constraints.
+
+NOTE:   Only the COBYLA and SLSQP local minimize methods currently
+        support constraint arguments. If the ``constraints`` sequence
+        used in the local optimization problem is not defined in
+        ``minimizer_kwargs`` and a constrained method is used then the
+        global ``constraints`` will be used.
+        (Defining a ``constraints`` sequence in ``minimizer_kwargs``
+        means that ``constraints`` will not be added so if equality
+        constraints and so forth need to be added then the inequality
+        functions in ``constraints`` need to be added to
+        ``minimizer_kwargs`` too).
+
+---
+
+    n : int, optional
+
+Number of sampling points used in the construction of the simplicial complex. Note that this argument is only used for ``sobol`` and other arbitrary sampling_methods.
+
+---
+
+    iters : int, optional
+
+Number of iterations used in the construction of the simplicial complex.
+
+---
+
+    callback : callable, optional
+
+Called after each iteration, as ``callback(xk)``, where ``xk`` is the
+current parameter vector.
+
+---
+
+    minimizer_kwargs : dict, optional
+
+Extra keyword arguments to be passed to the minimizer
+``scipy.optimize.minimize`` Some important options could be:
+
+    * method : str
+        The minimization method (e.g. ``SLSQP``)
+    * args : tuple
+        Extra arguments passed to the objective function (``func``) and
+        its derivatives (Jacobian, Hessian).
+
+    options : {ftol: 1e-12}
+
+---
+
+    options : dict, optional
+
+A dictionary of solver options. Many of the options specified for the
+global routine are also passed to the scipy.optimize.minimize routine.
+The options that are also passed to the local routine are marked with an
+(L)
+
+Stopping criteria, the algorithm will terminate if any of the specified
+criteria are met. However, the default algorithm does not require any to
+be specified:
+
+    * maxfev : int (L)
+        Maximum number of function evaluations in the feasible domain.
+        (Note only methods that support this option will terminate
+        the routine at precisely exact specified value. Otherwise the
+        criterion will only terminate during a global iteration)
+    * f_min
+        Specify the minimum objective function value, if it is known.
+    * f_tol : float
+        Precision goal for the value of f in the stopping
+        criterion. Note that the global routine will also
+        terminate if a sampling point in the global routine is
+        within this tolerance.
+    * maxiter : int
+        Maximum number of iterations to perform.
+    * maxev : int
+        Maximum number of sampling evaluations to perform (includes
+        searching in infeasible points).
+    * maxtime : float
+        Maximum processing runtime allowed
+    * maxhgrd : int
+        Maximum homology group rank differential. The homology group of the
+        objective function is calculated (approximately) during every
+        iteration. The rank of this group has a one-to-one correspondence
+        with the number of locally convex subdomains in the objective
+        function (after adequate sampling points each of these subdomains
+        contain a unique global minima). If the difference in the hgr is 0
+        between iterations for ``maxhgrd`` specified iterations the
+        algorithm will terminate.
+
+Objective function knowledge:
+
+    * symmetry : bool
+       Specify True if the objective function contains symmetric variables.
+       The search space (and therfore performance) is decreased by O(n!).
+
+Algorithm settings:
+
+    * minimize_every_iter : bool
+        If True then promising global sampling points will be passed to a
+        local minimisation routine every iteration. If False then only the
+        final minimiser pool will be run.
+    * local_iter : int
+        Only evaluate a few of the best minimiser pool candiates every
+        iteration. If False all potential points are passed to the local
+        minimsation routine.
+    * infty_constraints: bool
+        If True then any sampling points generated which are outside will
+        the feasible domain will be saved and given an objective function
+        value of numpy.inf. If False then these points will be discarded.
+        Using this functionality could lead to higher performance with
+        respect to function evaluations before the global minimum is found,
+        specifying False will use less memory at the cost of a slight
+        decrease in performance.
+
+Feedback:
+
+    * disp : bool (L)
+        Set to True to print convergence messages.
+
+---
+
+    sampling_method : str or function, optional
+
+Current built in sampling method options are ``sobol`` and
+``simplicial``. The default ``simplicial`` uses less memory and provides
+the theoretical guarantee of convergence to the global minimum in finite
+time. The ``sobol`` method is faster in terms of sampling point
+generation at the cost of higher memory resources and the loss of
+guaranteed convergence. It is more appropriate for most "easier"
+problems where the convergence is relatively fast.
+User defined sampling functions must accept two arguments of ``n``
+sampling points of dimension ``dim`` per call and output an array of s
+ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
+example function.
+
+
+Returns
+-------
+    res : OptimizeResult
+
+The optimization result represented as a `OptimizeResult` object.
+Important attributes are:
+    ``x`` the solution array corresponding to the global minimum,
+    ``fun`` the function output at the global solution,
+    ``xl`` an ordered list of local minima solutions,
+    ``funl`` the function output at the corresponding local solutions,
+    ``success`` a Boolean flag indicating if the optimizer exited
+    successfully,
+    ``message`` which describes the cause of the termination,
+    ``nfev`` the total number of objective function evaluations including
+    the sampling calls,
+    ``nlfev`` the total number of objective function evaluations
+    culminating from all local search optimisations,
+    ``nit`` number of iterations performed by the global routine.
+
 
 References
 ----------
