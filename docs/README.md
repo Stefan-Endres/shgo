@@ -254,13 +254,13 @@ objective function.
     constraints : dict or sequence of dict, optional
 
 Constraints definition.
-Function(s) R^n in the form g(x) <= 0 applied as g : R^n -> R^m
-                            h(x) == 0 applied as h : R^n -> R^p
+Function(s) $\mathbb{R}^n$ in the form $g(x) \le 0$ applied as $g : mathbb{R}^n -> mathbb{R}^m$
+                            $h(x) = 0$ applied as $g : mathbb{R}^n -> mathbb{R}^p$
 
 Each constraint is defined in a dictionary with fields:
 
     * type : str
-        Constraint type: 'eq' for equality, 'ineq' for inequality.
+        Constraint type: 'eq' for equality $h(x), 'ineq' for inequality $g(x).
     * fun : callable
         The function defining the constraint.
     * jac : callable, optional
@@ -314,8 +314,8 @@ Extra keyword arguments to be passed to the minimizer
     * args : tuple
         Extra arguments passed to the objective function (``func``) and
         its derivatives (Jacobian, Hessian).
-
-    options : {ftol: 1e-12}
+    * options : dict, optional
+        Note that by default the tolerance is specified as ``{ftol: 1e-12}``
 
 ---
 
@@ -393,17 +393,7 @@ Feedback:
 
     sampling_method : str or function, optional
 
-Current built in sampling method options are ``sobol`` and
-``simplicial``. The default ``simplicial`` uses less memory and provides
-the theoretical guarantee of convergence to the global minimum in finite
-time. The ``sobol`` method is faster in terms of sampling point
-generation at the cost of higher memory resources and the loss of
-guaranteed convergence. It is more appropriate for most "easier"
-problems where the convergence is relatively fast.
-User defined sampling functions must accept two arguments of ``n``
-sampling points of dimension ``dim`` per call and output an array of s
-ampling points with shape `n x dim`. See SHGO.sampling_sobol for an
-example function.
+Current built in sampling method options are ``sobol`` and ``simplicial``. The default ``simplicial`` uses less memory and provides the theoretical guarantee of convergence to the global minimum in finite time. The ``sobol`` method is faster in terms of sampling point generation at the cost of higher memory resources and the loss of guaranteed convergence. It is more appropriate for most "easier" problems where the convergence is relatively fast. User defined sampling functions must accept two arguments of ``n`` sampling points of dimension ``dim`` per call and output an array of s ampling points with shape `n x dim`. See SHGO.sampling_sobol for an example function.
 
 
 Returns
