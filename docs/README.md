@@ -34,7 +34,9 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 1. **[Introduction](#introduction)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
-    + **[Rosen](#rosen)**<br>
+    + **[Rosenbrock function (unimodal functions)](#rosenbrock-function-(unimodal-functions))**<br>
+        + [Bounded variables](#bounded-variables)
+    + [Unbounded variables](#unbounded-variables)
 1. **[Parameters](#parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
@@ -82,7 +84,7 @@ $ pip install shgo
 
 ###  Examples
 
-#### Rosenbrock function
+#### Rosenbrock function (unimodal functions)
 
 ##### Bounded variables
 
@@ -90,10 +92,10 @@ First consider the problem of minimizing the [Rosenbrock function](https://en.wi
 
 ```python
 >>> from scipy.optimize import rosen, shgo
->>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
+>>> bounds = [(0,2), (0, 2)]
 >>> result = shgo(rosen, bounds)
 >>> result.x, result.fun
-(array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
+(array([ 1.,  1.]), 2.9203923741900809e-18)
 ```
 
 ##### Unbounded variables
@@ -107,7 +109,8 @@ Note that bounds determine the dimensionality of the objective function and is t
 array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
 ```
 
-#### Eggholder function
+#### Eggholder function (multimodal functions)
+##### Mapping local minima
 
 Next we consider the [Eggholder function](https://en.wikipedia.org/wiki/Test_functions_for_optimization), a problem with several local minima and one global minimum. We will demonstrate the use of some of the arguments and capabilities of shgo.
 
@@ -154,9 +157,11 @@ shgo has two built-in low discrepancy sampling sequences. The default ``simplici
    -202.53912972]))
    ```
 
+##### Mapping a higher number of local minima
+
 These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [5].
 
-Now suppose we want to find a larger number of local minima (or hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
+Now suppose we want to find a larger number of local minima (or we hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
 
 ```python
 >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
