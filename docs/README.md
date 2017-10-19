@@ -29,8 +29,7 @@ where x is a vector of one or more variables.
 
 
 
-Introduction
------
+## Introduction
 Global optimisation using simplicial homology global optimisation [1].
 Appropriate for solving general purpose NLP and blackbox optimisation
 problems to global optimality (low dimensional problems).
@@ -69,12 +68,11 @@ Stephen Joe. The original program sobol.cc (MIT) is available and described
 at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by
 Carl Sandrock 2016-03-31.
 
-Installation
-------------
-.. code::
+### Installation
 
-    pip install shgo
-
+```
+    $ pip install shgo
+```
 
 Examples
 --------
