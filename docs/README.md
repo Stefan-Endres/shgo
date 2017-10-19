@@ -20,12 +20,12 @@ where x is a vector of one or more variables.
 
 
 ### Table of Contents
-**[Introduction](#Introduction)**<br>
-**[Installation](#Installation)**<br>
-**[Examples](#Examples)**<br>
-**[Parameters](#Parameters)**<br>
-**[Returns](#Returns)**<br>
-**[References](#References)**<br>
+**[Introduction](#introduction)**<br>
+**[Installation](#installation)**<br>
+**[Examples](#examples)**<br>
+**[Parameters](#parameters)**<br>
+**[Returns](#returns)**<br>
+**[References](#references)**<br>
 
 
 
