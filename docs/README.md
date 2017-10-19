@@ -16,19 +16,22 @@
 Finds the global minimum of a function using simplicial homology global
 optimisation. Appropriate for solving general purpose NLP and blackbox optimisation
 problems to global optimality (low dimensional problems).
-The general form of an optimisation problem is given by: $f(x) = x^2$
+The general form of an optimisation problem is given by:
 
 ```
-minimize f(x) subject to
-
-g_i(x) >= 0,  i = 1,...,m
-h_j(x)  = 0,  j = 1,...,p
+\begin{eqnarray} \nonumber
+  \min_x && f(x),  x \in \Re^n \\ \nonumber
+   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m\\ \nonumber
+   && h_j(x) = 0,  ~\forall j = 1,...,p
+\end{eqnarray}
 ```
 
-where x is a vector of one or more variables.
-``f(x)`` is the objective function ``R^n -> R``
-``g_i(x)`` are the inequality constraints.
-``h_j(x)`` are the equality constrains.
+where $x$ is a vector of one or more variables.
+$f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
+
+$g_i(x)$ are the inequality constraints $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
+
+$h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
 
 
 ### Table of Contents
