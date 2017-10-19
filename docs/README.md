@@ -36,7 +36,7 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 1. **[Examples](#examples)**<br>
     + **[Rosenbrock function (unimodal functions)](#rosenbrock-function-(unimodal-functions))**<br>
         + [Bounded variables](#bounded-variables)
-    + [Unbounded variables](#unbounded-variables)
+        + [Unbounded variables](#unbounded-variables)
 1. **[Parameters](#parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
