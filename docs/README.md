@@ -170,12 +170,12 @@ To demonstrate solving problems with non-linear constraints consider the followi
 
 \begin{eqnarray} \nonumber
   \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\\\\\ \nonumber
-   \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0 \\\\\\ \nonumber
+   \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0, \\\\\\ \nonumber
    && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21 & \\\\\\ \nonumber
    && -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
-                                  20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\\\\\ \nonumber
-&& x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\\\\\ \nonumber
-&& 0 \le x_i  ~~ \forall i
+                                  20.5 x_3^2 + 0.62  x_4^2} &\ge 0, \\\\\\ \nonumber
+&& x_1 + x_2 + x_3 + x_4 - 1 &= 0, \\\\\\ \nonumber
+&& 0 \le x_i \le 1 ~~ \forall i
 \end{eqnarray}
 
 Approx. answer [4]:
