@@ -23,6 +23,7 @@ where x is a vector of one or more variables.
 **[Introduction](#introduction)**<br>
 **[Installation](#installation)**<br>
 **[Examples](#examples)**<br>
+    * **[Rosen](#rosen)**<br>
 **[Parameters](#parameters)**<br>
 **[Returns](#returns)**<br>
 **[References](#references)**<br>
@@ -71,11 +72,14 @@ Carl Sandrock 2016-03-31.
 ### Installation
 
 ```
-    $ pip install shgo
+$ pip install shgo
 ```
 
 Examples
 --------
+
+#### Rosen
+
 First consider the problem of minimizing the Rosenbrock function. This
 function is implemented in `rosen` in `scipy.optimize`
 
