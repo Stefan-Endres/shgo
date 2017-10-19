@@ -65,7 +65,7 @@ While most of the theoretical advantages of shgo are only proven for when $f(x)$
 
 The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
-The `sobol` method points are generated using the Sobol (1967) [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
+The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
 
 ### Installation
 
@@ -171,8 +171,8 @@ To demonstrate solving problems with non-linear constraints consider the followi
 \begin{eqnarray} \nonumber
   \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\\\\\ \nonumber
    \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0 \\\\\\ \nonumber
-   && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21
-                    -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
+   && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21 & \\\\\\ \nonumber
+   && -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
                                   20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\\\\\ \nonumber
 && x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\\\\\ \nonumber
 && 0 \le x_i  ~~ \forall i
