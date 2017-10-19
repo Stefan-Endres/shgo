@@ -254,8 +254,11 @@ objective function.
     constraints : dict or sequence of dict, optional
 
 Constraints definition.
-Function(s) $\mathbb{R}^n$ in the form $g(x) \le 0$ applied as $g : mathbb{R}^n -> mathbb{R}^m$
-                            $h(x) = 0$ applied as $g : mathbb{R}^n -> mathbb{R}^p$
+Function(s) $\mathbb{R}^n$ in the form:
+
+$g(x) \le 0$ applied as $g : \mathbb{R}^n -> \mathbb{R}^m$
+
+$h(x) = 0$ applied as $g : \mathbb{R}^n -> \mathbb{R}^p$
 
 Each constraint is defined in a dictionary with fields:
 
