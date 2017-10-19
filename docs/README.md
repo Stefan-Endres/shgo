@@ -20,8 +20,8 @@ Finds the global minimum of a function using simplicial homology global optimisa
 \end{eqnarray*}
 
 
-where $x$ is a vector of one or more variables.
-$f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
+where $ x $ is a vector of one or more variables.
+$f(x)$ is the objective function $ f: \mathbb{R}^n \rightarrow \mathbb{R} $
 
 $g_i(x)$ are the inequality constraints $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
 
