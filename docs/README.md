@@ -34,9 +34,13 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 1. **[Introduction](#introduction)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
-    + **[Rosenbrock function (unimodal functions)](#rosenbrock-function-(unimodal-functions))**<br>
+    + **[Rosenbrock unimodal function)](#rosenbrock-unimodal-function)**<br>
         + [Bounded variables](#bounded-variables)
         + [Unbounded variables](#unbounded-variables)
+    + **[Eggholder multimodal function](#eggholder-multimodal-function)**<br>
+        + [Mapping local minima](#mapping-local-minima)
+        + [Improving results](#improving-results)
+    + **[Cattle feed HS73 problem with non-linear constraints](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
 1. **[Parameters](#parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
@@ -84,18 +88,19 @@ $ pip install shgo
 
 ###  Examples
 
-#### Rosenbrock function (unimodal functions)
+#### Rosenbrock unimodal function
 
 ##### Bounded variables
 
-First consider the problem of minimizing the [Rosenbrock function](https://en.wikipedia.org/wiki/Test_functions_for_optimization). This function is implemented in `rosen` in `scipy.optimize`
+First consider the problem of minimizing the [Rosenbrock function](https://en.wikipedia.org/wiki/Test_functions_for_optimization) which is unimodal in 2-dimensions. This function is implemented in `rosen` in `scipy.optimize`
 
 ```python
->>> from scipy.optimize import rosen, shgo
+>>> from scipy.optimize import rosen
+>>> from shgo import shgo
 >>> bounds = [(0,2), (0, 2)]
 >>> result = shgo(rosen, bounds)
 >>> result.x, result.fun
-(array([ 1.,  1.]), 2.9203923741900809e-18)
+(array([ 1.,  1.]), 3.6584112734652932e-19)
 ```
 
 ##### Unbounded variables
@@ -103,13 +108,13 @@ First consider the problem of minimizing the [Rosenbrock function](https://en.wi
 Note that bounds determine the dimensionality of the objective function and is therefore a required  nput, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
 
 ```python
->>> bounds = [(None, None), ]*4
+>>> bounds = [(None, None), ]*2
 >>> result = shgo(rosen, bounds)
 >>> result.x
-array([ 0.99999851,  0.99999704,  0.99999411,  0.9999882 ])
+array([ 0.99999555,  0.99999111])
 ```
 
-#### Eggholder function (multimodal functions)
+#### Eggholder multimodal function
 ##### Mapping local minima
 
 Next we consider the [Eggholder function](https://en.wikipedia.org/wiki/Test_functions_for_optimization), a problem with several local minima and one global minimum. We will demonstrate the use of some of the arguments and capabilities of shgo.
@@ -157,7 +162,7 @@ shgo has two built-in low discrepancy sampling sequences. The default ``simplici
    -202.53912972]))
    ```
 
-##### Mapping a higher number of local minima
+##### Improving results
 
 These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [5].
 
@@ -170,6 +175,8 @@ Now suppose we want to find a larger number of local minima (or we hope to find 
 ```
 
 Note that there is a difference between specifying arguments for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the promising points contained in the minimiser pool is processed only once. In the latter case it is processed every 60 sampling points for a total of 3 iterations.
+
+#### Cattle feed HS73 problem with non-linear constraints
 
 To demonstrate solving problems with non-linear constraints consider the following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
