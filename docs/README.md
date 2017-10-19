@@ -1,3 +1,7 @@
+---
+mathjax: true
+---
+
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Build Status](https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master)](https://coveralls.io/r/Stefan-Endres/shgo?branch=master)
 
