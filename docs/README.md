@@ -16,8 +16,8 @@
 Finds the global minimum of a function using simplicial homology global optimisation. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems). The general form of an optimisation problem is given by:
 
 \begin{eqnarray}
-  \min_x && f(x),  x \in \mathbb{R}^n \\\\\\
-   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\
+  \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
+   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\ \nonumber
    && h_j(x) = 0,  ~\forall j = 1,...,p
 \end{eqnarray}
 
@@ -47,8 +47,8 @@ Global optimisation using simplicial homology global optimisation [1]. Appropria
 In general, the optimisation problems are of the form::
 
 \begin{eqnarray} \nonumber
-  \min_x && f(x),  x \in \mathbb{R}^n \\ \nonumber
-   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m\\ \nonumber
+  \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
+   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\ \nonumber
    && h_j(x) = 0,  ~\forall j = 1,...,p
 \end{eqnarray}
 
@@ -169,11 +169,11 @@ Note that there is a difference between specifying arguments for ex. ``n=180, it
 To demonstrate solving problems with non-linear constraints consider the following example from Hock and Schittkowski problem 73 (cattle-feed) [4]::
 
 \begin{eqnarray} \nonumber
-  \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 &\\ \nonumber
-   \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0 \\ \nonumber
+  \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\\\\\ \nonumber
+   \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0 \\\\\\ \nonumber
    && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21
                     -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
-                                  20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\ \nonumber
+                                  20.5 x_3^2 + 0.62  x_4^2} &\ge 0 \\\\\\ \nonumber
 && x_1 + x_2 + x_3 + x_4 - 1 &= 0 \\ \nonumber
 && 0 \le x_i  ~~ \forall i
 \end{eqnarray}
