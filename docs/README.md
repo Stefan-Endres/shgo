@@ -35,13 +35,13 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 1. **[Performance summary](#performance-summary)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
-    + **[Rosenbrock **unimodal function**](#rosenbrock-unimodal-function)**<br>
+    + **[Rosenbrock *unimodal function*](#rosenbrock-unimodal-function)**<br>
         + [Bounded variables](#bounded-variables)
         + [Unbounded variables](#unbounded-variables)
-    + **[Eggholder **multimodal function**](#eggholder-multimodal-function)**<br>
+    + **[Eggholder *multimodal function*](#eggholder-multimodal-function)**<br>
         + [Mapping local minima](#mapping-local-minima)
         + [Improving results](#improving-results)
-    + **[Cattle feed problem (HS73) with **non-linear constraints**](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
+    + **[Cattle feed problem (HS73) with *non-linear constraints*](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
 1. **[Parameters](#parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
@@ -120,9 +120,9 @@ the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
 
 
 
-![Performance profiles on the SciPy benchmarking test suite](docs/img/Fig12.pdf)
+![Performance profiles on the SciPy benchmarking test suite](/docs/img/Fig12.pdf)
 
-![Performance profiles on the SciPy benchmarking test suite zoomed in](docs/img/Fig13.pdf)
+![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/img/Fig13.pdf)
 
 
 Figure 5.1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
