@@ -79,10 +79,9 @@ The `sobol` method points are generated using the Sobol [2] sequence. The primit
 Performance summary
 -----------------
 
+![Performance profiles on the SciPy benchmarking test suite](/img/Fig12.pdf)
 
-[![Fig12.pdf](img/Fig12.pdf)
-
-[![Fig13.pdf](img/Fig13.pdf)
+![Performance profiles on the SciPy benchmarking test suite zoomed in](/img/Fig13.pdf)
 
 
 Installation
