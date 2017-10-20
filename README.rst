@@ -45,7 +45,7 @@ Latest:
 
 Documentation
 -------------
-The project website https://stefan-endres.github.io/shgo/ contains detailed more examples, notes and performance profiles.
+The project website https://stefan-endres.github.io/shgo/ contains more detailed examples, notes and performance profiles.
 
 Quick example
 -------------
