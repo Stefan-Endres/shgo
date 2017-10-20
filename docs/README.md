@@ -32,22 +32,24 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>
+1. **[Performance summary](#performance-summary)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
-    + **[Rosenbrock *unimodal function*](#rosenbrock-unimodal-function)**<br>
+    + **[Rosenbrock **unimodal function**](#rosenbrock-unimodal-function)**<br>
         + [Bounded variables](#bounded-variables)
         + [Unbounded variables](#unbounded-variables)
-    + **[Eggholder *multimodal function*](#eggholder-multimodal-function)**<br>
+    + **[Eggholder **multimodal function**](#eggholder-multimodal-function)**<br>
         + [Mapping local minima](#mapping-local-minima)
         + [Improving results](#improving-results)
-    + **[Cattle feed problem (HS73) with *non-linear constraints*](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
+    + **[Cattle feed problem (HS73) with **non-linear constraints**](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
 1. **[Parameters](#parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
 
 
+Introduction
+------------
 
-## Introduction
 Global optimisation using simplicial homology global optimisation [1]. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems).
 
 In general, the optimisation problems are of the form::
@@ -73,7 +75,16 @@ The local search method may be specified using the ``minimizer_kwargs`` paramete
 
 The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
 
-### Installation
+
+Performance summary
+-----------------
+
+
+[![Build Status](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig1.pdf)
+
+
+Installation
+-----------------
 
 Stable:
 ```
@@ -82,9 +93,10 @@ $ pip install shgo
 
 Latest:
 ```
-$ git clone https://github.com/Stefan-Endres/shgo
+$ git clone https://bitbucket.org/upiamcompthermo/shgo
 $ cd shgo
 $ python setup.py install
+$ python setup.py test
 ```
 
 
