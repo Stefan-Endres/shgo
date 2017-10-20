@@ -229,7 +229,8 @@ $ python setup.py test
 ```
 
 
-###  Examples
+Examples
+----------
 
 #### Rosenbrock unimodal function
 
