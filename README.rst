@@ -7,10 +7,12 @@
 Description
 -----------
 
-Finds the global minimum of a function using (simplicial homology global
-optimisation)[https://stefan-endres.github.io/shgo/]. Appropriate for solving general purpose NLP and blackbox
+Finds the global minimum of a function using simplicial homology global
+optimisation (shgo_). Appropriate for solving general purpose NLP and blackbox
 optimisation problems to global optimality (low dimensional problems).
 The general form of an optimisation problem is given by:
+
+.. _shgo: https://stefan-endres.github.io/shgo/
 
 ::
 
