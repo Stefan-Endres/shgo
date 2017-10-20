@@ -36,7 +36,7 @@ $h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \math
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
     + [Rosenbrock **unimodal function**](#rosenbrock-unimodal-function)<br>
-        + [Bounded variables](#bounded-variables)<br>
+        + [Bounded variables](#bounded-variables)<br>
         + [Unbounded variables](#unbounded-variables)<br>
     + [Eggholder **multimodal function**](#eggholder-multimodal-function)<br>
         + [Mapping local minima](#mapping-local-minima)<br>
@@ -159,10 +159,10 @@ or a given number of function evaluations. This is expected since, for the same 
 point sequence, TGO produced more than one starting point in the same locally convex
 
 
-Algorithm:                                                      | shgo-simpl| shgo-sob | tgo| Lc-DISIMPL-v | Lc-DISIMPL-c    | PSwarm (min)          | PSwarm (min)       | PSwarm (avg)          | PSwarm (avg)           | PSwarm (max)             | PSwarm (max)         | DIRECT-L1 (pp=10)    | DIRECT-L1 (pp=10^2)               | DIRECT-L1 (pp=10^6)        |
+| Algorithm:                                                      | shgo-simpl| shgo-sob | tgo| Lc-DISIMPL-v | Lc-DISIMPL-c    | PSwarm (min)          | PSwarm (min)       | PSwarm (avg)          | PSwarm (avg)           | PSwarm (max)             | PSwarm (max)         | DIRECT-L1 (pp=10)    | DIRECT-L1 (pp=10^2)               | DIRECT-L1 (pp=10^6)        |
 |----------------------------------------------------------------|----:|-----:|----:|-----:|----------:|---------------:|---------------:|----------------:|----------------:|----------------:|----------------:|-------------|-----------|---------------------|
-|                                                                |     |      |     |      |           |                |                |                 |                 |                 |                 |             |           |                     |
-**Problem**                                                      | f.e.| f.e. | f.e.| f.e. | f.e.      | f.e.           | p.f.e.         | f.e.            | p.f.e.          | f.e.            | p.f.e.          | f.e.        | f.e.              | f.e.                |
+|                                                                |     |      |     |      |           |                |                |                 |                 |                 |                 |             |           |                     |
+| **Problem**                                                      | f.e.| f.e. | f.e.| f.e. | f.e.      | f.e.           | p.f.e.         | f.e.            | p.f.e.          | f.e.            | p.f.e.          | f.e.        | f.e.              | f.e.                |
 |                                                                |     |      |     |      |           |                |                |                 |                 |                 |                 |             |           |                     |
 | horst-1                                                        |  97 |   24 |  34 |    7 |       249 |            167 |            182 |  1329$^{b(3)}$  |  1343$^{b(3)}$  |  4100$^{b(3)}$  |  4101$^{b(3)}$  |  287$^a$    | 3689      |  >100000  |
 | horst-2                                                        |  10 |   11 |  11 |    5 |       171 |            160 |            176 |             424 |             492 |             768 |             867 |  265$^a$    | 10829     |  >100000  |
