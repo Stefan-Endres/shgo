@@ -79,16 +79,15 @@ The `sobol` method points are generated using the Sobol [2] sequence. The primit
 Performance summary
 -----------------
 
-Both the SHGO and TGO algorithms only make use of function evaluations without
-requiring the derivatives of objective functions. This makes them applicable to black-
+The shgo algorithm only makes use of function evaluations without requiring the derivatives of objective functions. This makes it applicable to black-
 box global optimisation problems. A recent review and experimental comparison of 22
-derivative-free optimisation algorithms by Rios and Sahinidis (2013) concluded that global
+derivative-free optimisation algorithms by Rios and Sahinidis [4] concluded that global
 optimisation solvers solvers such as TOMLAB/MULTI-MIN, TOMLAB/GLCCLUSTER,
 MCS and TOMLAB/LGO perform better, on average, than other derivative-free solvers
 in terms of solution quality within 2500 function evaluations. Both the TOMLAB/GLC-
 CLUSTER and MCS Huyer and Neumaier (1999) implementations are based on the
 well-known DIRECT (DIviding RECTangle) algorithm Jones, Perttunen, and Stuckman
-(1993).
+[5].
 The DISIMPL (DIviding SIMPLices) algorithm was recently proposed by Paulavičius
 and Žilinskas (2014b). The experimental investigation in Paulavičius & Žilinskas
 (2014b) shows that the proposed simplicial algorithm gives very competitive results
@@ -98,13 +97,8 @@ Žilinskas (2014a); Paulavičius, Sergeyev, Kvasov, and Žilinskas (2014). Th
 and DIRECTl methods in extensive numerical experiments on 800 multidimensional mul-
 tiextremal test functions.
 
-Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of
-algorithms and comparison of software implementations”, Journal of Global Optimiza-
-tion, 56 (3), 1247–1293.
 
-Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimiza-
-tion without the lipschitz constant”, Journal of Optimization Theory and Applications,
-79 (1), 157–181.
+
 
 
 Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-
@@ -586,8 +580,8 @@ References
 ----------
 1. Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
        optimisation".
-       
-2. Sobol, IM (1967) "The distribution of points in a cube and the
+
+1. Sobol, IM (1967) "The distribution of points in a cube and the
        approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
        7, 86-112.
        
@@ -595,6 +589,14 @@ References
        better  two-dimensional projections", SIAM J. Sci. Comput. 30,
        2635-2654.
        
+Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of
+algorithms and comparison of software implementations”, Journal of Global Optimiza-
+tion, 56 (3), 1247–1293. 
+    
+Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimiza-
+tion without the lipschitz constant”, Journal of Optimization Theory and Applications,
+79 (1), 157–181.
+   
 4. Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
        programming codes", Lecture Notes in Economics and mathematical
        Systems, 187. Springer-Verlag, New York. http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
