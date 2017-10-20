@@ -117,8 +117,14 @@ Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Sp
 Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without
 the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
 
-![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf)
+object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="http://yoursite.com/the.pdf">
+        This browser does not support PDFs. Please download the PDF to view it: <a href="http://yoursite.com/the.pdf">Download PDF</a>.</p>
+    </embed>
+</object>
 
+
+![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf)
 
 ![Performance profiles on the SciPy benchmarking test suite](/docs/img/Fig12.pdf)
 
