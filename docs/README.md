@@ -80,7 +80,9 @@ Performance summary
 -----------------
 
 
-[![Build Status](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig1.pdf)
+[![Fig12.pdf](img/Fig12.pdf)
+
+[![Fig13.pdf](img/Fig13.pdf)
 
 
 Installation
