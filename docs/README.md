@@ -13,7 +13,7 @@
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Build Status](https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master)](https://coveralls.io/r/Stefan-Endres/shgo?branch=master)
 
-<sub><sup>Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)</sup></sub>
+<sup>*Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)*<sup>
 
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>
@@ -104,9 +104,13 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 
 ![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
 
-![Performance profiles on the SciPy benchmarking test suite](/docs/img/Fig12.pdf)
+![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
 
-![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/img/Fig13.pdf)
+![/image/Fig12.svg](/image/Fig12.svg)
+![./image/Fig12.svg](./image/Fig12.svg)
+![image/Fig12.svg](image/Fig12.svg)
+
+![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
 
 Figure 5.1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
