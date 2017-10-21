@@ -603,3 +603,5 @@ tion without the lipschitz constant”, Journal of Optimization Theory and Appli
 5.  Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
        dynamics from the potential energy landscape",
        Journal of Chemical Physics, 142(13), 2015.
+
+Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)
