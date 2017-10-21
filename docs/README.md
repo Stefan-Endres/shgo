@@ -105,6 +105,10 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 
 ![./image/Fig12.svg](./image/Fig13.svg)
 
+![./image/Fig12.svg](./image/Fig6.svg)
+
+![./image/Fig12.svg](./image/Fig7.svg)
+
 ![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
 
