@@ -17,7 +17,7 @@
 
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>
-1. **[Performance summary](performance-summary)**<br>
+1. **[Performance summary](#performance-summary)**<br>
     + **[Open-source black-box algorithms](#open-source-black-box-algorithms)**<br>
     + **[Recently published black-box algorithms](#recently-published-black-box-algorithms)**<br>
 1. **[Installation](#installation)**<br>
