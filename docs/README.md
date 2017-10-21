@@ -19,6 +19,7 @@
 1. **[Introduction](#introduction)**<br>
 1. **[Performance summary](performance-summary)**<br>
     + **[Open-source black-box algorithms](#open-source-black-box-algorithms)**<br>
+    + **[Recently published black-box algorithms](#recently-published-black-box-algorithms)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
     + **[Rosenbrock *unimodal function*](#rosenbrock-unimodal-function)**<br>
@@ -56,6 +57,21 @@ Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $
 
 While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
 
+In brief the algorithm utilizes concepts from combinatorial integral homology theory to find locally sub-domains which are approximately convex and provide characterizations of the objective function. For example on the following objective function surface
+
+![./image/Fig7.svg](./image/Fig7.svg)
+
+The $k-$chain $C(\mathcal{H}^k), k = n + 1$ of simplices in $\textrm{st}\left( v_1 \right)$ forms a boundary cycle $\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}}$ - \overline{v_{4} v_{11}} with $\partial\left(\partial(C(\mathcal{H}^{n + 1}))\right) = \emptyset$
+
+The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines. The algorithm provides many additional guarantees such always passing active constraints (in g_i(x)) when a local minimum lies on it. Another important property of shgo is that it is proven that only one starting point for every strictly unique minimum is produced. So the number of locally convex subdomains do not increase with increased sampling of the objective function, rather only the constraints of the convex subdomains are refined:
+
+![./image/Fig8.svg](./image/Fig8.svg)
+
+
+This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf).
+
+The full outline of the algorithm can be downloaded [here](files/algorithm.pdf).
+
 The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
 The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
@@ -70,26 +86,20 @@ The shgo algorithm only makes use of function evaluations without requiring the 
 In this section we present numerical experiments comparing the SHGO and TGO algorithms with the SciPy implementations Jones et al. (2001–) of basinhopping (BH) Li and Scheraga (1987); Wales (2003); Wales and Doye (1997); Wales and Scheraga (1999) and differential evolution (DE) Storn and Price (1997). These algorithms were chosen because the open source versions are readily available in the SciPy project. The test suite contains multi-modal problems with box constraints, they are described in detail in Gavana (2016). We used the stopping criteria pe = 0.01% for SHGO and TGO. For the stochastic algorithms (BH and DE) the starting points provided by the test suite were used. For every test the algorithm was terminated if the global minimum was not found after 10 minutes of processing time and the test was flagged as a fail.
 
 
-Figure 5.1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
-suite
-
-Figure 5.2: Performance profiles zoomed in to the range of f.e. = [0, 1000] function evaluations
-and [0, 0.4] seconds run time
-
 ![./image/Fig12.svg](./image/Fig12.svg)
+
+Figure 1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
+suite
 
 ![./image/Fig12.svg](./image/Fig13.svg)
 
+Figure 2: Performance profiles zoomed in to the range of f.e. = [0, 1000] function evaluations
+and [0, 0.4] seconds run time
 
 
-From Fig. 5.1 it can be observed that for this problem set SHGO-Sobol was the best
-performing algorithm, followed closely by TGO and SHGO-Simpl. Fig. 5.2 provides a
-learer comparison between these three algorithms. While the performance of all 3 algo-
-ithms are comparable, SHGO-Sobol tends to outperform TGO, solving more problems
-or a given number of function evaluations. This is expected since, for the same sampling
-point sequence, TGO produced more than one starting point in the same locally convex
+From Figure 1 it can be observed that for this problem set SHGO-Sobol was the best performing algorithm, followed closely by TGO and SHGO-Simpl. Figure 2 provides a learer comparison between these three algorithms. While the performance of all 3 algoithms are comparable, SHGO-Sobol tends to outperform TGO, solving more problems or a given number of function evaluations. This is expected since, for the same sampling point sequence, TGO produced more than one starting point in the same locally convex domain.
 
-#### Open-source black-box algorithms
+#### Recently published black-box algorithms
 
 A recent review and experimental comparison of 22
 derivative-free optimisation algorithms by Rios and Sahinidis [4] concluded that global
@@ -107,12 +117,6 @@ Žilinskas (2014a); Paulavičius, Sergeyev, Kvasov, and Žilinskas (2014). Th
 (Globally-biased DISIMPL) was compared in Paulavičius et al. (2014) to the DIRECT
 and DIRECTl methods in extensive numerical experiments on 800 multidimensional mul-
 tiextremal test functions.
-
-
-<<<<<<< HEAD
-![./image/Fig12.svg](./image/Fig6.svg)
-=======
-
 
 
 Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-
@@ -135,10 +139,8 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 
 ![./image/Fig13.svg](./image/Fig13.svg)
 
-![./image/Fig7.svg](./image/Fig7.svg)
->>>>>>> c67c9fe18b223e87f5f63cbbcff5fae7f49346cf
 
-![./image/Fig8.svg](./image/Fig8.svg)
+
 
 ![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
@@ -152,37 +154,37 @@ ithms are comparable, SHGO-Sobol tends to outperform TGO, solving more problems
 or a given number of function evaluations. This is expected since, for the same sampling
 point sequence, TGO produced more than one starting point in the same locally convex
 
+
+Extracted only the p! DIRECT-L1 with the best performaning parameters (pp = 10)
 The full table can be found at [here](files/table.pdf).
 
 
-| Algorithm:                                                      | shgo-simpl| shgo-sob | tgo| Lc-DISIMPL-v | Lc-DISIMPL-c    | PSwarm (min)          | PSwarm (min)       | PSwarm (avg)          | PSwarm (avg)           | PSwarm (max)             | PSwarm (max)         | DIRECT-L1 (pp=10)    | DIRECT-L1 (pp=10^2)               | DIRECT-L1 (pp=10^6)        |
-|----------------------------------------------------------------|----:|-----:|----:|-----:|----------:|---------------:|---------------:|----------------:|----------------:|----------------:|----------------:|-------------|-----------|---------------------|
-| **Problem**                                                      | f.e.| f.e. | f.e.| f.e. | f.e.      | f.e.           | p.f.e.         | f.e.            | p.f.e.          | f.e.            | p.f.e.          | f.e.        | f.e.              | f.e.                |
-|                                                                |     |      |     |      |           |                |                |                 |                 |                 |                 |             |           |                     |
-| horst-1                                                        |  97 |   24 |  34 |    7 |       249 |            167 |            182 |  1329$^{b(3)}$  |  1343$^{b(3)}$  |  4100$^{b(3)}$  |  4101$^{b(3)}$  |  287$^a$    | 3689      |  >100000  |
-| horst-2                                                        |  10 |   11 |  11 |    5 |       171 |            160 |            176 |             424 |             492 |             768 |             867 |  265$^a$    | 10829     |  >100000  |
-| horst-3                                                        |   6 |    7 |   6 |    5 |       249 |             42 |             43 |              44 |              45 |              46 |              47 |  5$^a$      | 591       |  617      |
-| horst-4                                                        |  10 |   25 |  24 |    8 |       260 |             90 |            179 |             114 |             194 |             129 |             211 |  58293$^a$  |  >100000  |  >100000  |
-| horst-5                                                        |  20 |   15 |  15 |    8 |       259 |            106 |            150 |             134 |             192 |             214 |             302 |  7$^a$      |  >100000  |  >100000  |
-| horst-6                                                        |  22 |   59 |  77 |   10 |       284 |             90 |            172 |             110 |             192 |             133 |             227 |  11$^a$     |  739$^a$  |  >100000  |
-| horst-7                                                        |  10 |   15 |  13 |   10 |       220 |            188 |            201 |             380 |             403 |             919 |             957 |  7$^a$      |  71$^a$   |  >100000  |
-| hs021                                                          |  24 |   23 |  23 |  189 |       133 |            110 |            110 |             189 |             192 |             392 |             405 | 97          | 97        |  97       |
-| hs024                                                          |  24 |   15 |  36 |    3 |       141 |            101 |            153 |             118 |             172 |             138 |             195 |  19$^a$     |  57$^a$   |  >100000  |
-| hs035                                                          |  37 |   41 |  35 |  630 |       721 |            266 |            311 |             316 |             369 |             327 |             373 |  >100000    |  >100000  |  >100000  |
-| hs036                                                          | 105 |   20 | 103 |    8 |       314 |            179 |            179 |             396 |             401 |             561 |             574 |  25$^a$     |  49$^a$   |  >100000  |
-| hs037                                                          |  72 |   63 | 258 |  186 |      9129 |            127 |            131 |             160 |             167 |             201 |             574 |  7$^a$      |  7$^a$    |  >100000  |
-| hs038                                                          | 225 | 1029 | 389 | 3379 |  >100000  |          53662 |          54445 |           58576 |           59821 |           65677 |           67660 | 7401        | 5885      |  6511     |
-| hs044                                                          | 199 |   35 |  51 |   20 |       440 |  148$^{b(9)}$  |  218$^{b(9)}$  |   186$^{b(9)}$  |   281$^{b(9)}$  |   201$^{b(9)}$  |   299$^{b(9)}$  | 90283       |  >100000  |  >100000  |
-| hs076                                                          |  56 |   37 |  44 |  548 |      4794 |            132 |            198 |             203 |             286 |             275 |             341 | 19135       |  >100000  |  >100000  |
-| s224                                                           | 166 |  165 | 165 |   49 |       463 |            105 |            107 |             121 |             122 |             157 |             158 |  7$^a$      | 431       |  457      |
-| s231                                                           |  99 |   99 | 383 | 2137 |       655 |            542 |           1011 |            2366 |            3020 |            4116 |            4800 | 1261        | 1209      |  43341    |
-| s232                                                           |  24 |   15 |  22 |    3 |       141 |            105 |            144 |             119 |             171 |             162 |             236 |  19$^a$     |  57$^a$   |  >100000  |
-| s250                                                           | 105 |   20 | 103 |    8 |       314 |            296 |            296 |             367 |             375 |             495 |             498 |  25$^a$     |  49$^a$   |  >100000  |
-| s251                                                           |  72 |   63 | 258 |  186 |      9127 |             83 |             84 |             129 |             137 |             175 |             180 |  7$^a$      |  7$^a$    |  >100000  |
-| bunnag1                                                        |  34 |   47 |  39 |  630 |       721 |            132 |            142 |             214 |             228 |             411 |             438 | 1529        | 1495      |  1463     |
-| bunnag2                                                        |  46 |   36 |  35 |   16 |       500 |            150 |            153 |             252 |             259 |             410 |             426 |  >100000    |  >100000  |  >100000  |
-|                                                                |     |      |     |      |           |                |                |                 |                 |                 |                 |             |           |                     |
-| Average                                                        |  66 |   88 | 100 |  366 |    >5877  |           2590 |           2672 |            3011 |            3130 |            3637 |            3812 |  >17213     |  >28421   |  >75113   |
+| Algorithm: | shgo-simpl| shgo-sob | Lc-DISIMPL-v  | PSwarm (avg) | DIRECT-L1 |
+|------------|----------:|---------:|--------------:|-------------:|----------:|
+| horst-1   |  97 |   24 | 7    | 182            |  287$^a$    |
+| horst-2   |  10 |   11 | 5    | 176            |  265$^a$    |
+| horst-3   |  6  |    7 | 5    | 43             |  5$^a$      |
+| horst-4   |  10 |   25 | 8    | 179            |  58293$^a$  |
+| horst-5   | 20  | 15   | 8    | 150            |  7$^a$      |
+| horst-6   | 22  | 59   | 10   | 172            |  11$^a$     |
+| horst-7   | 10  | 15   | 10   | 201            |  7$^a$      |
+| hs021     | 24  | 23   | 189  | 110            | 97          |
+| hs024     | 24  | 15   | 3    | 153            |  19$^a$     |
+| hs035     | 37  | 41   | 630  | 311            |  >100000    |
+| hs036     | 105 | 20   | 8    | 179            |  25$^a$     |
+| hs037     | 72  | 63   | 186  | 131            |  7$^a$      |
+| hs038     | 225 | 1029 | 3379 | 54445          | 7401        |
+| hs044     | 199 | 35   | 20   |  218$^{b(9)}$  | 90283       |
+| hs076     | 56  | 37   | 548  | 198            | 19135       |
+| s224      | 166 | 165  | 49   | 107            |  7$^a$      |
+| s231      | 99  | 99   | 2137 | 1011           | 1261        |
+| s232      | 24  | 15   | 3    | 144            |  19$^a$     |
+| s250      | 105 | 20   | 8    | 296            |  25$^a$     |
+| s251      | 72  | 63   | 186  | 84             |  7$^a$      |
+| bunnag1   | 34  | 47   | 630  | 142            | 1529        |
+| bunnag2   | 46  | 36   | 16   | 153            |  >100000    |
+|           |     |      |      |                |             |
+| Average   | 66  | 88   | 366  | 2672           |  >17213     |
 
 
 $a$ result is outside the feasible region
