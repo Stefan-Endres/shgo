@@ -13,7 +13,7 @@
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Build Status](https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master)](https://coveralls.io/r/Stefan-Endres/shgo?branch=master)
 
-<sup>*Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)*<sup>
+<sup>*Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/)*<sup>
 
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>

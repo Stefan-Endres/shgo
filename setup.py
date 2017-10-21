@@ -6,10 +6,10 @@ def readme():
         return f.read()
 
 setup(name='shgo',
-      version='0.3.4',
+      version='0.3.5',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
-      author='Stefan Endres',
+      author='Stefan Endres, Carl Sandrock',
       author_email='stefan.c.endres@gmail.com',
       license='MIT',
       packages=['shgo'],
