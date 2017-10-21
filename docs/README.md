@@ -125,6 +125,8 @@ ithms are comparable, SHGO-Sobol tends to outperform TGO, solving more problems
 or a given number of function evaluations. This is expected since, for the same sampling
 point sequence, TGO produced more than one starting point in the same locally convex
 
+The full table can be found at [here](files/table.pdf).
+
 
 | Algorithm:                                                      | shgo-simpl| shgo-sob | tgo| Lc-DISIMPL-v | Lc-DISIMPL-c    | PSwarm (min)          | PSwarm (min)       | PSwarm (avg)          | PSwarm (avg)           | PSwarm (max)             | PSwarm (max)         | DIRECT-L1 (pp=10)    | DIRECT-L1 (pp=10^2)               | DIRECT-L1 (pp=10^6)        |
 |----------------------------------------------------------------|----:|-----:|----:|-----:|----------:|---------------:|---------------:|----------------:|----------------:|----------------:|----------------:|-------------|-----------|---------------------|
