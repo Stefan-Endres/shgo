@@ -101,12 +101,9 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
     </embed>
 </object>
 
-
-![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
-
-![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
-
 ![./image/Fig12.svg](./image/Fig12.svg)
+
+![./image/Fig12.svg](./image/Fig13.svg)
 
 ![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
