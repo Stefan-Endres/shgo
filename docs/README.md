@@ -18,6 +18,7 @@
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>
 1. **[Performance summary](performance-summary)**<br>
+    + **[Open-source black-box algorithms](#open-source-black-box-algorithms)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
     + **[Rosenbrock *unimodal function*](#rosenbrock-unimodal-function)**<br>
@@ -62,9 +63,35 @@ The `sobol` method points are generated using the Sobol [2] sequence. The primit
 
 Performance summary
 -----------------
+#### Open-source black-box algorithms
 
-The shgo algorithm only makes use of function evaluations without requiring the derivatives of objective functions. This makes it applicable to black-
-box global optimisation problems. A recent review and experimental comparison of 22
+The shgo algorithm only makes use of function evaluations without requiring the derivatives of objective functions. This makes it applicable to black-box global optimisation problems.
+
+In this section we present numerical experiments comparing the SHGO and TGO algorithms with the SciPy implementations Jones et al. (2001–) of basinhopping (BH) Li and Scheraga (1987); Wales (2003); Wales and Doye (1997); Wales and Scheraga (1999) and differential evolution (DE) Storn and Price (1997). These algorithms were chosen because the open source versions are readily available in the SciPy project. The test suite contains multi-modal problems with box constraints, they are described in detail in Gavana (2016). We used the stopping criteria pe = 0.01% for SHGO and TGO. For the stochastic algorithms (BH and DE) the starting points provided by the test suite were used. For every test the algorithm was terminated if the global minimum was not found after 10 minutes of processing time and the test was flagged as a fail.
+
+
+Figure 5.1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
+suite
+
+Figure 5.2: Performance profiles zoomed in to the range of f.e. = [0, 1000] function evaluations
+and [0, 0.4] seconds run time
+
+![./image/Fig12.svg](./image/Fig12.svg)
+
+![./image/Fig12.svg](./image/Fig13.svg)
+
+
+
+From Fig. 5.1 it can be observed that for this problem set SHGO-Sobol was the best
+performing algorithm, followed closely by TGO and SHGO-Simpl. Fig. 5.2 provides a
+learer comparison between these three algorithms. While the performance of all 3 algo-
+ithms are comparable, SHGO-Sobol tends to outperform TGO, solving more problems
+or a given number of function evaluations. This is expected since, for the same sampling
+point sequence, TGO produced more than one starting point in the same locally convex
+
+#### Open-source black-box algorithms
+
+A recent review and experimental comparison of 22
 derivative-free optimisation algorithms by Rios and Sahinidis [4] concluded that global
 optimisation solvers solvers such as TOMLAB/MULTI-MIN, TOMLAB/GLCCLUSTER,
 MCS and TOMLAB/LGO perform better, on average, than other derivative-free solvers
@@ -82,29 +109,6 @@ and DIRECTl methods in extensive numerical experiments on 800 multidimensional m
 tiextremal test functions.
 
 
-
-
-
-Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-
-biased disimpl algorithm for expensive global optimization”, Journal of Global Opti-
-mization, 59 (2), 545–567.
-
-
-Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer
-
-Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without
-the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
-
-object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="http://yoursite.com/the.pdf">
-        This browser does not support PDFs. Please download the PDF to view it: <a href="http://yoursite.com/the.pdf">Download PDF</a>.</p>
-    </embed>
-</object>
-
-![./image/Fig12.svg](./image/Fig12.svg)
-
-![./image/Fig12.svg](./image/Fig13.svg)
-
 ![./image/Fig12.svg](./image/Fig6.svg)
 
 ![./image/Fig12.svg](./image/Fig7.svg)
@@ -112,30 +116,6 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 ![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
 
-Figure 5.1: Performance profiles for SHGO, TGO, DE and BH on SciPy benchmarking test
-suite
-
-Figure 5.2: Performance profiles zoomed in to the range of f.e. = [0, 1000] function evaluations
-and [0, 0.4] seconds run time
-
-In this section we present numerical experiments comparing the SHGO and TGO algo-
-rithms with the SciPy implementations Jones et al. (2001–) of basinhopping (BH) Li and
-Scheraga (1987); Wales (2003); Wales and Doye (1997); Wales and Scheraga (1999) and
-differential evolution (DE) Storn and Price (1997). These algorithms were chosen both
-because the open source versions are readily available in the SciPy project and because
-BH is commonly used in energy surface optimisations Wales (2015) from which the moti-
-vation for developing SHGO grew. DE has also been applied in optimising Gibbs energy
-surfaces for phase equilibria calculations Zhang & Rangaiah (2011). The optimisation
-problems in Appendix A were selected from the SciPy global optimisation benchmark-
-ing test suite (Adorio and Dilman, 2005; Gavana, 2016; Jamil and Yang, 2013; Mishra,
-2007, 2006; NIST, 2016). The test suite contains multi-modal problems with box con-
-straints, they are described in detail in Gavana (2016). We again used the stopping
-criteria pe = 0.01% for SHGO and TGO. For the stochastic algorithms (BH and DE) the
-starting points provided by the test suite were used. For every test the algorithm was
-terminated if the global minimum was not found after 10 minutes of processing time and
-the test was flagged as a fail. For comparisons we used normalised performance profiles
-Dolan and Moré (2002) using function evaluations and processing time as performance
-criteria. In total 180 test problems were used.
 
 
 From Fig. 5.1 it can be observed that for this problem set SHGO-Sobol was the best
@@ -584,6 +564,19 @@ tion, 56 (3), 1247–1293.
 Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimiza-
 tion without the lipschitz constant”, Journal of Optimization Theory and Applications,
 79 (1), 157–181.
+
+
+
+
+Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-
+biased disimpl algorithm for expensive global optimization”, Journal of Global Opti-
+mization, 59 (2), 545–567.
+
+
+Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer
+
+Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without
+the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
    
 4. Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear
        programming codes", Lecture Notes in Economics and mathematical
