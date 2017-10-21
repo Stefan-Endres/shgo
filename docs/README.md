@@ -61,18 +61,22 @@ In brief the algorithm utilizes concepts from combinatorial integral homology th
 
 ![./image/Fig7.svg](./image/Fig7.svg)
 
-The $k-$chain $C(\mathcal{H}^k), k = n + 1$ of simplices in $\textrm{st}\left( v_1 \right)$ forms a boundary cycle $\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}}$ - \overline{v_{4} v_{11}} with $\partial\left(\partial(C(\mathcal{H}^{n + 1}))\right) = \emptyset$
+The $k-$chain $C(\mathcal{H}^k), k = n + 1$ of simplices in $\textrm{st}\left( v_1 \right)$ forms a boundary cycle $\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}} - \overline{v_{4} v_{11}}$ with $\partial\left(\partial(C(\mathcal{H}^{n + 1}))\right) = \emptyset$
 
-The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines. The algorithm provides many additional guarantees such always passing active constraints (in g_i(x)) when a local minimum lies on it. Another important property of shgo is that it is proven that only one starting point for every strictly unique minimum is produced. So the number of locally convex subdomains do not increase with increased sampling of the objective function, rather only the constraints of the convex subdomains are refined:
+The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines. The algorithm provides many additional guarantees such always passing active constraints (in g_i(x)) when a local minimum lies on it. For example here the star domain around vertex $v_7$ is bounded by the global constraints of the problem.
+
+![./image/Fig8.svg](./image/Fig9.svg)
+
+
+Another important property of shgo is that it is proven that one and only one starting point for every strictly unique minimum is produced. So the number of locally convex subdomains do not increase with increased sampling of the objective function, rather only the constraints of the convex subdomains are refined:
 
 ![./image/Fig8.svg](./image/Fig8.svg)
 
-
-This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf).
+This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf). In addition since the locally convex sub-domains are processed  shgo can concentrate on the global search preventing the need to specify the usual trade-off between local and global search.
 
 The full outline of the algorithm can be downloaded [here](files/algorithm.pdf).
 
-The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
+The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. Other local minimisation methods more suited to the problem can also be used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
 The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
 
