@@ -57,13 +57,13 @@ Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $
 
 While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
 
-In brief the algorithm utilizes concepts from combinatorial integral homology theory to find locally sub-domains which are approximately convex and provide characterizations of the objective function. For example on the following objective function surface:
+In brief the algorithm utilises concepts from combinatorial integral homology theory to find sub-domains which are, approximately, locally convex and provides characterisations of the objective function. For example on the following objective function surface:
 
 ![./image/Fig7.svg](./image/Fig7.svg)
 
 The $k-$chain $C(\mathcal{H}^k), k = n + 1$ of simplices in $\textrm{st}\left( v_1 \right)$ forms a boundary cycle $\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}} - \overline{v_{4} v_{11}}$ with $\partial\left(\partial(C(\mathcal{H}^{n + 1}))\right) = \emptyset$
 
-The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines. The algorithm provides many additional guarantees such always passing active constraints (in g_i(x)) when a local minimum lies on it. For example here the star domain around vertex $v_7$ is bounded by the global constraints of the problem:
+The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines during each iteration. The algorithm provides many additional guarantees such always passing active constraints (in $g_i(x)$) when a local minimum lies on it. For example here the star domain around vertex $v_7$ is bounded by the global constraints of the problem:
 
 ![./image/Fig8.svg](./image/Fig9.svg)
 
