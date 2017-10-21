@@ -566,8 +566,8 @@ Important attributes are:
 
 References
 ----------
-1. Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
-       optimisation".
+1. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
+       optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
 
 1. Sobol, IM (1967) "The distribution of points in a cube and the
        approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
