@@ -106,9 +106,6 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 
 ![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
 
-![/docs/image/Fig12.svg](/docs/image/Fig12.svg)
-![./docs/image/Fig12.svg](./docs/image/Fig12.svg)
-![docs/image/Fig12.svg](docs/image/Fig12.svg)
 ![/image/Fig12.svg](/image/Fig12.svg)
 ![./image/Fig12.svg](./image/Fig12.svg)
 ![image/Fig12.svg](image/Fig12.svg)
