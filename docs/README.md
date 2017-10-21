@@ -182,7 +182,7 @@ First consider the problem of minimizing the [Rosenbrock function](https://en.wi
 
 ##### Unbounded variables
 
-Note that bounds determine the dimensionality of the objective function and is therefore a required  nput, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
+Note that bounds determine the dimensionality of the objective function and is therefore a required input, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
 
 ```python
 >>> bounds = [(None, None), ]*2
@@ -239,9 +239,10 @@ shgo has two built-in low discrepancy sampling sequences. The default ``simplici
    -202.53912972]))
    ```
 
-##### Improving results
-
 These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [13].
+
+
+##### Improving results
 
 Now suppose we want to find a larger number of local minima (or we hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
 
@@ -317,7 +318,7 @@ Parameters
 
 The objective function to be minimized.  Must be in the form
 ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-and ``args`` is a  tuple of any additional fixed parameters needed to
+and ``args`` is a tuple of any additional fixed parameters needed to
 completely specify the function.
 
 ---
