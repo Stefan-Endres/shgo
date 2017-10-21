@@ -109,9 +109,36 @@ and DIRECTl methods in extensive numerical experiments on 800 multidimensional m
 tiextremal test functions.
 
 
+<<<<<<< HEAD
 ![./image/Fig12.svg](./image/Fig6.svg)
+=======
 
-![./image/Fig12.svg](./image/Fig7.svg)
+
+
+Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-
+biased disimpl algorithm for expensive global optimization”, Journal of Global Opti-
+mization, 59 (2), 545–567.
+
+
+Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer
+
+Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without
+the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
+
+object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf" type="application/pdf" width="700px" height="700px">
+    <embed src="http://yoursite.com/the.pdf">
+        This browser does not support PDFs. Please download the PDF to view it: <a href="http://yoursite.com/the.pdf">Download PDF</a>.</p>
+    </embed>
+</object>
+
+![./image/Fig12.svg](./image/Fig12.svg)
+
+![./image/Fig13.svg](./image/Fig13.svg)
+
+![./image/Fig7.svg](./image/Fig7.svg)
+>>>>>>> c67c9fe18b223e87f5f63cbbcff5fae7f49346cf
+
+![./image/Fig8.svg](./image/Fig8.svg)
 
 ![Performance profiles on the SciPy benchmarking test suite zoomed in](/docs/image/Fig13.pdf)
 
@@ -548,8 +575,8 @@ Important attributes are:
 
 References
 ----------
-1. Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
-       optimisation".
+1. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
+       optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
 
 1. Sobol, IM (1967) "The distribution of points in a cube and the
        approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
