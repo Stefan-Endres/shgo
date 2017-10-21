@@ -116,7 +116,7 @@ object data="https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pd
 </object>
 
 
-![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig13.pdf)
+![](https://github.com/Stefan-Endres/mdissertation/blob/master/Fig5.svg)
 
 ![Performance profiles on the SciPy benchmarking test suite](/docs/img/Fig12.pdf)
 
