@@ -13,21 +13,7 @@
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Build Status](https://coveralls.io/repos/Stefan-Endres/shgo/badge.png?branch=master)](https://coveralls.io/r/Stefan-Endres/shgo?branch=master)
 
-Finds the global minimum of a function using simplicial homology global optimisation. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems). The general form of an optimisation problem is given by:
-
-\begin{eqnarray} \nonumber
-  \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
-   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\ \nonumber
-   && h_j(x) = 0,  ~\forall j = 1,...,p
-\end{eqnarray}
-
-
-where $x$ is a vector of one or more variables.
-$f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
-
-$g_i(x)$ are the inequality constraints $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
-
-$h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
+<sub><sup>Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)</sup></sub>
 
 ### Table of Contents
 1. **[Introduction](#introduction)**<br>
@@ -603,5 +589,3 @@ tion without the lipschitz constant”, Journal of Optimization Theory and Appli
 5.  Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
        dynamics from the potential energy landscape",
        Journal of Chemical Physics, 142(13), 2015.
-
-Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/shgo/)
