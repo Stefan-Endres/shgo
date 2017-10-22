@@ -41,5 +41,5 @@ setup(name='shgo',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
       ],
-      test_suite='shgo.shgo_tests',
+      test_suite='shgo.tests.test__shgo',
       zip_safe=False)
