@@ -50,8 +50,7 @@ The project website https://stefan-endres.github.io/shgo/ contains more detailed
 Quick example
 -------------
 
-First consider the problem of minimizing the Rosenbrock function. This
-function is implemented in ``rosen`` in ``scipy.optimize``
+Consider the problem of minimizing the Rosenbrock function. This function is implemented in ``rosen`` in ``scipy.optimize``
 
 .. code:: python
 
@@ -62,8 +61,5 @@ function is implemented in ``rosen`` in ``scipy.optimize``
     >>> result.x, result.fun
     (array([ 1.,  1.,  1.,  1.,  1.]), 2.9203923741900809e-18)
 
-Note that bounds determine the dimensionality of the objective function
-and is therefore a required input, however you can specify empty bounds
-using ``None`` or objects like numpy.inf which will be converted to
-large float numbers.
+Note that bounds determine the dimensionality of the objective function and is therefore a required input, however you can specify empty bounds using ``None`` or objects like numpy.inf which will be converted to large float numbers.
 

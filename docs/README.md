@@ -57,13 +57,13 @@ Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $
 
 While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
 
-In brief the algorithm utilizes concepts from combinatorial integral homology theory to find locally sub-domains which are approximately convex and provide characterizations of the objective function. For example on the following objective function surface:
+In brief the algorithm utilises concepts from combinatorial integral homology theory to find sub-domains which are, approximately, locally convex and provides characterisations of the objective function. For example on the following objective function surface:
 
 ![./image/Fig7.svg](./image/Fig7.svg)
 
 The $k-$chain $C(\mathcal{H}^k), k = n + 1$ of simplices in $\textrm{st}\left( v_1 \right)$ forms a boundary cycle $\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}} - \overline{v_{4} v_{11}}$ with $\partial\left(\partial(C(\mathcal{H}^{n + 1}))\right) = \emptyset$
 
-The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines. The algorithm provides many additional guarantees such always passing active constraints (in g_i(x)) when a local minimum lies on it. For example here the star domain around vertex $v_7$ is bounded by the global constraints of the problem:
+The starting point $v_1$ and its corresponding constraints are then passed to local-minimisation routines during each iteration. The algorithm provides many additional guarantees such always passing active constraints (in $g_i(x)$) when a local minimum lies on it. For example, here the star domain around vertex $v_7$ is bounded by the global constraints of the problem:
 
 ![./image/Fig8.svg](./image/Fig9.svg)
 
@@ -72,7 +72,7 @@ Another important property of shgo is that it is proven that one and only one st
 
 ![./image/Fig8.svg](./image/Fig8.svg)
 
-This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf). In addition since the locally convex sub-domains are processed  shgo can concentrate on the global search preventing the need to specify the usual trade-off between local and global search.
+This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf). In addition since the locally convex sub-domains are processed, shgo can concentrate on the global search. This circumvents the need to specify the usual trade-off between a local and global search.
 
 The full outline of the algorithm can be downloaded [here](files/algorithm.pdf). Detailed description of the properties and their proofs can be found in [1].
 
@@ -80,8 +80,7 @@ The local search method may be specified using the ``minimizer_kwargs`` paramete
 
 The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
 
-The algorithm is generally applicable to low dimensional black problems ([~10-dimensional problems](https://www.youtube.com/watch?v=fhNuspYbMeI)) unless more information can be supplied to the algorithm. This is not necessarily
- gradients and hessians. For example if it is known that the decision variables of the objective function are symmetric, then the ``symmetry`` option can be used in order to solve problems with hundreds of variables.
+The algorithm is generally applicable to low dimensional black problems ([~10-dimensional problems](https://www.youtube.com/watch?v=fhNuspYbMeI)) unless more information can be supplied to the algorithm. This is not necessarily only gradients and hessians. For example if it is known that the decision variables of the objective function are symmetric, then the ``symmetry`` option can be used in order to solve problems with hundreds of variables.
 
 
 Performance summary
@@ -182,7 +181,7 @@ First consider the problem of minimizing the [Rosenbrock function](https://en.wi
 
 ##### Unbounded variables
 
-Note that bounds determine the dimensionality of the objective function and is therefore a required  nput, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
+Note that bounds determine the dimensionality of the objective function and is therefore a required input, however you can specify empty bounds using ``None`` or objects like ``numpy.inf`` which will be converted to large float numbers.
 
 ```python
 >>> bounds = [(None, None), ]*2
@@ -239,9 +238,10 @@ shgo has two built-in low discrepancy sampling sequences. The default ``simplici
    -202.53912972]))
    ```
 
-##### Improving results
-
 These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [13].
+
+
+##### Improving results
 
 Now suppose we want to find a larger number of local minima (or we hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
 
@@ -317,7 +317,7 @@ Parameters
 
 The objective function to be minimized.  Must be in the form
 ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
-and ``args`` is a  tuple of any additional fixed parameters needed to
+and ``args`` is a tuple of any additional fixed parameters needed to
 completely specify the function.
 
 ---

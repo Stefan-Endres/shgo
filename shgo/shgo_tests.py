@@ -411,38 +411,35 @@ class TestShgoArguments(unittest.TestCase):
     @numpy.testing.decorators.slow
     def test_4_1_known_f_min(self):
         """Test known function minima stopping criteria"""
-        options = {}
         # Specify known function value
-        options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-6
-        options['minimize_every_iter'] = True
+        options = {'f_min': test4_1.expected_fun,
+                   'f_tol': 1e-6,
+                   'minimize_every_iter': True}
         #TODO: Make default n higher for faster tests
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
     def test_4_2_known_f_min(self):
         """Test Global mode limiting local evalutions"""
-        options = {}
-        # Specify known function value
-        options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-6
+        options = { # Specify known function value
+                   'f_min': test4_1.expected_fun,
+                   'f_tol': 1e-6,
+                   # Specify number of local iterations to perform
+                   'minimize_every_iter': True,
+                   'local_iter': 1}
 
-        # Specify number of local iterations to perform
-        options['minimize_every_iter'] = True
-        options['local_iter'] = 1
         run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
     def test_4_3_known_f_min(self):
         """Test Global mode limiting local evalutions"""
-        options = {}
-        # Specify known function value
-        options['f_min'] = test4_1.expected_fun
-        options['f_tol'] = 1e-6
+        options = { # Specify known function value
+                   'f_min': test4_1.expected_fun,
+                   'f_tol': 1e-6,
+                   # Specify number of local iterations to perform+
+                   'minimize_every_iter': True,
+                   'local_iter': 1}
 
-        # Specify number of local iterations to perform+
-        options['minimize_every_iter'] = True
-        options['local_iter'] = 1
         #run_test(test4_1, n=490, test_atol=1e-5, options=options, sampling_method='sobol')
         run_test(test4_1, n=300, test_atol=1e-5, options=options, sampling_method='sobol')
 
