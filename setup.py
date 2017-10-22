@@ -16,7 +16,8 @@ setup(name='shgo',
       install_requires=[
           'scipy',
           'numpy',
-          'pytest'
+          'pytest',
+          'pytest-cov'
       ],
       long_description=readme(),
       keywords='optimization',
