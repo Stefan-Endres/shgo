@@ -1,5 +1,6 @@
 name: shgo
 dependencies:
+- nose>=1.0.0
 - pytest
 - pytest-cov
 - numpy
