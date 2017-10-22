@@ -10,8 +10,7 @@ import numpy
 import scipy.optimize
 import scipy.spatial
 from shgo.triangulation import *
-from shgo.sobol_seq import *
-
+import shgo.sobol_seq as sobol_seq
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
@@ -1360,7 +1359,7 @@ class SHGO(object):
         Generate N sampling points in D dimensions
         """
         #TODO Investigate slight differences in sequence generation patterns
-        points = i4_sobol_generate(d, n, skip=0)
+        points = sobol_seq.i4_sobol_generate(d, n, skip=0)
 
         return points
 
