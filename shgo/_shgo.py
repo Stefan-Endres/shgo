@@ -509,8 +509,7 @@ class SHGO(object):
             if 'callback' not in minimizer_kwargs:
                 minimizer_kwargs['callback'] = self.callback
 
-            if self.minimizer_kwargs['method'] == 'SLSQP' or \
-                            self.minimizer_kwargs['method'] == 'COBYLA':
+            if self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA'):
                 if 'constraints' not in minimizer_kwargs:
                     minimizer_kwargs['constraints'] = self.min_cons
         else:
