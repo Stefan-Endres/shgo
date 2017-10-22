@@ -506,11 +506,11 @@ class SHGO(object):
                 self.minimizer_kwargs['bounds'] = self.bounds
 
             if 'callback' not in minimizer_kwargs:
-                minimizer_kwargs['callback'] = self.callback
+                self.minimizer_kwargs['callback'] = self.callback
 
             if self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA'):
                 if 'constraints' not in minimizer_kwargs:
-                    minimizer_kwargs['constraints'] = self.min_cons
+                    self.minimizer_kwargs['constraints'] = self.min_cons
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
