@@ -22,7 +22,7 @@ import numpy as np
 from scipy.stats import norm
 
 __all__ = ['i4_bit_hi1', 'i4_bit_lo0', 'i4_sobol_generate',
-           'i4_sobol', 'i4_uniform', 'prime_ge', 'is_prime']
+           'i4_sobol']
 
 
 def i4_bit_hi1(n):
@@ -130,25 +130,6 @@ def i4_sobol_generate(dim_num, n, skip=1):
         r[j, 0:dim_num], next_seed = i4_sobol(dim_num, seed)
 
     return r
-
-
-def i4_sobol_generate_std_normal(dim_num, n, skip=1):
-    """
-    Generates multivariate standard normal quasi-random variables.
-
-    Parameters:
-      Input, integer dim_num, the spatial dimension.
-      Input, integer n, the number of points to generate.
-      Input, integer SKIP, the number of initial points to skip.
-
-      Output, real np array of shape (n, dim_num).
-    """
-
-    sobols = i4_sobol_generate(dim_num, n, skip)
-
-    normals = norm.ppf(sobols)
-
-    return normals
 
 
 def i4_sobol(dim_num, seed):
