@@ -196,8 +196,7 @@ class Complex:
         if self.centroid_added:
             self.structure = numpy.zeros([2**self.dim + 1, 2**self.dim + 1], dtype=int)
         else:
-            self.structure = numpy.zeros([2**self.dim, 2**self.dim], dtype=int)\
-
+            self.structure = numpy.zeros([2**self.dim, 2**self.dim], dtype=int)
 
         for v in HC.C0():
             for v2 in v.nn:
