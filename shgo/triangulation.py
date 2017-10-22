@@ -211,11 +211,8 @@ class Complex:
         """ Make a list of size 2**n + 1 where an entry is a vertex
         incidence, each list element contains a list of indexes
         corresponding to that entries neighbours"""
-        self.graph = []
-        for i, v in enumerate(self.C0()):
-            self.graph.append([])
-            for v2 in v.nn:
-                self.graph[i].append(v2.I)
+
+        self.graph = [[v2.I for v2 in v.nn] for v in self.C0()]
 
     # Graph structure method:
     # 0. Capture the indices of the initial cell.
