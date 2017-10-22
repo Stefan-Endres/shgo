@@ -1,4 +1,3 @@
-import unittest
 from shgo._shgo import *
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -270,7 +269,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
     return
 
 # Base test functions:
-class TestShgoSobolTestFunctions(unittest.TestCase):
+class TestShgoSobolTestFunctions(object):
     """
     Global optimisation tests with Sobol sampling:
     """
@@ -310,7 +309,7 @@ class TestShgoSobolTestFunctions(unittest.TestCase):
     #    """1D tabletop function"""
     #    run_test(test11_1)
 
-class TestShgoSimplicialTestFunctions(unittest.TestCase):
+class TestShgoSimplicialTestFunctions(object):
     """
     Global optimisation tests with Simplicial sampling:
     """
@@ -356,7 +355,7 @@ class TestShgoSimplicialTestFunctions(unittest.TestCase):
 
 
 # Argument test functions
-class TestShgoArguments(unittest.TestCase):
+class TestShgoArguments(object):
     def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""
         run_test(test1_2, n=None, iters=2, sampling_method='simplicial')
@@ -461,7 +460,7 @@ class TestShgoArguments(unittest.TestCase):
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
 # Failure test functions
-class TestShgoFailures(unittest.TestCase):
+class TestShgoFailures(object):
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
         numpy.testing.assert_raises(IOError,
@@ -532,6 +531,3 @@ class TestShgoFailures(unittest.TestCase):
         #numpy.testing.assert_raises(TypeError,
         #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
 
-
-if __name__ == '__main__':
-    unittest.main()
