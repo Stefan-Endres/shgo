@@ -528,7 +528,6 @@ class SHGO(object):
             # Update remaining options such as jac, hess, f_tol etc:
             if options is not None:
                 self.minimizer_kwargs.update(options)
-                print(f'self.minimizer_kwargs = {self.minimizer_kwargs}')
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
@@ -545,16 +544,6 @@ class SHGO(object):
 
             if options is not None:
                 self.minimizer_kwargs['options'].update(options)
-                if 0:
-                    if 'f_tol' in options:
-                        self.minimizer_kwargs['options']['ftol'] = \
-                            options['f_tol']
-                    if 'maxfev' in options:
-                        self.minimizer_kwargs['options']['maxfev'] = \
-                            options['maxfev']
-                    if 'disp' in options:
-                        self.minimizer_kwargs['options']['disp'] = \
-                            options['disp']
 
         # Process options dict
         if options is not None:
@@ -655,6 +644,7 @@ class SHGO(object):
         -------
 
         """
+        self.minimizer_kwargs['options'].update(options)
         # Default settings:
         if 'minimize_every_iter' in options:
             self.minimize_every_iter = options['minimize_every_iter']
@@ -670,8 +660,6 @@ class SHGO(object):
         if 'maxfev' in options:
             # Maximum number of function evaluations in the feasible domain
             self.maxfev = options['maxfev']
-            self.minimizer_kwargs['options']['maxfev'] = \
-                options['maxfev']  # TODO: Must update inside routine
         else:
             self.maxfev = None
         if 'maxev' in options:
@@ -695,9 +683,6 @@ class SHGO(object):
                 self.f_tol = 1e-4
         elif 'f_min' not in options:
             self.f_min_true = None
-
-        if 'ftol' in options:
-            self.minimizer_kwargs['options']['ftol'] = options['ftol']
 
         if 'maxhgrd' in options:
             self.maxhgrd = options['maxhgrd']
@@ -725,7 +710,6 @@ class SHGO(object):
         # Feedback
         if 'disp' in options:
             self.disp = options['disp']
-            self.minimizer_kwargs['options']['disp'] = options['disp']
         else:
             self.disp = False
         return
