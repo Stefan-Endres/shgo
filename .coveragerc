@@ -1,3 +1,6 @@
 [report]
-omit =  
+omit =
+    shgo/_tgo.py
+    shgo/sobol_seq.py
+    shgo/triangulation.py
     */python?.?/*
