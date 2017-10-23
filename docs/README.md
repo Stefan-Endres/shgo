@@ -452,9 +452,28 @@ be specified:
 
 Objective function knowledge:
 
-    * symmetry : bool
-       Specify True if the objective function contains symmetric variables.
-       The search space (and therfore performance) is decreased by O(n!).
+        * symmetry : bool
+            Specify True if the objective function contains symmetric variables.
+            The search space (and therefore performance) is decreased by O(n!).
+
+        * jac : bool or callable, optional
+            Jacobian (gradient) of objective function. Only for CG, BFGS,
+            Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If jac is a
+            Boolean and is True, fun is assumed to return the gradient along
+            with the objective function. If False, the gradient will be
+            estimated numerically. jac can also be a callable returning the
+            gradient of the objective. In this case, it must accept the same
+            arguments as fun. (Passed to `scipy.optimize.minmize` automatically)
+
+        * hess, hessp : callable, optional
+            Hessian (matrix of second-order derivatives) of objective function
+            or Hessian of objective function times an arbitrary vector p.
+            Only for Newton-CG, dogleg, trust-ncg. Only one of hessp or hess
+            needs to be given. If hess is provided, then hessp will be ignored.
+            If neither hess nor hessp is provided, then the Hessian product
+            will be approximated using finite differences on jac. hessp must
+            compute the Hessian times an arbitrary vector.
+            (Passed to `scipy.optimize.minmize` automatically)
 
 Algorithm settings:
 
@@ -510,7 +529,7 @@ Important attributes are:
 References
 ----------
 1. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz        optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
-2. Sobol, IM (1967) "The distribution of points in a cube and the        approximate evaluation of integrals", USSR Comput. Math. Math. Phys.        7, 86-112.
+2. [Sobol, IM (1967) "The distribution of points in a cube and the approximate evaluation of integrals", USSR Comput. Math. Math. Phys. 7, 86-112.](http://www.sciencedirect.com/science/article/pii/0041555367901449)
 3. Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with better two-dimensional projections", SIAM J. Sci. Comput. 30, 2635-2654.
 4. Li, Z. and Scheraga, H. A. (1987) “Monte carlo-minimization approach to the multipleminima problem in protein folding”, Proceedings of the National Academy of Sciences, 84 (19), 6611–6615.
 5. Wales, D. J. and Doye, J. P. (1997) “Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms”, The Journal of Physical Chemistry A, 101 (28), 5111–5116.

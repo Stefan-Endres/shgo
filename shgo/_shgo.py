@@ -1,16 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-""" execfile('tgo.py')
-"""
-from __future__ import division, print_function, absolute_import
-
-from time import time
-
 import numpy
 import scipy.optimize
 import scipy.spatial
 from shgo.triangulation import *
 import shgo.sobol_seq as sobol_seq
+from time import time
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
@@ -137,8 +130,27 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Objective function knowledge:
 
         * symmetry : bool
-           Specify True if the objective function contains symmetric variables.
-           The search space (and therfore performance) is decreased by O(n!).
+            Specify True if the objective function contains symmetric variables.
+            The search space (and therefore performance) is decreased by O(n!).
+
+        * jac : bool or callable, optional
+            Jacobian (gradient) of objective function. Only for CG, BFGS,
+            Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If jac is a
+            Boolean and is True, fun is assumed to return the gradient along
+            with the objective function. If False, the gradient will be
+            estimated numerically. jac can also be a callable returning the
+            gradient of the objective. In this case, it must accept the same
+            arguments as fun. (Passed to `scipy.optimize.minmize` automatically)
+
+        * hess, hessp : callable, optional
+            Hessian (matrix of second-order derivatives) of objective function
+            or Hessian of objective function times an arbitrary vector p.
+            Only for Newton-CG, dogleg, trust-ncg. Only one of hessp or hess
+            needs to be given. If hess is provided, then hessp will be ignored.
+            If neither hess nor hessp is provided, then the Hessian product
+            will be approximated using finite differences on jac. hessp must
+            compute the Hessian times an arbitrary vector.
+            (Passed to `scipy.optimize.minmize` automatically)
 
         Algorithm settings:
 
@@ -512,6 +524,11 @@ class SHGO(object):
                 if 'constraints' not in minimizer_kwargs:
                     if constraints is not None:
                         self.minimizer_kwargs['constraints'] = self.min_cons
+
+            # Update remaining options such as jac, hess, f_tol etc:
+            if options is not None:
+                self.minimizer_kwargs.update(options)
+                print(f'self.minimizer_kwargs = {self.minimizer_kwargs}')
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
@@ -527,15 +544,17 @@ class SHGO(object):
                     self.minimizer_kwargs['constraints'] = self.min_cons
 
             if options is not None:
-                if 'f_tol' in options:
-                    self.minimizer_kwargs['options']['ftol'] = \
-                        options['f_tol']
-                if 'maxfev' in options:
-                    self.minimizer_kwargs['options']['maxfev'] = \
-                        options['maxfev']
-                if 'disp' in options:
-                    self.minimizer_kwargs['options']['disp'] = \
-                        options['disp']
+                self.minimizer_kwargs['options'].update(options)
+                if 0:
+                    if 'f_tol' in options:
+                        self.minimizer_kwargs['options']['ftol'] = \
+                            options['f_tol']
+                    if 'maxfev' in options:
+                        self.minimizer_kwargs['options']['maxfev'] = \
+                            options['maxfev']
+                    if 'disp' in options:
+                        self.minimizer_kwargs['options']['disp'] = \
+                            options['disp']
 
         # Process options dict
         if options is not None:
@@ -1599,9 +1618,3 @@ class LMapCache:
         self.xl_maps.append(lres.x)
         self.f_maps.append(lres.fun)
         self.lbound_maps.append(bounds)
-
-
-
-if __name__ == '__main__':
-    pass
-    # doctest.testmod()

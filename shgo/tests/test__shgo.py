@@ -32,6 +32,12 @@ class Test1(TestFunction):
     def g(x):
        return -(numpy.sum(x, axis=0) - 6.0)
 
+    def jac(x):
+        return numpy.array([2*x[0], 2*x[1]]).T
+
+    def hess(x):
+        return numpy.array([[2, 0], [0, 2]])
+
     cons = wrap_constraints(g)
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
@@ -478,7 +484,7 @@ class TestShgoArguments(object):
 
     def test_7_1_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers with constraints"""
-        # Test sovlers
+        # Test solvers
         for solver in ['COBYLA', 'SLSQP']:
             # Note that passing global constraints to SLSQP is tested in other
             # unittests which run test4_1 normally
@@ -495,6 +501,39 @@ class TestShgoArguments(object):
         SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
                      minimizer_kwargs=minimizer_kwargs)
 
+
+    def test_7_3_minkwargs(self):
+        """Test the minimizer_kwargs arguments for solvers without constraints"""
+        for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
+                       'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg']:
+            def jac(x):
+                return numpy.array([2 * x[0], 2 * x[1]]).T
+
+            def hess(x):
+                return numpy.array([[2, 0], [0, 2]])
+
+            minimizer_kwargs = {'method': solver,
+                                'jac': jac,
+                                'hess': hess}
+            logging.info("Solver = {}".format(solver))
+            logging.info("="*100)
+            run_test(test1_1, n=100, test_atol=1e-3,
+                     minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
+
+        def test_7_3_minkwargs(self):
+            """Test the minimizer_kwargs arguments for solvers without constraints"""
+            for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
+                           'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg']:
+                # Note that passing global constraints to SLSQP is tested in other
+                # unittests which run test4_1 normally
+                minimizer_kwargs = {'method': solver}
+                options = {'jac': test1_1.jac,
+                           'hess': test1_1.hess}
+                logging.info("Solver = {}".format(solver))
+                logging.infot("=" * 100)
+                run_test(test1_1, n=100, test_atol=1e-3, options=options,
+                         minimizer_kwargs=minimizer_kwargs,
+                         sampling_method='sobol')
 
     #def test_8_custom_sampling(self):
     #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
