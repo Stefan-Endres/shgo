@@ -1293,68 +1293,6 @@ class SHGO(object):
                 self.X_min = []
 
     @staticmethod
-    def sobol_points_old(n, d):
-        """
-        sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
-        Carl Sandrock 2016-03-31 (MIT lic)
-
-        The original program is available and described at
-        http://web.maths.unsw.edu.au/~fkuo/sobol/
-        (BSD lic)
-        """
-        import gzip
-        import os
-        path = os.path.join(os.path.dirname(__file__), 'new-joe-kuo-6.gz')
-        with gzip.open(path) as f:
-            unsigned = "uint64"
-            # swallow header
-            buffer = next(f)
-            l = int(numpy.log(n) // numpy.log(2.0)) + 1
-
-            C = numpy.ones(n, dtype=unsigned)
-            for i in range(1, n):
-                value = i
-                while value & 1:
-                    value >>= 1
-                    C[i] += 1
-
-            points = numpy.zeros((n, d), dtype='double')
-
-            # XXX: This appears not to set the first element of V
-            V = numpy.empty(l + 1, dtype=unsigned)
-            for i in range(1, l + 1):
-                V[i] = 1 << (32 - i)
-
-            X = numpy.empty(n, dtype=unsigned)
-            X[0] = 0
-            for i in range(1, n):
-                X[i] = X[i - 1] ^ V[C[i - 1]]
-                points[i, 0] = X[i] / 2 ** 32
-
-            for j in range(1, d):
-                F_int = [int(item) for item in next(f).strip().split()]
-                (d, s, a), m = F_int[:3], [0] + F_int[3:]
-
-                if l <= s:
-                    for i in range(1, l + 1): V[i] = m[i] << (32 - i)
-                else:
-                    for i in range(1, s + 1): V[i] = m[i] << (32 - i)
-                    for i in range(s + 1, l + 1):
-                        V[i] = V[i - s] ^ (
-                            V[i - s] >> numpy.array(s, dtype=unsigned))
-                        for k in range(1, s):
-                            V[i] ^= numpy.array(
-                                (((a >> (s - 1 - k)) & 1) * V[i - k]),
-                                dtype=unsigned)
-
-                X[0] = 0
-                for i in range(1, n):
-                    X[i] = X[i - 1] ^ V[C[i - 1]]
-                    points[i, j] = X[i] / 2 ** 32  # *** the actual points
-
-            return points
-
-    @staticmethod
     def sobol_points(n, d):
         """
         Wrapper for sobol_seq.i4_sobol_generate
