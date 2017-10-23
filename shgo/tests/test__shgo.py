@@ -496,8 +496,8 @@ class TestShgoArguments(object):
                      minimizer_kwargs=minimizer_kwargs)
 
 
-    def test_8_custom_sampling(self):
-        run_test(test1_1, sampling_method=SHGO.sampling_sobol)
+    #def test_8_custom_sampling(self):
+    #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
 
     def test_9_cons_g(self):
         """Test single function constraint passing"""
@@ -511,6 +511,14 @@ class TestShgoArguments(object):
         print(res)
 
     def test_11_f_min_time(self):
+        """Test to cover the case where f_lowest == 0"""
+        options = {'maxtime': 1e-15,
+                   'f_min': 0.0}
+        res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
+                   options=options, sampling_method='sobol')
+        print(res)
+
+    def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
         options = {'maxtime': 1e-15,
                    'f_min': 0.0}
