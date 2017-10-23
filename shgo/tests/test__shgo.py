@@ -234,7 +234,6 @@ test_infeasible = TestInfeasible(bounds=[(2, 50), (-1, 1)],
                                  expected_x=None
                                  )
 
-
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol'):
@@ -459,6 +458,21 @@ class TestShgoArguments(object):
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
+    def test_7_1_local_args(self):
+        """Test the minimizer_kwargs arguments for solvers with constraints"""
+        for solver in ['COBYLA', 'SLSQP']:
+            # Note that passing global constraints to SLSQP is tested in other
+            # unittests which run test4_1 normally
+            minimizer_kwargs = {'method': solver,
+                                'constraints': test3_1.cons}
+            print("Solver = {}".format(solver))
+            print("="*100)
+            run_test(test3_1, n=100, test_atol=1e-3,
+                     minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
+
+    def test_8_custom_sampling(self):
+        run_test(test1_1, sampling_method=SHGO.sampling_sobol)
+
 # Failure test functions
 class TestShgoFailures(object):
     def test_2_sampling(self):
@@ -530,4 +544,3 @@ class TestShgoFailures(object):
     #                                shgo, test1_1.f, test1_1.bounds, args=args)
         #numpy.testing.assert_raises(TypeError,
         #                            shgo, test1_1.f, test1_1.bounds, g_args=args)
-

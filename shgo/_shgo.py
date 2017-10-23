@@ -1142,7 +1142,11 @@ class SHGO(object):
             self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(
                 x_min)
 
-        lres = scipy.optimize.minimize(self.func, x_min,
+        #TODO: Investigate why this is needed for COBLYA but not SLSQP
+        x0 = numpy.ndarray.tolist(x_min)
+        x0 = tuple(x0[0])
+        ###############################################################
+        lres = scipy.optimize.minimize(self.func, x0,
                                        **self.minimizer_kwargs)
 
         if self.disp:
@@ -1628,9 +1632,6 @@ class LMap:
         self.f_min = None
         self.lbounds = []
 
-    def __hash__(self):
-        return hash(self.x)
-
 class LMapCache:
     def __init__(self):
         self.cache = {}
@@ -1644,7 +1645,6 @@ class LMapCache:
     def __getitem__(self, v):
         v = numpy.ndarray.tolist(v)
         v = tuple(v[0])
-        #try:  # Needed because of the brain dead 1x1 numpy arrays
         try:
             return self.cache[v]
         except KeyError:
