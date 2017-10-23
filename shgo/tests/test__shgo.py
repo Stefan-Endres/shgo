@@ -434,19 +434,21 @@ class TestShgoArguments(object):
                    'f_tol': 1e-6,
                    # Specify number of local iterations to perform+
                    'minimize_every_iter': True,
-                   'local_iter': 1}
+                   'local_iter': 1,
+                   'infty_constraints': False}
 
         run_test(test4_1, n=300, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evalutions for 1D funcs"""
-        options = { # Specify known function value
+        options = {# Specify known function value
                    'f_min': test4_1.expected_fun,
                    'f_tol': 1e-6,
                    # Specify number of local iterations to perform+
                    'minimize_every_iter': True,
-                   'local_iter': 1}
+                   'local_iter': 1,
+                   'infty_constraints': False}
         #run_test(test2_1, n=None, iters=None, test_atol=1e-5, options=options,
         #         sampling_method='sobol')
 
@@ -498,8 +500,9 @@ class TestShgoArguments(object):
     def test_7_2_minkwargs(self):
         """Test the minimizer_kwargs default inits"""
         minimizer_kwargs = {'ftol': 1e-5}
+        options = {'disp' : True}  # For coverage purposes
         SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
-                     minimizer_kwargs=minimizer_kwargs)
+                     minimizer_kwargs=minimizer_kwargs, options=options)
 
 
     def test_7_3_minkwargs(self):
@@ -530,10 +533,13 @@ class TestShgoArguments(object):
                 options = {'jac': test1_1.jac,
                            'hess': test1_1.hess}
                 logging.info("Solver = {}".format(solver))
-                logging.infot("=" * 100)
-                run_test(test1_1, n=100, test_atol=1e-3, options=options,
+                logging.info("=" * 100)
+                logging.info("Not DONE")
+                run_test(test1_1, n=101, test_atol=1e-3, options=options,
                          minimizer_kwargs=minimizer_kwargs,
                          sampling_method='sobol')
+                logging.info("DONE")
+
 
     #def test_8_custom_sampling(self):
     #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)

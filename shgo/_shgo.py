@@ -525,6 +525,8 @@ class SHGO(object):
                     if constraints is not None:
                         self.minimizer_kwargs['constraints'] = self.min_cons
 
+            if 'options' not in minimizer_kwargs:
+                self.minimizer_kwargs['options'] = {}
             # Update remaining options such as jac, hess, f_tol etc:
             if options is not None:
                 self.minimizer_kwargs.update(options)
@@ -629,7 +631,8 @@ class SHGO(object):
         self.res = scipy.optimize.OptimizeResult()
         self.res.nfev = 0  # Includes each sampling point as func evaluation
         self.res.nlfev = 0  # Local function evals for all minimisers
-        self.res.nljev = 0  # Local jacobian evals for all minimisers
+        self.res.nljev = 0  # Local Jacobian evals for all minimisers
+        self.res.nlhev = 0  # Local Hessian evals for all minimisers
         return
 
     ## Initiation aids
@@ -705,7 +708,7 @@ class SHGO(object):
             # If True then
             self.infty_cons_sampl = options['infty_constraints']
         else:
-            self.infty_cons_sampl = False
+            self.infty_cons_sampl = True
 
         # Feedback
         if 'disp' in options:
@@ -1158,6 +1161,10 @@ class SHGO(object):
 
         # Local function evals for all minimisers
         self.res.nlfev += lres.nfev
+        if 'njev' in lres:
+            self.res.nljev += lres.njev
+        if 'nhev' in lres:
+            self.res.nlhev += lres.nhev
 
         # Convert containers to lists
         self.x_min_glob = list(self.x_min_glob)
