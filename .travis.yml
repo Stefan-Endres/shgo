@@ -45,7 +45,7 @@ install:
 
 # Run test
 script:
-  - pytest --cov=shgo
-  - coverage run ./shgo/tests/test__shgo.py
+  - pytest #--cov=shgo
+  #- coverage run ./shgo/tests/test__shgo.py
 after_success:
   - coveralls
