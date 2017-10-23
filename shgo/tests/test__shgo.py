@@ -327,7 +327,7 @@ class TestShgoSimplicialTestFunctions(object):
     def test_f2_1_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
         #run_test(test2_1, n=100, sampling_method='simplicial')
-        run_test(test2_1, iters=6, sampling_method='simplicial')
+        run_test(test2_1, iters=7, sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
@@ -348,7 +348,7 @@ class TestShgoSimplicialTestFunctions(object):
                    'disp': True}
         args = (6,)  # No. of atoms
         run_test(testLJ, args=args, n=None,
-                 options=options, iters=3,
+                 options=options, iters=4,
                  sampling_method='simplicial')
 
 
@@ -361,7 +361,7 @@ class TestShgoArguments(object):
 
     def test_1_2_simpl_iter(self):
         """Iterative simplicial on TestFunction 2 (univariate)"""
-        run_test(test2_1, n=None, iters=6, sampling_method='simplicial')
+        run_test(test2_1, n=None, iters=7, sampling_method='simplicial')
 
     def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
@@ -476,8 +476,9 @@ class TestShgoArguments(object):
         numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5, atol=1e-5)
         numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
-    def test_7_1_local_args(self):
+    def test_7_1_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers with constraints"""
+        # Test sovlers
         for solver in ['COBYLA', 'SLSQP']:
             # Note that passing global constraints to SLSQP is tested in other
             # unittests which run test4_1 normally
@@ -488,11 +489,46 @@ class TestShgoArguments(object):
             run_test(test3_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
+    def test_7_2_minkwargs(self):
+        """Test the minimizer_kwargs default inits"""
+        minimizer_kwargs = {'ftol': 1e-5}
+        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
+                     minimizer_kwargs=minimizer_kwargs)
+
+
     def test_8_custom_sampling(self):
         run_test(test1_1, sampling_method=SHGO.sampling_sobol)
 
+    def test_9_cons_g(self):
+        """Test single function constraint passing"""
+        SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
+
+    def test_10_finite_time(self):
+        """Test single function constraint passing"""
+        options = {'maxtime': 1e-15}
+        res = shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
+                   options=options, sampling_method='sobol')
+        print(res)
+
+    def test_11_f_min_time(self):
+        """Test to cover the case where f_lowest == 0"""
+        options = {'maxtime': 1e-15,
+                   'f_min': 0.0}
+        res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
+                   options=options, sampling_method='sobol')
+        print(res)
+
 # Failure test functions
 class TestShgoFailures(object):
+    def test_1_maxiter(self):
+        """Test failure on insufficient iterations"""
+        options = {'maxiter': 2}
+        res = shgo(test4_1.f, test4_1.bounds, n=2, iters=None,
+                   options=options, sampling_method='sobol')
+
+        numpy.testing.assert_equal(False, res.success)
+        numpy.testing.assert_equal(4, res.nfev)
+
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
         numpy.testing.assert_raises(IOError,

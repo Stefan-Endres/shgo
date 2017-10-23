@@ -510,7 +510,8 @@ class SHGO(object):
 
             if self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA'):
                 if 'constraints' not in minimizer_kwargs:
-                    self.minimizer_kwargs['constraints'] = self.min_cons
+                    if constraints is not None:
+                        self.minimizer_kwargs['constraints'] = self.min_cons
         else:
             self.minimizer_kwargs = {'args': self.args,
                                      'method': 'SLSQP',
@@ -663,7 +664,7 @@ class SHGO(object):
         if 'maxtime' in options:
             # Maximum processing runtime allowed
             self.maxtime = options['maxtime']
-            self.init = time.time()
+            self.init = time()
         else:
             self.maxtime = None
         if 'f_min' in options:
@@ -784,11 +785,11 @@ class SHGO(object):
     ## Stopping criteria functions:
     def finite_iterations(self):
         if self.iters is not None:
-            if self.iters_done >= self.iters:
+            if self.iters_done >= (self.iters - 1):
                 self.stop_global = True
 
-        if self.maxiter is not None:
-            if self.iters_done >= self.maxiter:  # Stop for infeasible sampling
+        if self.maxiter is not None:  # Stop for infeasible sampling
+            if self.iters_done >= (self.maxiter - 1):
                 self.stop_global = True
         return self.stop_global
 
@@ -805,7 +806,7 @@ class SHGO(object):
         pass
 
     def finite_time(self):
-        if (time.time() - self.init) >= self.maxtime:
+        if (time() - self.init) >= self.maxtime:
             self.stop_global = True
 
     def finite_precision(self):
