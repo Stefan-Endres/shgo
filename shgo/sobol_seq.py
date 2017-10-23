@@ -266,15 +266,6 @@ def i4_sobol(dim_num, seed):
 
     #  Things to do only if the dimension changed.
     if dim_num != dim_num_save:
-
-        #  Check parameters.
-        if dim_num < 1 or dim_max < dim_num:
-            print('I4_SOBOL - Fatal error!')
-            print('  The spatial dimension DIM_NUM should satisfy:')
-            print('    1 <= DIM_NUM <= %d' % dim_max)
-            print('  But this input value is DIM_NUM = %d' % dim_num)
-            return
-
         dim_num_save = dim_num
 
         #  Initialize the remaining rows of V.
