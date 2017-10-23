@@ -1208,12 +1208,6 @@ class SHGO(object):
         self.res.message = mes
         return
 
-    def global_evals(self):
-        """Count the number of global evaluations"""
-
-        if self.sampling_method == 'simplicial':
-            pass
-
     def sampled_surface(self, infty_cons_sampl=False):
         """
         Sample the function surface. There are 2 modes, if infty_cons_sampl
