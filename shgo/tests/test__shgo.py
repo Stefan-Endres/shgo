@@ -417,7 +417,8 @@ class TestShgoArguments(object):
                    'minimize_every_iter': True,
                    'local_iter': 1}
 
-        run_test(test4_1, n=None, test_atol=1e-5, options=options, sampling_method='simplicial')
+        run_test(test4_1, n=None, test_atol=1e-5, options=options,
+                 sampling_method='simplicial')
 
     @numpy.testing.decorators.slow
     def test_4_3_known_f_min(self):
@@ -429,8 +430,25 @@ class TestShgoArguments(object):
                    'minimize_every_iter': True,
                    'local_iter': 1}
 
-        #run_test(test4_1, n=490, test_atol=1e-5, options=options, sampling_method='sobol')
-        run_test(test4_1, n=300, test_atol=1e-5, options=options, sampling_method='sobol')
+        run_test(test4_1, n=300, test_atol=1e-5, options=options,
+                 sampling_method='sobol')
+
+    def test_4_4_known_f_min(self):
+        """Test Global mode limiting local evalutions for 1D funcs"""
+        options = { # Specify known function value
+                   'f_min': test4_1.expected_fun,
+                   'f_tol': 1e-6,
+                   # Specify number of local iterations to perform+
+                   'minimize_every_iter': True,
+                   'local_iter': 1}
+        #run_test(test2_1, n=None, iters=None, test_atol=1e-5, options=options,
+        #         sampling_method='sobol')
+
+        res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
+                    n=None, iters=None, options=options,
+                    sampling_method='sobol')
+        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
+                                      atol=1e-5)
 
     def test_5_1_simplicial_argless(self):
         """Test Default simplicial sampling settings on TestFunction 1"""
