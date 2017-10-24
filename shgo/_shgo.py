@@ -1343,8 +1343,7 @@ class SHGO(object):
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
         self.I = numpy.argsort(self.C, axis=0)
-        # TODO Use self.I as mask to sort only once
-        self.Xs = numpy.sort(self.C, axis=0)
+        self.Xs = self.C[self.I]
         return self.I, self.Xs
 
     def ax_subspace(self):  # Validated
