@@ -195,7 +195,7 @@ array([ 0.99999555,  0.99999111])
 Next we consider the [Eggholder function](https://en.wikipedia.org/wiki/Test_functions_for_optimization), a problem with several local minima and one global minimum. We will demonstrate the use of some of the arguments and capabilities of shgo.
 
 ```python
->>> from scipy.optimize import shgo
+>>> from shgo import shgo
 >>> import numpy as np
 >>> def eggholder(x):
 ...     return (-(x[1] + 47.0)
@@ -247,7 +247,7 @@ Now suppose we want to find a larger number of local minima (or we hope to find 
 ```python
 >>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
 >>> len(result.xl), len(result_2.xl)
-(13, 33)
+(13, 28)
 ```
 
 Note that there is a difference between specifying arguments for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the promising points contained in the minimiser pool is processed only once. In the latter case it is processed every 60 sampling points for a total of 3 iterations.
@@ -270,7 +270,7 @@ Approx. answer [4]:
     $f([0.6355216, -0.12e^{-11}, 0.3127019, 0.05177655]) = 29.894378$
 
 ```python
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]
@@ -291,7 +291,7 @@ Approx. answer [4]:
     ...         {'type': 'ineq', 'fun': g2},
     ...         {'type': 'eq', 'fun': h1})
     >>> bounds = [(0, 1.0),]*4
-    >>> res = shgo(f, bounds, iters=2, constraints=cons)
+    >>> res = shgo(f, bounds, iters=3, constraints=cons)
     >>> res
          fun: 29.894378159142136
         funl: array([ 29.89437816])
@@ -344,9 +344,9 @@ objective function.
 Constraints definition.
 Function(s) $\mathbb{R}^n$ in the form:
 
-$g(x) \le 0$ applied as $g : \mathbb{R}^n -> \mathbb{R}^m$
+$g(x) \le 0$ applied as $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
 
-$h(x) = 0$ applied as $g : \mathbb{R}^n -> \mathbb{R}^p$
+$h(x) = 0$ applied as $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
 
 Each constraint is defined in a dictionary with fields:
 
@@ -440,8 +440,8 @@ be specified:
         searching in infeasible points).
     * maxtime : float
         Maximum processing runtime allowed
-    * maxhgrd : int
-        Maximum homology group rank differential. The homology group of the
+    * minhgrd : int
+        Minimum  homology group rank differential. The homology group of the
         objective function is calculated (approximately) during every
         iteration. The rank of this group has a one-to-one correspondence
         with the number of locally convex subdomains in the objective
@@ -452,35 +452,35 @@ be specified:
 
 Objective function knowledge:
 
-        * symmetry : bool
-            Specify True if the objective function contains symmetric variables.
-            The search space (and therefore performance) is decreased by O(n!).
+    * symmetry : bool
+        Specify True if the objective function contains symmetric variables.
+        The search space (and therefore performance) is decreased by O(n!).
 
-        * jac : bool or callable, optional
-            Jacobian (gradient) of objective function. Only for CG, BFGS,
-            Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If jac is a
-            Boolean and is True, fun is assumed to return the gradient along
-            with the objective function. If False, the gradient will be
-            estimated numerically. jac can also be a callable returning the
-            gradient of the objective. In this case, it must accept the same
-            arguments as fun. (Passed to `scipy.optimize.minmize` automatically)
+    * jac : bool or callable, optional
+        Jacobian (gradient) of objective function. Only for CG, BFGS,
+        Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg. If jac is a
+        Boolean and is True, fun is assumed to return the gradient along
+        with the objective function. If False, the gradient will be
+        estimated numerically. jac can also be a callable returning the
+        gradient of the objective. In this case, it must accept the same
+        arguments as fun. (Passed to `scipy.optimize.minmize` automatically)
 
-        * hess, hessp : callable, optional
-            Hessian (matrix of second-order derivatives) of objective function
-            or Hessian of objective function times an arbitrary vector p.
-            Only for Newton-CG, dogleg, trust-ncg. Only one of hessp or hess
-            needs to be given. If hess is provided, then hessp will be ignored.
-            If neither hess nor hessp is provided, then the Hessian product
-            will be approximated using finite differences on jac. hessp must
-            compute the Hessian times an arbitrary vector.
-            (Passed to `scipy.optimize.minmize` automatically)
+    * hess, hessp : callable, optional
+        Hessian (matrix of second-order derivatives) of objective function
+        or Hessian of objective function times an arbitrary vector p.
+        Only for Newton-CG, dogleg, trust-ncg. Only one of hessp or hess
+        needs to be given. If hess is provided, then hessp will be ignored.
+        If neither hess nor hessp is provided, then the Hessian product
+        will be approximated using finite differences on jac. hessp must
+        compute the Hessian times an arbitrary vector.
+        (Passed to `scipy.optimize.minmize` automatically)
 
 Algorithm settings:
 
     * minimize_every_iter : bool
         If True then promising global sampling points will be passed to a
         local minimisation routine every iteration. If False then only the
-        final minimiser pool will be run.
+        final minimiser pool will be run. Defaults to False.
     * local_iter : int
         Only evaluate a few of the best minimiser pool candiates every
         iteration. If False all potential points are passed to the local
