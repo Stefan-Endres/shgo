@@ -344,14 +344,16 @@ class TestShgoSimplicialTestFunctions(object):
         run_test(test1_2, n=1,  sampling_method='simplicial')
 
     def test_f1_3_simplicial(self):
-        """Multivariate test function 1: x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
-        run_test(test1_3, n=1,  sampling_method='simplicial')
+        """Multivariate test function 1: x[0]**2 + x[1]**2
+        with bounds=[(None, None),(None, None)]"""
+        run_test(test1_3, n=1, sampling_method='simplicial')
 
     def test_f2_1_simplicial(self):
-        """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
-        #run_test(test2_1, n=100, sampling_method='simplicial')
-        #run_test(test2_1, iters=7, sampling_method='simplicial')
-        run_test(test2_1, iters=6, sampling_method='simplicial')
+        """Univariate test function on
+        f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
+        options = {'minimize_every_iter': False}
+        run_test(test2_1, iters=7, options=options,
+                 sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
@@ -383,7 +385,9 @@ class TestShgoArguments(object):
 
     def test_1_2_simpl_iter(self):
         """Iterative simplicial on TestFunction 2 (univariate)"""
-        run_test(test2_1, n=None, iters=7, sampling_method='simplicial')
+        options = {'minimize_every_iter': False}
+        run_test(test2_1, n=None, iters=7, options=options,
+                 sampling_method='simplicial')
 
     def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
@@ -520,7 +524,6 @@ class TestShgoArguments(object):
         SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
                      minimizer_kwargs=minimizer_kwargs, options=options)
 
-
     def test_7_3_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers without constraints"""
         for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
@@ -539,9 +542,9 @@ class TestShgoArguments(object):
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
-
     def test_8_homology_group_diff(self):
-        options = {'minhgrd': 1}
+        options = {'minhgrd': 1,
+                   'minimize_every_iter': True}
         #run_test(test1_1, n=None, iters=None, options=options,
         #         sampling_method='sobol')
 
@@ -587,6 +590,12 @@ class TestShgoArguments(object):
         """Test limited local iterations for a pseudo-global mode"""
         options = {'local_iter': 4}
         run_test(test5_1, n=30, options=options)
+
+    def test_15_min_every_iter(self):
+        """Test minimize every iter options and cover function cache"""
+        options = {'minimize_every_iter': True}
+        run_test(test1_1, n=1, iters=7, options=options,
+                 sampling_method='sobol')
 
     #def test_15_custom_sampling(self):
     #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)

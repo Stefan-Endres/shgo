@@ -157,7 +157,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
             local minimisation routine every iteration. If False then only the
-            final minimiser pool will be run. Defaults to True.
+            final minimiser pool will be run. Defaults to False.
         * local_iter : int
             Only evaluate a few of the best minimiser pool candiates every
             iteration. If False all potential points are passed to the local
@@ -551,7 +551,7 @@ class SHGO(object):
             self.init_options(options)
         else:  # Default settings:
             self.f_min_true = None
-            self.minimize_every_iter = True
+            self.minimize_every_iter = False
             self.local_fglob = None  # dev
 
             # Algorithm limits
@@ -655,7 +655,7 @@ class SHGO(object):
         if 'minimize_every_iter' in options:
             self.minimize_every_iter = options['minimize_every_iter']
         else:
-            self.minimize_every_iter = True
+            self.minimize_every_iter = False
 
         # Algorithm limits
         if 'maxiter' in options:
@@ -839,12 +839,11 @@ class SHGO(object):
         return self.stop_global
 
     def finite_homology_growth(self):
-        print(f'self.LMC.size  = {self.LMC.size }')
         if self.LMC.size == 0:
             return  # pass on no reason to stop yet.
         self.hgrd = self.LMC.size - self.hgr
 
-        self.hgr = len(self.LMC.size)
+        self.hgr = self.LMC.size
         if self.hgrd <= self.minhgrd:
             self.stop_global = True
         return self.stop_global
@@ -1480,14 +1479,15 @@ class SHGO(object):
             if self.g_cons is not None:
                 for g in self.g_cons:
                     if g(self.C[i, :], *self.args) < 0.0:
-                        self.F[i] = numpy.inf
                         eval_f = False
                         break  # Breaks the g loop
 
             if eval_f:
                 self.F[i] = self.func(self.C[i, :], *self.args)
                 self.fn += 1
-
+            elif self.infty_cons_sampl:
+                self.F[i] = numpy.inf
+                self.fn += 1
         if f_cache_bool:
             if fn_old > 0:  # Restore saved function evaluations
                 self.F[0:fn_old] = Ftemp
