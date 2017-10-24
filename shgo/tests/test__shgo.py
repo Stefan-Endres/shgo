@@ -153,6 +153,20 @@ test4_1 = Test4(bounds=[(-10, 10),]*7,
                    expected_fun=680.6300573
                   )
 
+class Test5(TestFunction):
+    def f(self, x):
+        return (-(x[1] + 47.0)
+                * numpy.sin(numpy.sqrt(abs(x[0] / 2.0 + (x[1] + 47.0))))
+                - x[0] * numpy.sin(numpy.sqrt(abs(x[0] - (x[1] + 47.0))))
+                )
+
+    g = None
+    cons = wrap_constraints(g)
+
+test5_1 = Test5(bounds=[(-512, 512), (-512, 512)],
+                       expected_fun=[-959.64066272085051],
+                       expected_x=[ 512.,  404.23180542])
+
 class TestLJ(TestFunction):
     """
     LennardJones objective function. Used to test symmetry constraints settings.
@@ -304,6 +318,13 @@ class TestShgoSobolTestFunctions(object):
         #run_test(test4_1, n=800)
         run_test(test4_1, n=990)
 
+    def test_f5_1_sobol(self):
+        """NLP: Eggholder, multimodal"""
+        run_test(test5_1, n=30)
+
+    def test_f5_2_sobol(self):
+        """NLP: Eggholder, multimodal"""
+        run_test(test5_1, n=60, iters=5)
 
     #def test_t911(self):
     #    """1D tabletop function"""

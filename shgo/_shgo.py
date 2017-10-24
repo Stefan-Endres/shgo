@@ -973,7 +973,9 @@ class SHGO(object):
         # Find first local minimum
         # NOTE: Since we always minimize this value regardless it is a waste to
         # build the topograph first before minimizing
-        lres_f_min = self.minimize(self.X_min[[0]])
+
+        #lres_f_min = self.minimize(self.X_min[[0]])
+        lres_f_min = self.minimize(self.X_min[0])
 
         # Trim minimised point from current minimiser set
         self.trim_min_pool(0)
@@ -1013,7 +1015,8 @@ class SHGO(object):
             # Find local minimum at the miniser with the greatest euclidean
             # distance from the current solution
             ind_xmin_l = self.Z[:, -1]
-            lres_f_min = self.minimize(self.Ss[:, -1])
+            #lres_f_min = self.minimize(self.Ss[:, -1])
+            lres_f_min = self.minimize(self.Ss[-1, :])
 
             # Trim minimised point from current minimiser set
             self.trim_min_pool(ind_xmin_l)
@@ -1048,6 +1051,7 @@ class SHGO(object):
         self.Z = numpy.argsort(self.Y, axis=-1)
 
         self.Ss = X_min[self.Z]
+        self.Ss = self.Ss[0]
         return self.Ss
 
     # Local bound functions
@@ -1098,6 +1102,37 @@ class SHGO(object):
         for x_b_i in self.bounds:
             cbounds.append([x_b_i[0], x_b_i[1]])
         # TODO: USE NEIGHBOURS FROM THE DELAYNEY TRIANGULATION
+        if 0:
+            if self.dim > 1:
+                #print(self.Tri.points)
+                print('-'*30)
+                print('-'*30)
+                print(self.X_min)  # [[ 0.09375  0.09375]]
+                print(self.X_min[0])
+                print(len(self.X_min))  # 1
+                for i, v in enumerate(self.X_min):
+                    print(v_min)
+                    print(v)
+                    if v == v_min[0]:
+                        ind = i
+                print(self.Tri.points[self.minimizer_pool])
+                print(self.Tri.points[i])
+                print(v_min)
+                print('-' * 30)
+        #nn = self.find_neighbors_delaunay(ind, self.Tri)
+        if 0:
+            for v in (1, 2):
+                for i, x_i in enumerate(v):
+                    # Lower bound
+                    if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
+                        cbounds[i][0] = x_i
+
+                    # Upper bound
+                    if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
+                        cbounds[i][1] = x_i
+            if self.disp:
+                logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
+                logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
     # Minimize a starting point locally
@@ -1135,7 +1170,7 @@ class SHGO(object):
                   'minimization at {}...'.format(x_min))
 
         if self.sampling_method == 'simplicial':
-            x_min_t = tuple(x_min[0])
+            x_min_t = tuple(x_min)
             # Find the normalized tuple in the Vertex cache:
             x_min_t_norm = self.X_min_cache[tuple(x_min_t)]
 
@@ -1154,7 +1189,8 @@ class SHGO(object):
 
         #TODO: Investigate why this is needed for COBLYA but not SLSQP
         x0 = numpy.ndarray.tolist(x_min)
-        x0 = tuple(x0[0])
+        #x0 = tuple(x0[0])
+        x0 = tuple(x0)
         ###############################################################
         lres = scipy.optimize.minimize(self.func, x0,
                                        **self.minimizer_kwargs)
@@ -1559,6 +1595,7 @@ class SHGO(object):
             self.Tri = Delaunay(self.C)
         else:
             if hasattr(self, 'T'):
+            #if hasattr(self, 'Tri'): #TODO?
                 self.Tri.add_points(self.C[n_prc:, :])
             else:
                 self.Tri = Delaunay(self.C, incremental=True)
@@ -1648,7 +1685,7 @@ class LMapCache:
 
     def __getitem__(self, v):
         v = numpy.ndarray.tolist(v)
-        v = tuple(v[0])
+        v = tuple(v)
         try:
             return self.cache[v]
         except KeyError:
@@ -1659,7 +1696,7 @@ class LMapCache:
 
     def add_res(self, v, lres, bounds=None):
         v = numpy.ndarray.tolist(v)
-        v = tuple(v[0])
+        v = tuple(v)
         self.cache[v].x_l = lres.x
         self.cache[v].lres = lres
         self.cache[v].f_min = lres.fun
