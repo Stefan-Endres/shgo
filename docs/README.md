@@ -11,7 +11,7 @@
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
-[![Coverage Status](https://s3.amazonaws.com/assets.coveralls.io/badges/coveralls_98.svg)](https://coveralls.io/github/Stefan-Endres/shgo?branch=master)
+[![Coverage Status](https://s3.amazonaws.com/assets.coveralls.io/badges/coveralls_99.svg)](https://coveralls.io/github/Stefan-Endres/shgo?branch=master)
 <sup>*Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/)*<sup>
 
 ### Table of Contents
