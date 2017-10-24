@@ -1,8 +1,8 @@
 .. image:: https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master
     :target: https://travis-ci.org/Stefan-Endres/shgo
     
-.. image:: https://s3.amazonaws.com/assets.coveralls.io/badges/coveralls_98.svg
-    :target: https://coveralls.io/github/Stefan-Endres/shgo?branch=master
+.. image:: https://coveralls.io/repos/github/Stefan-Endres/shgo/badge.png?branch=master
+:target: https://coveralls.io/github/Stefan-Endres/shgo?branch=master
 
 
 
