@@ -324,6 +324,7 @@ class TestShgoSobolTestFunctions(object):
 
     def test_f5_2_sobol(self):
         """NLP: Eggholder, multimodal"""
+        #run_test(test5_1, n=60, iters=5)
         run_test(test5_1, n=60, iters=5)
 
     #def test_t911(self):
