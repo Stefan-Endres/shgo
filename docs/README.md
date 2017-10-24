@@ -530,15 +530,15 @@ References
 ----------
 1. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz        optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
 2. [Sobol, IM (1967) "The distribution of points in a cube and the approximate evaluation of integrals", USSR Comput. Math. Math. Phys. 7, 86-112.](http://www.sciencedirect.com/science/article/pii/0041555367901449)
-3. Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with better two-dimensional projections", SIAM J. Sci. Comput. 30, 2635-2654.
-4. Li, Z. and Scheraga, H. A. (1987) “Monte carlo-minimization approach to the multipleminima problem in protein folding”, Proceedings of the National Academy of Sciences, 84 (19), 6611–6615.
-5. Wales, D. J. and Doye, J. P. (1997) “Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms”, The Journal of Physical Chemistry A, 101 (28), 5111–5116.
-6. Storn, R. and Price, K. (1997) “Differential evolution – a simple and efficient heuristic for global optimization over continuous spaces”, Journal of Global Optimization, 11 (4), 341–359 URL http://dx.doi.org/10.1023/A:1008202821328.
-7. Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of algorithms and comparison of software implementations”, Journal of Global Optimization, 56 (3), 1247–1293.    
-8. Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimization without the lipschitz constant”, Journal of Optimization theory and Applications,79 (1), 157–181.
-9. Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.
-10. Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-biased disimpl algorithm for expensive global optimization”, Journal of Global Optimization, 59 (2), 545–567.
-11. Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer
-12. Paulavičius, R. and Žilinskas, J. Feb (2016) “Advantages of simplicial partitioning for lipschitz optimization problems with linear constraints”, Optimization Letters, 10 (2), 237–246.
-13.  Wales, DJ (2015) "Perspective: Insight into reaction coordinates and dynamics from the potential energy landscape",        Journal of Chemical Physics, 142(13), 2015.
-14. Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear programming codes", Lecture Notes in Economics and mathematical Systems, 187. Springer-Verlag, New York. http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
+3. [Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with better two-dimensional projections", SIAM J. Sci. Comput. 30, 2635-2654.](http://epubs.siam.org/doi/abs/10.1137/070709359?journalCode=sjoce3)
+4. [Li, Z. and Scheraga, H. A. (1987) “Monte carlo-minimization approach to the multipleminima problem in protein folding”, Proceedings of the National Academy of Sciences, 84 (19), 6611–6615.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC299132/)
+5. [Wales, D. J. and Doye, J. P. (1997) “Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms”, The Journal of Physical Chemistry A, 101 (28), 5111–5116.](http://pubs.acs.org/doi/abs/10.1021/jp970984n)
+6. [Storn, R. and Price, K. (1997) “Differential evolution – a simple and efficient heuristic for global optimization over continuous spaces”, Journal of Global Optimization, 11 (4), 341–359 URL http://dx.doi.org/10.1023/A:1008202821328.](http://dx.doi.org/10.1023/A:1008202821328)
+7. [Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of algorithms and comparison of software implementations”, Journal of Global Optimization, 56 (3), 1247–1293.](https://link.springer.com/article/10.1007/s10898-012-9951-y)
+8. [Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimization without the lipschitz constant”, Journal of Optimization theory and Applications,79 (1), 157–181.](https://link.springer.com/article/10.1007/BF00941892)
+9. [Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.](link.springer.com/article/10.1007/s10898-013-0089-3)
+10. [Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-biased disimpl algorithm for expensive global optimization”, Journal of Global Optimization, 59 (2), 545–567.](https://link.springer.com/article/10.1007/s10898-014-0180-4)
+11. [Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer](http://www.springer.com/us/book/9781461490920)
+12. [Paulavičius, R. and Žilinskas, J. Feb (2016) “Advantages of simplicial partitioning for lipschitz optimization problems with linear constraints”, Optimization Letters, 10 (2), 237–246.](https://link.springer.com/article/10.1007/s11590-014-0772-4)
+13.  [Wales, DJ (2015) "Perspective: Insight into reaction coordinates and dynamics from the potential energy landscape",        Journal of Chemical Physics, 142(13), 2015.](http://dx.doi.org/10.1063/1.4916307)
+14. [Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear programming codes", Lecture Notes in Economics and mathematical Systems, 187. Springer-Verlag, New York. http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf](http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf)
