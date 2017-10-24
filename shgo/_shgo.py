@@ -1365,7 +1365,7 @@ class SHGO(object):
         Find the objective function output reference table
         TODO: Replace with cached wrapper
         """
-        # TODO: This process can be pooled
+        # Note: This process can be pooled easily
         # Obj. function returns to be used as reference table.:
         f_cache_bool = False
         if self.fn > 0:  # Store old function evaluations
