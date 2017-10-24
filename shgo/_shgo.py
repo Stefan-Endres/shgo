@@ -905,7 +905,7 @@ class SHGO(object):
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
-        self.n_sampled = self.HC.V.size  # nevs counted by the triangulation.py routines
+        self.n_sampled = self.HC.V.size  # nevs counted in triangulation.py
         return
 
     def iterate_delauney(self):
@@ -925,7 +925,7 @@ class SHGO(object):
         Returns the indexes of all minimizers
         """
         self.minimizer_pool = []
-        # TODO: Can easily be parralized
+        # Note: Can implement parallelization here
         for x in self.HC.V.cache:
             if self.HC.V[x].minimiser():
                 if self.disp:
@@ -984,7 +984,6 @@ class SHGO(object):
         # NOTE: Since we always minimize this value regardless it is a waste to
         # build the topograph first before minimizing
 
-        #lres_f_min = self.minimize(self.X_min[[0]])
         lres_f_min = self.minimize(self.X_min[0], ind=self.minimizer_pool[0])
 
         # Trim minimised point from current minimiser set
@@ -1011,7 +1010,6 @@ class SHGO(object):
                 if self.local_iter == 0:
                     self.stop_l_iter = True
                     break
-                    # TODO: Test usage of iterative features
 
             if numpy.shape(self.X_min)[0] == 0:
                 self.stop_l_iter = True
@@ -1025,8 +1023,6 @@ class SHGO(object):
             # Find local minimum at the miniser with the greatest euclidean
             # distance from the current solution
             ind_xmin_l = self.Z[:, -1]
-            #lres_f_min = self.minimize(self.Ss[:, -1])
-            print(f'self.minimizer_pool = {self.minimizer_pool}')
             lres_f_min = self.minimize(self.Ss[-1, :], self.minimizer_pool[-1])
 
             # Trim minimised point from current minimiser set
@@ -1088,7 +1084,6 @@ class SHGO(object):
             cbounds.append([x_b_i[0], x_b_i[1]])
         # Loop over all bounds
         for vn in v_min.nn:
-            # for i, x_i in enumerate(vn.x):
             for i, x_i in enumerate(vn.x_a):
                 # Lower bound
                 if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
@@ -1118,7 +1113,7 @@ class SHGO(object):
         for x_b_i in self.bounds:
             cbounds.append([x_b_i[0], x_b_i[1]])
 
-        if 0:  # TODO: Routine not working well with tests currently
+        if 0:  # TODO: Routine is currently not working well on tests
             if self.dim == 1:  # No triangulation
                 return cbounds
 
@@ -1158,7 +1153,7 @@ class SHGO(object):
         # Use minima maps if vertex was already run
         if self.disp:
             logging.info('Vertex minimiser maps = {}'.format(self.LMC.v_maps))
-        #if x_min in self.LMC.v_maps:
+
         if self.LMC[x_min].lres is not None:
             return self.LMC[x_min].lres
 
@@ -1186,7 +1181,6 @@ class SHGO(object):
                 print('bounds in kwarg:')
                 print(self.minimizer_kwargs['bounds'])
         else:
-            # TODO: self.contstruct_lcb for Sobol sampling
             self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(
                 x_min, ind=ind)
 
@@ -1212,8 +1206,6 @@ class SHGO(object):
         self.LMC[x_min]
         self.LMC.add_res(x_min, lres, bounds=self.minimizer_kwargs['bounds'])
 
-
-
         return lres
 
     # Post local minimisation processing
@@ -1221,8 +1213,6 @@ class SHGO(object):
         """
         Sort results and build the global return object
         """
-        import numpy
-
         # Sort results in local minima cache
         results = self.LMC.sort_cache_result()
         self.res.xl = results['xl']
@@ -1421,7 +1411,6 @@ class SHGO(object):
                 if self.disp:
                     print(self.res.message)
 
-        # self.fn = numpy.shape(self.C)[0]
         return
 
     def sorted_samples(self):  # Validated
@@ -1477,8 +1466,6 @@ class SHGO(object):
         if f_cache_bool:
             if fn_old > 0:  # Restore saved function evaluations
                 self.F[0:fn_old] = Ftemp
-
-        # self.fn = numpy.shape(self.C)[0]
 
         return self.F
 
@@ -1553,9 +1540,8 @@ class SHGO(object):
         """
         Returns the indexes of all minimizers
         """
-        # TODO: Add capability to minimize limited subset like >1D
         self.minimizer_pool = []
-        # Note: Can be parralized
+        # Note: Can implement parallelization here
         for ind in range(self.fn):
             min_bool = self.sample_topo(ind)
             if min_bool:
@@ -1569,7 +1555,7 @@ class SHGO(object):
             self.X_min = self.C[self.minimizer_pool]
             # If function is called again and pool is found unbreak:
         else:
-            return []
+            self.X_min = []
 
         return self.X_min
 
