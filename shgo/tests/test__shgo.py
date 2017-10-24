@@ -32,12 +32,6 @@ class Test1(TestFunction):
     def g(x):
        return -(numpy.sum(x, axis=0) - 6.0)
 
-    def jac(x):
-        return numpy.array([2*x[0], 2*x[1]]).T
-
-    def hess(x):
-        return numpy.array([[2, 0], [0, 2]])
-
     cons = wrap_constraints(g)
 
 test1_1 = Test1(bounds=[(-1, 6), (-1, 6)],
@@ -303,6 +297,7 @@ class TestShgoSobolTestFunctions(object):
         """NLP: Hock and Schittkowski problem 18"""
         run_test(test3_1)
 
+    @numpy.testing.decorators.slow
     def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         #run_test(test4_1, n=500)
@@ -382,7 +377,7 @@ class TestShgoArguments(object):
         numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
-        """Iterative sampling on TestFunction 2 (univariate)"""
+        """Iterative sampling on TestFunction 1 and 2  (multi and univariate)"""
         def callback_func(x):
             print("Local minimization callback test")
         for test in [test1_1, test2_1]:
@@ -392,7 +387,7 @@ class TestShgoArguments(object):
                            callback=callback_func, options={'disp': True})
 
     def test_3_2_disp_sobol(self):
-        """Iterative sampling on TestFunction 2 (univariate)"""
+        """Iterative sampling on TestFunction 1 and 2 (multi and univariate)"""
         def callback_func(x):
             print("Local minimization callback test")
 
@@ -534,11 +529,9 @@ class TestShgoArguments(object):
                            'hess': test1_1.hess}
                 logging.info("Solver = {}".format(solver))
                 logging.info("=" * 100)
-                logging.info("Not DONE")
                 run_test(test1_1, n=101, test_atol=1e-3, options=options,
                          minimizer_kwargs=minimizer_kwargs,
                          sampling_method='sobol')
-                logging.info("DONE")
 
 
     #def test_8_custom_sampling(self):
@@ -621,11 +614,24 @@ class TestShgoFailures(object):
         numpy.testing.assert_raises(ValueError,
                                     shgo, test1_1.f, bounds)
 
-    def test_5_1_infeasible_sobol(self):
+    def test_5_1_1_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
-           after maxev is exceeded."""
+           after maxev is exceeded. Use infty constraints option"""
         options = {'maxev': 100,
                    'disp': True}
+
+        res = shgo(test_infeasible.f, test_infeasible.bounds,
+                   constraints=test_infeasible.cons, n=100, options=options,
+                   sampling_method='sobol')
+
+        numpy.testing.assert_equal(False, res.success)
+
+    def test_5_1_2_infeasible_sobol(self):
+        """Ensures the algorithm terminates on infeasible problems
+           after maxev is exceeded. Do not use infty constraints option"""
+        options = {'maxev': 100,
+                   'disp': True,
+                   'infty_constraints': False}
 
         res = shgo(test_infeasible.f, test_infeasible.bounds,
                    constraints=test_infeasible.cons, n=100, options=options,

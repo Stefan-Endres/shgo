@@ -169,7 +169,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
             Using this functionality could lead to higher performance with
             respect to function evaluations before the global minimum is found,
             specifying False will use less memory at the cost of a slight
-            decrease in performance.
+            decrease in performance. Defaults to True.
 
         Feedback:
 
@@ -462,7 +462,6 @@ class SHGO(object):
 
         ## Initiate class
         self.func = func
-        #  TODO Assert if func output matches dims. found from bounds
         self.bounds = bounds
         self.args = args
 
@@ -1334,7 +1333,6 @@ class SHGO(object):
                 self.res.message = ('No sampling point found within the '
                                     + 'feasible set. Increasing sampling '
                                     + 'size.')
-                # TODO: Write a unittest to see if algorithm is increasing
                 # sampling correctly for both 1D and >1D cases
                 if self.disp:
                     print(self.res.message)
