@@ -1403,7 +1403,6 @@ class SHGO(object):
         vector.
         """
         # Replace numpy inf, -inf and nan objects with floating point numbers
-        # fixme: Find a better way to deal with numpy.nan values.
         # nan --> float
         self.F[numpy.isnan(self.F)] = numpy.inf
         # inf, -inf  --> floats
@@ -1471,7 +1470,7 @@ class SHGO(object):
         """
         # TODO: Add capability to minimize limited subset like >1D
         self.minimizer_pool = []
-        # TODO: Can be parralized
+        # Note: Can be parralized
         for ind in range(self.fn):
             min_bool = self.sample_topo(ind)
             if min_bool:
