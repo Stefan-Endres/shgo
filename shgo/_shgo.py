@@ -117,8 +117,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
             searching in infeasible points).
         * maxtime : float
             Maximum processing runtime allowed
-        * maxhgrd : int
-            Maximum homology group rank differential. The homology group of the
+        * minhgrd : int
+            Minimum homology group rank differential. The homology group of the
             objective function is calculated (approximately) during every
             iteration. The rank of this group has a one-to-one correspondence
             with the number of locally convex subdomains in the objective
@@ -157,7 +157,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         * minimize_every_iter : bool
             If True then promising global sampling points will be passed to a
             local minimisation routine every iteration. If False then only the
-            final minimiser pool will be run.
+            final minimiser pool will be run. Defaults to True.
         * local_iter : int
             Only evaluate a few of the best minimiser pool candiates every
             iteration. If False all potential points are passed to the local
@@ -551,7 +551,7 @@ class SHGO(object):
             self.init_options(options)
         else:  # Default settings:
             self.f_min_true = None
-            self.minimize_every_iter = False
+            self.minimize_every_iter = True
             self.local_fglob = None  # dev
 
             # Algorithm limits
@@ -560,13 +560,13 @@ class SHGO(object):
             self.maxev = None
             self.maxtime = None
             self.f_min_true = None
-            self.maxhgrd = None
+            self.minhgrd = None
 
             # Objective function knowledge
             self.symmetry = False
 
             # Algorithm functionality
-            self.local_iter = False  # TODO: Change default value to True
+            self.local_iter = False
             self.infty_cons_sampl = False  # TODO: Change default value to True
 
             # Feedback
@@ -583,6 +583,7 @@ class SHGO(object):
         self.n_prc = 0  # Number of processed points (used to track Delaunay iters)
         self.n_sampled = 0  # To track no. of sampling points already generated
         self.fn = 0  # Number of feasible sampling points evaluations performed
+        self.hgr = 0  # Homology group rank
 
         # Default settings if no sampling criteria.
         if self.iters is None:
@@ -593,7 +594,7 @@ class SHGO(object):
 
         if not ((self.maxiter is None) and (self.maxfev is None) and (
                     self.maxev is None)
-                and (self.maxhgrd is None) and (self.f_min_true is None)):
+                and (self.minhgrd is None) and (self.f_min_true is None)):
             self.iters = None
 
         ## Set complex construction mode based on a provided stopping criteria:
@@ -624,8 +625,7 @@ class SHGO(object):
         self.stop_complex_iter = False  # Sampling iterations
 
         # Initiate storage objects used in algorithm classes
-        self.fun_min_glob = []  # List of objective function values at minima found
-        self.x_min_glob = []  # List of coordinate candidates at minima found
+        self.minimizer_pool = []
 
         # Cache of local minimizers mapped
         self.LMC = LMapCache()
@@ -655,7 +655,7 @@ class SHGO(object):
         if 'minimize_every_iter' in options:
             self.minimize_every_iter = options['minimize_every_iter']
         else:
-            self.minimize_every_iter = False
+            self.minimize_every_iter = True
 
         # Algorithm limits
         if 'maxiter' in options:
@@ -690,10 +690,10 @@ class SHGO(object):
         elif 'f_min' not in options:
             self.f_min_true = None
 
-        if 'maxhgrd' in options:
-            self.maxhgrd = options['maxhgrd']
+        if 'minhgrd' in options:
+            self.minhgrd = options['minhgrd']
         else:
-            self.maxhgrd = None
+            self.minhgrd = None
 
         # Objective function knowledge
         if 'symmetry' in options:
@@ -839,7 +839,15 @@ class SHGO(object):
         return self.stop_global
 
     def finite_homology_growth(self):
-        pass  #TODO:
+        print(f'self.LMC.size  = {self.LMC.size }')
+        if self.LMC.size == 0:
+            return  # pass on no reason to stop yet.
+        self.hgrd = self.LMC.size - self.hgr
+
+        self.hgr = len(self.LMC.size)
+        if self.hgrd <= self.minhgrd:
+            self.stop_global = True
+        return self.stop_global
 
     def stopping_criteria(self):
         """
@@ -862,7 +870,7 @@ class SHGO(object):
             self.finite_time()
         if self.f_min_true is not None:
             self.finite_precision()
-        if self.maxhgrd is not None:
+        if self.minhgrd is not None:
             self.finite_homology_growth()
 
         return
@@ -1021,6 +1029,8 @@ class SHGO(object):
             # Trim minimised point from current minimiser set
             self.trim_min_pool(ind_xmin_l)
 
+        # Reset controls
+        self.stop_l_iter = False
         return
 
     def sort_min_pool(self):
@@ -1205,19 +1215,16 @@ class SHGO(object):
         if 'nhev' in lres:
             self.res.nlhev += lres.nhev
 
-        # Convert containers to lists
-        self.x_min_glob = list(self.x_min_glob)
-        self.fun_min_glob = list(self.fun_min_glob)
+        try:  # Needed because of the brain dead 1x1 numpy arrays
+            lres.fun = lres.fun[0]
+        except (IndexError, TypeError):
+            lres.fun
 
         # Append minima maps
-        self.x_min_glob.append(lres.x)
         self.LMC[x_min]
         self.LMC.add_res(x_min, lres, bounds=self.minimizer_kwargs['bounds'])
 
-        try:  # Needed because of the brain dead 1x1 numpy arrays
-            self.fun_min_glob.append(lres.fun[0])
-        except (IndexError, TypeError):
-            self.fun_min_glob.append(lres.fun)
+
 
         return lres
 
@@ -1227,27 +1234,18 @@ class SHGO(object):
         Sort results and build the global return object
         """
         import numpy
-        # Sort results and save
-        self.x_min_glob = numpy.array(self.x_min_glob)
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
 
-        # Sorted indexes in Func_min
-        ind_sorted = numpy.argsort(self.fun_min_glob)
-
-        # Save ordered list of minima
-        self.res.xl = self.x_min_glob[ind_sorted]  # Ordered x vals
-        self.fun_min_glob = numpy.array(self.fun_min_glob)
-        self.res.funl = self.fun_min_glob[ind_sorted]
-        self.res.funl = self.res.funl.T
-
-        # Find global of all minimisers
-        self.res.x = self.x_min_glob[ind_sorted[0]]  # Save global minima
-        self.res.fun = self.fun_min_glob[ind_sorted[0]]  # Save global fun value
+        # Sort results in local minima cache
+        results = self.LMC.sort_cache_result()
+        self.res.xl = results['xl']
+        self.res.funl = results['funl']
+        self.res.x = results['x']
+        self.res.fun = results['fun']
 
         # Add local func evals to sampling func evals
         # Count the number of feasible vertices and add to local function evaluations:
-        self.res.nfev = self.fn + self.res.nlfev  # TODO:CHECK
-        return
+        self.res.nfev = self.fn + self.res.nlfev
+        return self.res
 
     # Algorithm controls
     def fail_routine(self, mes=("Failed to converge")):
@@ -1594,8 +1592,8 @@ class SHGO(object):
         if not grow:
             self.Tri = Delaunay(self.C)
         else:
-            if hasattr(self, 'T'):
-            #if hasattr(self, 'Tri'): #TODO?
+            #if hasattr(self, 'T'):
+            if hasattr(self, 'Tri'): #TODO?
                 self.Tri.add_points(self.C[n_prc:, :])
             else:
                 self.Tri = Delaunay(self.C, incremental=True)
@@ -1682,6 +1680,7 @@ class LMapCache:
         self.xl_maps = []
         self.f_maps = []
         self.lbound_maps = []
+        self.size = 0
 
     def __getitem__(self, v):
         v = numpy.ndarray.tolist(v)
@@ -1702,8 +1701,38 @@ class LMapCache:
         self.cache[v].f_min = lres.fun
         self.cache[v].lbounds = bounds
 
+        # Update cache size
+        self.size += 1
+
         # Cache lists for search queries
         self.v_maps.append(v)
         self.xl_maps.append(lres.x)
         self.f_maps.append(lres.fun)
         self.lbound_maps.append(bounds)
+
+    def sort_cache_result(self):
+        """
+        Sort results and build the global return object
+        """
+        import numpy
+        results = {}
+        # Sort results and save
+        self.xl_maps = numpy.array(self.xl_maps)
+        self.f_maps = numpy.array(self.f_maps)
+
+        # Sorted indexes in Func_min
+        ind_sorted = numpy.argsort(self.f_maps)
+
+        # Save ordered list of minima
+        results['xl'] = self.xl_maps[ind_sorted]  # Ordered x vals
+        self.f_maps = numpy.array(self.f_maps)
+        results['funl'] = self.f_maps[ind_sorted]
+        results['funl'] = results['funl'].T
+
+        # Find global of all minimisers
+        results['x'] = self.xl_maps[ind_sorted[0]]  # Save global minima
+        results['fun'] = self.f_maps[ind_sorted[0]]  # Save global fun value
+
+        self.xl_maps = numpy.ndarray.tolist(self.xl_maps)
+        self.f_maps = numpy.ndarray.tolist(self.f_maps)
+        return results

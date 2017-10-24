@@ -350,7 +350,8 @@ class TestShgoSimplicialTestFunctions(object):
     def test_f2_1_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) with bounds=[(0, 60)]"""
         #run_test(test2_1, n=100, sampling_method='simplicial')
-        run_test(test2_1, iters=7, sampling_method='simplicial')
+        #run_test(test2_1, iters=7, sampling_method='simplicial')
+        run_test(test2_1, iters=6, sampling_method='simplicial')
 
     def test_f2_2_simplicial(self):
         """Univariate test function on f(x) = (x - 30) * sin(x) bounds=[(0, 4.5)]"""
@@ -373,8 +374,6 @@ class TestShgoSimplicialTestFunctions(object):
         run_test(testLJ, args=args, n=None,
                  options=options, iters=4,
                  sampling_method='simplicial')
-
-
 
 # Argument test functions
 class TestShgoArguments(object):
@@ -540,24 +539,14 @@ class TestShgoArguments(object):
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
-        def test_7_3_minkwargs(self):
-            """Test the minimizer_kwargs arguments for solvers without constraints"""
-            for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                           'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg']:
-                # Note that passing global constraints to SLSQP is tested in other
-                # unittests which run test4_1 normally
-                minimizer_kwargs = {'method': solver}
-                options = {'jac': test1_1.jac,
-                           'hess': test1_1.hess}
-                logging.info("Solver = {}".format(solver))
-                logging.info("=" * 100)
-                run_test(test1_1, n=101, test_atol=1e-3, options=options,
-                         minimizer_kwargs=minimizer_kwargs,
-                         sampling_method='sobol')
 
+    def test_8_homology_group_diff(self):
+        options = {'minhgrd': 1}
+        #run_test(test1_1, n=None, iters=None, options=options,
+        #         sampling_method='sobol')
 
-    #def test_8_custom_sampling(self):
-    #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
+        run_test(test1_1, n=None, iters=None, options=options,
+                 sampling_method='simplicial')
 
     def test_9_cons_g(self):
         """Test single function constraint passing"""
@@ -593,6 +582,14 @@ class TestShgoArguments(object):
         bounds = [(None, None),]*41
         SHGOc = SHGO(f, bounds)
         SHGOc.sobol_points(2, 50)
+
+    def test_14_local_iter(self):
+        """Test limited local iterations for a pseudo-global mode"""
+        options = {'local_iter': 4}
+        run_test(test5_1, n=30, options=options)
+
+    #def test_15_custom_sampling(self):
+    #    run_test(test1_1, sampling_method=SHGO.sampling_sobol)
 
 # Failure test functions
 class TestShgoFailures(object):
