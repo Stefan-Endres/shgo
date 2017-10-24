@@ -316,7 +316,8 @@ class TestShgoSobolTestFunctions(object):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         #run_test(test4_1, n=500)
         #run_test(test4_1, n=800)
-        run_test(test4_1, n=990)
+        options = {'infty_constraints': False}
+        run_test(test4_1, n=990, options=options)
 
     def test_f5_1_sobol(self):
         """NLP: Eggholder, multimodal"""

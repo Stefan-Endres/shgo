@@ -567,7 +567,7 @@ class SHGO(object):
 
             # Algorithm functionality
             self.local_iter = False
-            self.infty_cons_sampl = False  # TODO: Change default value to True
+            self.infty_cons_sampl = True
 
             # Feedback
             self.disp = False
@@ -707,8 +707,7 @@ class SHGO(object):
         else:  # Evaluate all minimisers
             self.local_iter = False
 
-        if 'infty_constraints' in options:  #TODO: Write unittests for this
-            # If True then
+        if 'infty_constraints' in options:
             self.infty_cons_sampl = options['infty_constraints']
         else:
             self.infty_cons_sampl = True
@@ -789,7 +788,6 @@ class SHGO(object):
                 self.f_I = numpy.argsort(self.F, axis=-1)
                 self.f_lowest = self.F[self.f_I[0]]
                 self.x_lowest = self.C[self.f_I[0]]
-                # TODO: TEST THESE VALUES
 
     ## Stopping criteria functions:
     def finite_iterations(self):
@@ -834,8 +832,13 @@ class SHGO(object):
                     self.stop_global = True
         else:
             pe = (self.f_lowest - self.f_min_true) / abs(self.f_min_true)
-            if pe <= self.f_tol:  # TODO Ensure pe is not <= -1e-3 (much lower than f*)
+            if pe <= self.f_tol:
                 self.stop_global = True
+                if (pe - self.f_tol) <= 1.0 / abs(self.f_min_true):
+                    logging.warning("A much lower value than expected f* =" +
+                                    " {} than".format(self.f_min_true) +
+                                    " the was found f_lowest =" +
+                                    "{} ".format(self.f_lowest))
         return self.stop_global
 
     def finite_homology_growth(self):
@@ -982,7 +985,7 @@ class SHGO(object):
         # build the topograph first before minimizing
 
         #lres_f_min = self.minimize(self.X_min[[0]])
-        lres_f_min = self.minimize(self.X_min[0])
+        lres_f_min = self.minimize(self.X_min[0], ind=self.minimizer_pool[0])
 
         # Trim minimised point from current minimiser set
         self.trim_min_pool(0)
@@ -1023,7 +1026,8 @@ class SHGO(object):
             # distance from the current solution
             ind_xmin_l = self.Z[:, -1]
             #lres_f_min = self.minimize(self.Ss[:, -1])
-            lres_f_min = self.minimize(self.Ss[-1, :])
+            print(f'self.minimizer_pool = {self.minimizer_pool}')
+            lres_f_min = self.minimize(self.Ss[-1, :], self.minimizer_pool[-1])
 
             # Trim minimised point from current minimiser set
             self.trim_min_pool(ind_xmin_l)
@@ -1043,6 +1047,7 @@ class SHGO(object):
     def trim_min_pool(self, trim_ind):
         self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
         self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
+        self.minimizer_pool = numpy.delete(self.minimizer_pool, trim_ind)
         return
 
     def g_topograph(self, x_min, X_min):
@@ -1060,7 +1065,9 @@ class SHGO(object):
         self.Z = numpy.argsort(self.Y, axis=-1)
 
         self.Ss = X_min[self.Z]
+        self.minimizer_pool = self.minimizer_pool[self.Z]
         self.Ss = self.Ss[0]
+        self.minimizer_pool = self.minimizer_pool[0]
         return self.Ss
 
     # Local bound functions
@@ -1095,7 +1102,7 @@ class SHGO(object):
             logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
-    def contstruct_lcb_delauney(self, v_min):
+    def contstruct_lcb_delauney(self, v_min, ind=None):
         """
         Construct locally (approximately) convex bounds
 
@@ -1110,34 +1117,21 @@ class SHGO(object):
         cbounds = []
         for x_b_i in self.bounds:
             cbounds.append([x_b_i[0], x_b_i[1]])
-        # TODO: USE NEIGHBOURS FROM THE DELAYNEY TRIANGULATION
-        if 0:
-            if self.dim > 1:
-                #print(self.Tri.points)
-                print('-'*30)
-                print('-'*30)
-                print(self.X_min)  # [[ 0.09375  0.09375]]
-                print(self.X_min[0])
-                print(len(self.X_min))  # 1
-                for i, v in enumerate(self.X_min):
-                    print(v_min)
-                    print(v)
-                    if v == v_min[0]:
-                        ind = i
-                print(self.Tri.points[self.minimizer_pool])
-                print(self.Tri.points[i])
-                print(v_min)
-                print('-' * 30)
-        #nn = self.find_neighbors_delaunay(ind, self.Tri)
-        if 0:
-            for v in (1, 2):
+
+        if 0:  # TODO: Routine not working well with tests currently
+            if self.dim == 1:  # No triangulation
+                return cbounds
+
+            nn = self.find_neighbors_delaunay(ind, self.Tri)
+            nc = self.Tri.points[nn]
+            for v in nc:
                 for i, x_i in enumerate(v):
                     # Lower bound
-                    if (x_i < v_min.x_a[i]) and (x_i > cbounds[i][0]):
+                    if (x_i < v_min[i]) and (x_i > cbounds[i][0]):
                         cbounds[i][0] = x_i
 
                     # Upper bound
-                    if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
+                    if (x_i > v_min[i]) and (x_i < cbounds[i][1]):
                         cbounds[i][1] = x_i
             if self.disp:
                 logging.info('cbounds found for v_min.x_a = {}'.format(v_min.x_a))
@@ -1145,7 +1139,7 @@ class SHGO(object):
         return cbounds
 
     # Minimize a starting point locally
-    def minimize(self, x_min):
+    def minimize(self, x_min, ind=None):
         """
         This function is used to calculate the local minima using the specified
         sampling point as a starting value.
@@ -1194,14 +1188,9 @@ class SHGO(object):
         else:
             # TODO: self.contstruct_lcb for Sobol sampling
             self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(
-                x_min)
+                x_min, ind=ind)
 
-        #TODO: Investigate why this is needed for COBLYA but not SLSQP
-        x0 = numpy.ndarray.tolist(x_min)
-        #x0 = tuple(x0[0])
-        x0 = tuple(x0)
-        ###############################################################
-        lres = scipy.optimize.minimize(self.func, x0,
+        lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
 
         if self.disp:
@@ -1267,8 +1256,6 @@ class SHGO(object):
         the loss of guaranteed convergence and usually requires more objective function
         evaluations.
         """
-        # TODO: Add unittest where infty_cons_sampl = True
-
         # Generate sampling points
         if self.disp:
             print('Generating sampling points')
@@ -1411,9 +1398,8 @@ class SHGO(object):
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
         if self.n_sampled == 0:
-            self.C = self.sobol_points(n, dim, skip=self.n_sampled)
+            self.C = self.sobol_points(n, dim)
         else:
-            #TODO: APPEND to self.C
             self.C = self.sobol_points(n, dim, skip=self.n_sampled)
         # Distribute over bounds
         for i in range(len(self.bounds)):
@@ -1592,16 +1578,10 @@ class SHGO(object):
         if not grow:
             self.Tri = Delaunay(self.C)
         else:
-            #if hasattr(self, 'T'):
-            if hasattr(self, 'Tri'): #TODO?
+            if hasattr(self, 'Tri'):
                 self.Tri.add_points(self.C[n_prc:, :])
             else:
                 self.Tri = Delaunay(self.C, incremental=True)
-
-            #try:
-            #    self.Tri.add_points(self.C[n_prc:, :])
-            #except AttributeError:  # TODO: Fix in main algorithm
-            #    self.Tri = Delaunay(self.C, incremental=True)
 
         return self.Tri
 
