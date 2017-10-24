@@ -564,6 +564,14 @@ class TestShgoArguments(object):
                    options=options, sampling_method='sobol')
         print(res)
 
+    def test_13_high_sobol(self):
+        """Test init of high-dimensional sobol sequences"""
+        def f(x):
+            return 0
+        bounds = [(None, None),]*41
+        SHGOc = SHGO(f, bounds)
+        SHGOc.sobol_points(2, 50)
+
 # Failure test functions
 class TestShgoFailures(object):
     def test_1_maxiter(self):

@@ -567,7 +567,7 @@ class SHGO(object):
 
             # Algorithm functionality
             self.local_iter = False  # TODO: Change default value to True
-            self.infty_cons_sampl = False
+            self.infty_cons_sampl = False  # TODO: Change default value to True
 
             # Feedback
             self.disp = False
@@ -610,6 +610,10 @@ class SHGO(object):
             if sampling_method == 'sobol':
                 self.sampling_method = sampling_method
                 self.sampling = self.sampling_sobol
+                if self.dim < 40:
+                    self.sobol_points = self.sobol_points_40
+                else:
+                    self.sobol_points = self.sobol_points_10k
             else:
                 # A user defined sampling method:
                 # self.sampling_points = sampling_method
@@ -1235,14 +1239,12 @@ class SHGO(object):
         # Generate sampling points
         if self.disp:
             print('Generating sampling points')
-        self.sampling(self.nc, self.dim)  # TODO: Improve speed by only generating new points
+        self.sampling(self.nc, self.dim)
 
         if not self.infty_cons_sampl:
             # Find subspace of feasible points
             if self.g_cons is not None:
                 self.sampling_subspace()
-            else:
-                pass
 
         # Sort remaining samples
         self.sorted_samples()
@@ -1297,16 +1299,76 @@ class SHGO(object):
                 self.X_min = []
 
     @staticmethod
-    def sobol_points(n, d):
+    def sobol_points_40(n, d, skip=0):
         """
         Wrapper for sobol_seq.i4_sobol_generate
 
         Generate N sampling points in D dimensions
         """
-        #TODO Investigate slight differences in sequence generation patterns
         points = sobol_seq.i4_sobol_generate(d, n, skip=0)
 
         return points
+
+    def sobol_points_10k(self, N, D):
+        """
+        sobol.cc by Frances Kuo and Stephen Joe translated to Python 3 by
+        Carl Sandrock 2016-03-31
+
+        The original program is available and described at
+        http://web.maths.unsw.edu.au/~fkuo/sobol/
+        """
+        import gzip
+        import os
+        path = os.path.join(os.path.dirname(__file__), 'sobol_vec.gz')
+        with gzip.open(path) as f:
+            unsigned = "uint64"
+            # swallow header
+            buffer = next(f)
+
+            L = int(numpy.log(N) // numpy.log(2.0)) + 1
+
+            C = numpy.ones(N, dtype=unsigned)
+            for i in range(1, N):
+                value = i
+                while value & 1:
+                    value >>= 1
+                    C[i] += 1
+
+            points = numpy.zeros((N, D), dtype='double')
+
+            # XXX: This appears not to set the first element of V
+            V = numpy.empty(L + 1, dtype=unsigned)
+            for i in range(1, L + 1):
+                V[i] = 1 << (32 - i)
+
+            X = numpy.empty(N, dtype=unsigned)
+            X[0] = 0
+            for i in range(1, N):
+                X[i] = X[i - 1] ^ V[C[i - 1]]
+                points[i, 0] = X[i] / 2 ** 32
+
+            for j in range(1, D):
+                F_int = [int(item) for item in next(f).strip().split()]
+                (d, s, a), m = F_int[:3], [0] + F_int[3:]
+
+                if L <= s:
+                    for i in range(1, L + 1): V[i] = m[i] << (32 - i)
+                else:
+                    for i in range(1, s + 1): V[i] = m[i] << (32 - i)
+                    for i in range(s + 1, L + 1):
+                        V[i] = V[i - s] ^ (
+                        V[i - s] >> numpy.array(s, dtype=unsigned))
+                        for k in range(1, s):
+                            V[i] ^= numpy.array(
+                                (((a >> (s - 1 - k)) & 1) * V[i - k]),
+                                dtype=unsigned)
+
+                X[0] = 0
+                for i in range(1, N):
+                    X[i] = X[i - 1] ^ V[C[i - 1]]
+                    points[i, j] = X[i] / 2 ** 32  # *** the actual points
+
+            return points
 
     def sampling_sobol(self, n, dim):
         """
@@ -1315,8 +1377,11 @@ class SHGO(object):
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        self.C = self.sobol_points(n, dim)
-
+        if self.n_sampled == 0:
+            self.C = self.sobol_points(n, dim, skip=self.n_sampled)
+        else:
+            #TODO: APPEND to self.C
+            self.C = self.sobol_points(n, dim, skip=self.n_sampled)
         # Distribute over bounds
         for i in range(len(self.bounds)):
             self.C[:, i] = (self.C[:, i] *
@@ -1540,7 +1605,7 @@ class SHGO(object):
         Returns the indexes of all minimizers
         """
         self.minimizer_pool = []
-        # TODO: Can easily be parralized
+        # Note: Can easily be parralized
         if self.disp:
             logging.info('self.fn = {}'.format(self.fn))
             logging.info('self.nc = {}'.format(self.nc))
