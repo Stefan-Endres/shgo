@@ -1,4 +1,7 @@
 from shgo._shgo import *
+import logging
+import numpy
+import sys
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class TestFunction(object):
