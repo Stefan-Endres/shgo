@@ -572,6 +572,69 @@ class SHGO(object):
             # Feedback
             self.disp = False
 
+        ## Pop unknown arguments in self.minimizer_kwargs
+        method = self.minimizer_kwargs['method']
+        meth = method.lower()
+        if meth == '_custom':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'hessp', 'bounds',
+                                    'constraints', 'callback']
+        elif meth == 'nelder-mead':
+            self.min_solver_args = ['fun', 'x0', 'args', 'callback']
+        elif meth == 'powell':
+            self.min_solver_args = ['fun', 'x0', 'args', 'callback']
+        elif meth == 'cg':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'callback']
+        elif meth == 'bfgs':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'callback']
+        elif meth == 'newton-cg':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'hessp', 'callback']
+        elif meth == 'l-bfgs-b':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
+                                    'callback']
+        elif meth == 'tnc':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
+                                    'callback']
+        elif meth == 'cobyla':
+            self.min_solver_args = ['fun', 'x0', 'args', 'constraints']
+        elif meth == 'slsqp':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
+                                    'constraints', 'callback']
+        elif meth == 'dogleg':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'callback']
+        elif meth == 'trust-ncg':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'hessp', 'callback']
+        elif meth == 'trust-krylov':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'hessp', 'callback']
+        elif meth == 'trust-exact':
+            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
+                                    'callback']
+
+        self.min_solver_args.append('options')
+        self.min_solver_args.append('method')
+
+        kwarg_dict = self.minimizer_kwargs.copy()
+        kwarg_opt_dict = self.minimizer_kwargs['options'].copy()
+        for key in kwarg_dict:
+            if key not in self.min_solver_args:
+                self.minimizer_kwargs.pop(key, None)
+                if key is 'ftol':
+                    pass
+                else:
+                    self.minimizer_kwargs['options'].pop(key, None)
+
+        for key in kwarg_opt_dict:
+            if key not in self.min_solver_args:
+                self.minimizer_kwargs.pop(key, None)
+                if key is 'ftol':
+                    pass
+                else:
+                    self.minimizer_kwargs['options'].pop(key, None)
+
         ## Algorithm controls
         # Global controls
         self.stop_global = False  # Used in the stopping_criteria method
@@ -1174,15 +1237,17 @@ class SHGO(object):
 
             x_min_t_norm = tuple(x_min_t_norm)
 
-            self.minimizer_kwargs['bounds'] = \
-                self.contstruct_lcb_simplicial(self.HC.V[x_min_t_norm])
+            g_bounds = self.contstruct_lcb_simplicial(self.HC.V[x_min_t_norm])
+            if 'bounds' in self.min_solver_args:
+                self.minimizer_kwargs['bounds'] = g_bounds
 
             if self.disp:
                 print('bounds in kwarg:')
                 print(self.minimizer_kwargs['bounds'])
         else:
-            self.minimizer_kwargs['bounds'] = self.contstruct_lcb_delauney(
-                x_min, ind=ind)
+            g_bounds = self.contstruct_lcb_delauney(x_min, ind=ind)
+            if 'bounds' in self.min_solver_args:
+                self.minimizer_kwargs['bounds'] = g_bounds
 
         lres = scipy.optimize.minimize(self.func, x_min,
                                        **self.minimizer_kwargs)
@@ -1204,7 +1269,7 @@ class SHGO(object):
 
         # Append minima maps
         self.LMC[x_min]
-        self.LMC.add_res(x_min, lres, bounds=self.minimizer_kwargs['bounds'])
+        self.LMC.add_res(x_min, lres, bounds=g_bounds)
 
         return lres
 
