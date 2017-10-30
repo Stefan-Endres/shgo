@@ -245,9 +245,9 @@ These results are useful in applications where there are many global minima and 
 Now suppose we want to find a larger number of local minima (or we hope to find a lower minimum than the current best). This can be accomplished for example by increasing the amount of sampling points or the number of iterations. We'll increase the number of sampling points to 60 and the number of iterations to 3 increased from the default 100 for a total of 60 x 3 = 180 initial sampling points.
 
 ```python
->>> result_2 = shgo(eggholder, bounds, n=60, iters=3, sampling_method='sobol')
+>>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
 >>> len(result.xl), len(result_2.xl)
-(13, 28)
+(13, 39)
 ```
 
 Note that there is a difference between specifying arguments for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the promising points contained in the minimiser pool is processed only once. In the latter case it is processed every 60 sampling points for a total of 3 iterations.
@@ -297,7 +297,7 @@ Approx. answer [4]:
         funl: array([ 29.89437816])
      message: 'Optimization terminated successfully.'
         nfev: 119
-         nit: 2
+         nit: 3
        nlfev: 40
        nljev: 0
      success: True
