@@ -50,7 +50,7 @@ $f(x)$ is the objective function $f: \mathbb{R}^n \rightarrow \mathbb{R}$
 
 $g_i(x)$ are the inequality constraints $\mathbb{g}: \mathbb{R}^n \rightarrow \mathbb{R}^m$
 
-$h_j(x)$ are the equality constrains $\mathbb{h}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
+$h_j(x)$ are the equality constraints $\mathbb{h}: \mathbb{R}^n \rightarrow \mathbb{R}^p$
 
 Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $x$ can also be specified using the `bounds` argument.
 
