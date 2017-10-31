@@ -107,7 +107,7 @@ The DISIMPL (DIviding SIMPLices) algorithm was recently proposed by Paulavičiu
 More recently the Lc-DISIMPL variant of the algorithm was developed to handle optimisation problems with linear constraints [12]. Below we use an extract of the results with the highest performing Lc-DISIMPL algorithm (Lc-DISIMPL-v) and  DIRECT-L1 with the best performaning parameters (pp = 10). The full table can be found at [here](files/table.pdf). From the table it can be seen shgo provides competative results compared to the other algorithms:
 
 
-| Algorithm: | shgo-simpl| shgo-sob | Lc-DISIMPL-v  | PSwarm (avg) | DIRECT-L1 |
+| Algorithm: | shgo-simpl| shgo-sob | Lc-DISIMPL-v$^c$  | PSwarm (avg)$^c$ | DIRECT-L1$^c$ |
 |------------|---:|-----:|------:|-------------:|----------:|
 | horst-1   |  97 |   24 | 7    | 182            |  287$^a$    |
 | horst-2   |  10 |   11 | 5    | 176            |  265$^a$    |
