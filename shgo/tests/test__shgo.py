@@ -1,8 +1,9 @@
 import logging
 import numpy
 from pytest import raises as assert_raises
-from shgo._shgo import *
+from shgo._shgo import shgo
 from shgo._shgo import SHGO
+
 
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,

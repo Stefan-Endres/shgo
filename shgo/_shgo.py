@@ -1,12 +1,17 @@
+"""
+shgo: The simplicial homology global optimisation algorithm
+"""
 from __future__ import division, print_function, absolute_import
 import numpy
 import time
+import logging
 import scipy.optimize
 import scipy.spatial
 import shgo.shgo_m.sobol_seq as sobol_seq
-from shgo.shgo_m.triangulation import *
+from shgo.shgo_m.triangulation import Complex
 
 __all__ = ['shgo']
+
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
@@ -259,7 +264,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     function is implemented in `rosen` in `scipy.optimize`
 
     >>> from scipy.optimize import rosen
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = shgo(rosen, bounds)
     >>> result.x, result.fun
@@ -280,7 +285,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     the capabilities of shgo_m.
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization)
 
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def eggholder(x):
     ...     return (-(x[1] + 47.0)
@@ -360,7 +365,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     Approx. Answer [4]_:
         f([0.6355216, -0.12e-11, 0.3127019, 0.05177655]) = 29.894378
 
-    >>> from scipy.optimize import shgo
+    >>> from shgo import shgo
     >>> import numpy as np
     >>> def f(x):  # (cattle-feed)
     ...     return 24.55*x[0] + 26.75*x[1] + 39*x[2] + 40.50*x[3]

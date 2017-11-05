@@ -10,6 +10,7 @@ except ImportError:  # Python 2:
     import functools
     import collections
 
+
     # Note to avoid using external packages such as functools32 we use this code
     # only using the standard library
     def lru_cache(maxsize=255, timeout=None):
