@@ -3,7 +3,8 @@ _tgo.py
 htmlcov
 min_map_dev.py
 .ipynb_checkpoints/
-
+node_modules
+shgo/patch
 
 # Editor temporary/working/backup files #
 #########################################

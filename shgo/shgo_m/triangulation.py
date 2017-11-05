@@ -499,18 +499,6 @@ class Complex:
         return
 
     @lru_cache(maxsize=None)
-    def generate_sub_cell(self, origin, suprenum):  # No hits
-        V_new = []
-        for i, v in enumerate(self.C0()[:-1]):
-            t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
-            vec = t1 + t2
-            vec = tuple(vec)
-            V_new.append(vec)
-
-        return V_new
-
-    @lru_cache(maxsize=None)
     def generate_sub_cell_2(self, origin, suprenum, v_x_t):  # No hits
         """
         Use the origin and suprenum vectors to find a new cell in that
