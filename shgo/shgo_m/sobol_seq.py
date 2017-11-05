@@ -15,31 +15,13 @@
 
     Original code is available from
     http://people.sc.fsu.edu/~jburkardt/py_src/sobol/sobol.html
+
+  Modifications:
+    Wrapped into Python class [30.10.2017]
 """
 import numpy as np
 
-__all__ = ['i4_sobol_generate']
-
-
-def i4_sobol_generate(dim_num, n, skip=1):
-    """
-    i4_sobol_generate generates a Sobol dataset.
-
-    Parameters:
-      Input, integer dim_num, the spatial dimension.
-      Input, integer N, the number of points to generate.
-      Input, integer SKIP, the number of initial points to skip.
-
-      Output, real R(M,N), the points.
-    """
-    S = Sobol(dim_num, n)
-    r = np.full((n, dim_num), np.nan)
-    for j in range(n):
-        seed = j + skip
-        r[j, 0:dim_num], next_seed = S.i4_sobol(dim_num, seed)
-
-    return r
-
+__all__ = ['Sobol']
 
 class Sobol:
     def __init__(self):

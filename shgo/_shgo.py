@@ -6,6 +6,8 @@ import scipy.spatial
 import shgo.shgo_m.sobol_seq as sobol_seq
 from shgo.shgo_m.triangulation import *
 
+__all__ = ['shgo']
+
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
@@ -467,7 +469,7 @@ class SHGO(object):
                                                and (
                         sampling_method is not 'simplicial')):
             raise ValueError("""Unknown sampling_method specified, use either 
-                                     'sobol' or 'simplicial' """)
+                                 'sobol' or 'simplicial' """)
 
         # Initiate class
         self.func = func

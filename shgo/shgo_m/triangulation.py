@@ -542,31 +542,6 @@ class Complex:
         v_s = numpy.array(suprenum)
         return v_s * numpy.array(v_x)
 
-    def complex_homology_group_rank(self):
-        # self.hgr = self.C0.homology_group_rank()
-        p_hgr = self.hgr
-        self.hgr = 0
-        cells = 0
-
-        for x in self.V.cache:
-            # print(self.V[x].minimiser())
-            # print('self.V[{}].f = {}'.format(x, self.V[x].f))
-            if self.V[x].minimiser():
-                # print(f'self.V[{x}].minimiser() is a minimiser')
-                # print('self.V[x].f = {}'.format(self.V[x].f))
-                self.hgr += 1
-        if 0:
-            for Cell_gen in self.H:
-                # for Cell in self.H[self.gen]:
-                for Cell in Cell_gen:
-                    self.hgr += Cell.homology_group_rank()
-                    cells += 1
-
-        # self.hgr = self.hgr/cells * 100
-        # logging.info('self.hgr = {}'.format(self.hgr))
-        self.hgrd = self.hgr - p_hgr  # Complex group rank differential
-        return self.hgr
-
     # Plots
     def plot_complex(self):
         """
