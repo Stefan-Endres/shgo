@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Get the long description from the README file
 def readme():
@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(name='shgo',
-      version='0.4.2',
+      version='0.3.7',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres, Carl Sandrock',
