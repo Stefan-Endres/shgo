@@ -1,6 +1,4 @@
 import numpy
-import logging
-import sys
 import copy
 
 try:
@@ -99,8 +97,6 @@ except ImportError:  # Python 2:
         # maintain the docstring and the name of the original function):
         return (lambda input_func: functools.wraps(input_func)(
             LruCacheClass(input_func, maxsize, timeout)))
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class Complex:
