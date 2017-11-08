@@ -568,7 +568,8 @@ class TestShgoArguments(object):
     def test_7_3_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers without constraints"""
         for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
-                       'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg']:
+                       'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg', 'trust-exact',
+                       'trust-krylov']:
             def jac(x):
                 return numpy.array([2 * x[0], 2 * x[1]]).T
 
