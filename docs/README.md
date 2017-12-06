@@ -77,7 +77,7 @@ The full outline of the algorithm can be downloaded [here](files/algorithm.pdf).
 
 The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. Other local minimisation methods more suited to the problem can also be used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
-The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at http://web.maths.unsw.edu.au/~fkuo/sobol/ translated to Python 3 by Carl Sandrock 2016-03-31.
+The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at [http://web.maths.unsw.edu.au/~fkuo/sobol/](http://web.maths.unsw.edu.au/~fkuo/sobol/) translated to Python 3 by Carl Sandrock 2016-03-31.
 
 The algorithm is generally applicable to low dimensional black problems ([~10-dimensional problems](https://www.youtube.com/watch?v=fhNuspYbMeI)) unless more information can be supplied to the algorithm. This is not necessarily only gradients and hessians. For example if it is known that the decision variables of the objective function are symmetric, then the ``symmetry`` option can be used in order to solve problems with hundreds of variables.
 
@@ -109,30 +109,30 @@ More recently the Lc-DISIMPL variant of the algorithm was developed to handle op
 
 | Algorithm: | shgo-simpl| shgo-sob | Lc-DISIMPL-v  | PSwarm (avg) | DIRECT-L1 |
 |------------|---:|-----:|------:|-------------:|----------:|
-| horst-1   |  97 |   24 | 7    | 182            |  287$^a$    |
-| horst-2   |  10 |   11 | 5    | 176            |  265$^a$    |
-| horst-3   |  6  |    7 | 5    | 43             |  5$^a$      |
-| horst-4   |  10 |   25 | 8    | 179            |  58293$^a$  |
-| horst-5   | 20  | 15   | 8    | 150            |  7$^a$      |
-| horst-6   | 22  | 59   | 10   | 172            |  11$^a$     |
-| horst-7   | 10  | 15   | 10   | 201            |  7$^a$      |
-| hs021     | 24  | 23   | 189  | 110            | 97          |
-| hs024     | 24  | 15   | 3    | 153            |  19$^a$     |
-| hs035     | 37  | 41   | 630  | 311            |  >100000    |
-| hs036     | 105 | 20   | 8    | 179            |  25$^a$     |
-| hs037     | 72  | 63   | 186  | 131            |  7$^a$      |
-| hs038     | 225 | 1029 | 3379 | 54445          | 7401        |
-| hs044     | 199 | 35   | 20   |  218$^{b(9)}$  | 90283       |
-| hs076     | 56  | 37   | 548  | 198            | 19135       |
-| s224      | 166 | 165  | 49   | 107            |  7$^a$      |
-| s231      | 99  | 99   | 2137 | 1011           | 1261        |
-| s232      | 24  | 15   | 3    | 144            |  19$^a$     |
-| s250      | 105 | 20   | 8    | 296            |  25$^a$     |
-| s251      | 72  | 63   | 186  | 84             |  7$^a$      |
-| bunnag1   | 34  | 47   | 630  | 142            | 1529        |
-| bunnag2   | 46  | 36   | 16   | 153            |  >100000    |
+| horst-1   |  97 |   24 | 7    | 1329$^{b(3)}$  |  287$^a$    |
+| horst-2   |  10 |   11 | 5    | 424            |  265$^a$    |
+| horst-3   |  6  |    7 | 5    | 44             |  5$^a$      |
+| horst-4   |  10 |   25 | 8    | 114          |  58293$^a$  |
+| horst-5   | 20  | 15   | 8    | 134          |  7$^a$      |
+| horst-6   | 22  | 59   | 10   | 110          |  11$^a$     |
+| horst-7   | 10  | 15   | 10   | 380         |  7$^a$      |
+| hs021     | 24  | 23   | 189  | 189         | 97          |
+| hs024     | 24  | 15   | 3    | 118         |  19$^a$     |
+| hs035     | 37  | 41   | 630  | 316           |  >100000    |
+| hs036     | 105 | 20   | 8    | 396         |  25$^a$     |
+| hs037     | 72  | 63   | 186  | 160         |  7$^a$      |
+| hs038     | 225 | 1029 | 3379 | 58576      | 7401        |
+| hs044     | 199 | 35   | 20   |  186$^{b(9)}$  | 90283       |
+| hs076     | 56  | 37   | 548  | 203            | 19135       |
+| s224      | 166 | 165  | 49   | 121            |  7$^a$      |
+| s231      | 99  | 99   | 2137 | 2366           | 1261        |
+| s232      | 24  | 15   | 3    | 119            |  19$^a$     |
+| s250      | 105 | 20   | 8    | 367            |  25$^a$     |
+| s251      | 72  | 63   | 186  | 129             |  7$^a$      |
+| bunnag1   | 34  | 47   | 630  | 214            | 1529        |
+| bunnag2   | 46  | 36   | 16   | 252            |  >100000    |
 |           |     |      |      |                |             |
-| Average   | 66  | 88   | 366  | 2672           |  >17213     |
+| Average   | 66  | 88   | 366  | 3011          |  >17213     |
 
 
 $a$ result is outside the feasible region
