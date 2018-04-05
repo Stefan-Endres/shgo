@@ -3,7 +3,9 @@
 .. image:: https://coveralls.io/repos/github/Stefan-Endres/shgo/badge.png?branch=master
     :target: https://coveralls.io/github/Stefan-Endres/shgo?branch=master
 
-NOTE: This is the developmental (unstable) repository for the shgo package. Any issues should be raised on the stable repository https://github.com/Stefan-Endres/shgo .
+NOTE:
+Developmental (unstable) repository for the shgo package: https://bitbucket.org/upiamcompthermo/shgo
+Stable repository (raise public issues here): https://github.com/Stefan-Endres/shgo
 
 Description
 -----------
