@@ -12,32 +12,48 @@
 
 [![Build Status](https://travis-ci.org/Stefan-Endres/shgo.svg?branch=master)](https://travis-ci.org/Stefan-Endres/shgo)
 [![Coverage Status](https://s3.amazonaws.com/assets.coveralls.io/badges/coveralls_99.svg)](https://coveralls.io/github/Stefan-Endres/shgo?branch=master)
+
 <sup>*Corresponding author for shgo: [Stefan Endres](https://stefan-endres.github.io/)*<sup>
 
-### Table of Contents
+### Table of contents
 1. **[Introduction](#introduction)**<br>
+    + **[Global and derivative free optimisation](#global-and-derivative-free-optimisation)**<br>
+    + **[Simplicial homology global optimisation theory](simplicial-homology-global-optimisation-theory)**<br>
+    + **[Summary of shgo features](summary-of-shgo-features)**<br>
 1. **[Performance summary](#performance-summary)**<br>
     + **[Open-source black-box algorithms](#open-source-black-box-algorithms)**<br>
     + **[Recently published black-box algorithms](#recently-published-black-box-algorithms)**<br>
 1. **[Installation](#installation)**<br>
 1. **[Examples](#examples)**<br>
-    + **[Rosenbrock *unimodal function*](#rosenbrock-unimodal-function)**<br>
+    + **[*Unimodal function*: Rosenbrock](#unimodal-function-rosenbrock)**<br>
         + [Bounded variables](#bounded-variables)
         + [Unbounded variables](#unbounded-variables)
-    + **[Eggholder *multimodal function*](#eggholder-multimodal-function)**<br>
+    + **[*Multimodal function*: Eggholder](#multimodal-function-eggholder)**<br>
         + [Mapping local minima](#mapping-local-minima)
         + [Improving results](#improving-results)
-    + **[Cattle feed problem (HS73) with *non-linear constraints*](#cattle-feed-hs73-problem-with-non-linear-constraints)**<br>
-1. **[Parameters](#parameters)**<br>
+    + **[*Non-linear constraints*: cattle feed problem (HS73)](#non-linear-constraints-cattle-feed-problem-hs73)**<br>
+1. **[Advanced features](advanced-features)**<br>
+    + **[Model structure and performance](#Model-structure-and-performance)**<br>
+    + **[Stopping criteria](#stopping-criteria)**<br>
+    + **[Parallelization](#parallelization)**<br>
+1. **[Code parameters](#code-parameters)**<br>
 1. **[Returns](#returns)**<br>
 1. **[References](#references)**<br>
 
 Introduction
 ------------
 
-Global optimisation using simplicial homology global optimisation [1]. Appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems).
+The simplicial homology global optimisation (shgo) algorithm is a promising, recently published global optimisation (GO) algorithm [[1]](#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization). The software implementation of the algorithm has been shown to be highly competitive when compared to state of the art commercial and open-source optimisation software. It was shown that shgo had the highest performance on a test suite of constrained problems [[1]](#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization). The shgo algorithm is relatively unique among GO algorithms in that it also returns all other local and global minimum in addition to the global minimum (using novel, rigorously proven methods that detect the homological properties of the objective function surface). Therefore, shgo is highly appropriate for problems where the local minima are desired, such as energy surface problems or problems with more than one global solution.
 
-In general, the optimisation problems are of the form::
+As a general purpose solver, shgo solves any general class of optimisation problem. However, it is most appropriate for solving a [global and derivative free optimisation](#global-and-derivative-free-optimisation) problem. It is simple to use, requiring only a black-box (or "oracle") function input. Therefore it is especially appropriate for science and engineering problems that have embedded simulations or has a highly complex model structure. 
+
+By its nature black-box problems are difficult to solve to global optimality, therefore it is unlikely that a problem with [more than 10 variables (dimensions)](https://www.youtube.com/watch?v=fhNuspYbMeI) can be solved quickly with the minimum input of the objective function. If you have more information about your model structure (such as known bounds, symmetry or gradients) it is generally recommended to [provide shgo with this information](#Model-structure-and-performance) which will greatly speed up performance and allow you to solve problems with more variables.
+
+The remainder of this [introductory](#introduction) section describes the [theory](simplicial-homology-global-optimisation-theory) behind shgo and the current [features](summary-of-shgo-features) of the software. If you want to quickly learn how to implement shgo on a problem of your own, you can skip to the [Installation](#installation) section and the [*Non-linear constraints*](#non-linear-constraints-cattle-feed-problem-hs73) example, which demonstates how to program the most general case of a global optimisation problem.
+
+#### Global and Derivative Free Optimisation
+
+The shgo algorithm is appropriate for solving general purpose NLP and blackbox optimisation problems to global optimality (low dimensional problems) [[1](#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization)-[2]((#2-endres-sc-2017-a-simplicial-homology-algorithm-for-lipschitz-optimisation))]. This class of optimisation is also know as CDFO (constrained derivative free optimisation). In general, the optimisation problems are of the form::
 
 \begin{eqnarray} \nonumber
   \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
@@ -54,9 +70,15 @@ $h_j(x)$ are the equality constraints $\mathbb{h}: \mathbb{R}^n \rightarrow \mat
 
 Optionally, the lower and upper bounds $x_l \le x \le x_u$ for each element in $x$ can also be specified using the `bounds` argument.
 
-While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [1].
+While most of the theoretical advantages of shgo are only proven for when $f(x)$ is a Lipschitz smooth function. The algorithm is also proven to converge to the global optimum for the more general case where $f(x)$ is non-continuous, non-convex and non-smooth iff the default sampling method is used [[2]](#2-endres-sc-2017-a-simplicial-homology-algorithm-for-lipschitz-optimisation).
 
-In brief the algorithm utilises concepts from combinatorial integral homology theory to find sub-domains which are, approximately, locally convex and provides characterisations of the objective function. For example on the following objective function surface:
+
+#### Simplicial Homology Global Optimisation Theory
+In order to understand the properties of shgo some background theory is required. An important facet of shgo} is the concept of homology group growth which can be used by an optimisation practitioner as a visual guide of the number of local and global solutions to a problem of arbitrarily high dimensions. In addition a measure of the mutli-modality and the geometric sparsity of solutions of the optimisation problem instance can be deduced.
+
+
+In brief the algorithm utilises concepts from combinatorial integral homology theory to find sub-domains which are, approximately, locally convex and provides characterisations of the objective function as the algorithm progresses. For example on the following objective function surface:
+
 
 ![./image/Fig7.svg](./image/Fig7.svg)
 
@@ -71,22 +93,59 @@ Another important property of shgo is that it is proven that one and only one st
 
 ![./image/Fig8.svg](./image/Fig8.svg)
 
-This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [1]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf). In addition since the locally convex sub-domains are processed, shgo can concentrate on the global search. This circumvents the need to specify the usual trade-off between a local and global search.
+This distinguishes it from many other global optimisation algorithms using graph theory and clustering methods that often show poor performance by producing starting points that converge to the same local minimum [[1](#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization)-[2]((#2-endres-sc-2017-a-simplicial-homology-algorithm-for-lipschitz-optimisation))]. These guarantees are [proven to hold for Lipschitz smooth functions of arbitrarily high dimensions](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf). In addition since the locally convex sub-domains are processed, shgo can concentrate on the global search. This circumvents the need to specify the usual trade-off between a local and global search.
 
-The full outline of the algorithm can be downloaded [here](files/algorithm.pdf). Detailed description of the properties and their proofs can be found in [1].
+
+This is accomplished in several steps. First the construction of a simplicial complex $\mathcal{H}$ built up from the sampling points mapped through $f$ as vertices following the constructions described in \cite{Endres2018}. Next a homomorphism is found between $\mathcal{H}$ and $\mathcal{K}$; another simplicial complex which exists on an abstract constructed surface $\mathcal{S}$. The $n$-dimensional manifold $\mathcal{S}$ is a connected g sum of g tori $S := S_0\,\#\,S_1\,\#\,\cdots\,\#\,S_{g - 1}$. The figures below demonstrate this construction geometrically in the 2-dimensional case. By using an extension of Brouwer's fixed point theorem [(Henle, 1979)](#17-henle-m-1979-a-combinatorial-introduction-to-topology-unabriged-dover-1994-republication-of-the-edition-published-by-wh-greeman--company-san-francisco-1979) adapted to handle non-linear constraints, it is proven that each of the "minimiser points" in the figure below corresponds to a sub-domain containing a unique local-minima when the problem is adequately sampled. Through the Invariance Theorem [[17]](#17-henle-m-1979-a-combinatorial-introduction-to-topology-unabriged-dover-1994-republication-of-the-edition-published-by-wh-greeman--company-san-francisco-1979) and the Eilenberg-Steenrod Axioms [[17](#17-henle-m-1979-a-combinatorial-introduction-to-topology-unabriged-dover-1994-republication-of-the-edition-published-by-wh-greeman--company-san-francisco-1979)-[18](#18-eilenberg-s-and-steenrod-n-1952-foundations-of-algebraic-topology-mathematical-reviews-mathscinet-mr14-398b-zentralblatt-math-princeton-47)], we draw another homomorphism between the surfaces of $f$ and $\mathcal{S}$. 
+
+
+
+![./image/stori_complete.svg](./image/stori_complete.svg)
+
+The process of puncturing a hypersphere at a minimiser point in a compact search space. Start by identifying a minimiser point in the $\mathcal{H}^1$ ($\cong~\mathcal{K}^1$) graph. By construction, our initial complex exists on the (hyper-)surface of an $n$-dimensional torus $\mathcal{S}_0$ such that the rest of $\mathcal{K}^1$ is connected and compact. We puncture a hypersphere at the minimiser point and identify the resulting edges (or ($n-1$)-simplices in higher dimensional problems). Next we shrink (a topoligical (ie continuous) transformation) the remainder of the simplicial complex to the faces and vertices of our (hyper-)plane model. Make the appropriate identifications for $\mathcal{S}_0$ and glue the identified and connected face $z$ (a ($n-1$)-simplex) that resulted from the hypersphere puncture. The other faces (ie ($n-1$)-simplices) are connected in the usual way for tori constructions.
+
+
+![./image/stori_sum.svg](./image/stori_sum.svg)
+
+The process of puncturing a new hypersphere on $ \mathcal{S}_{0}\,\#\,\mathcal{S}_{1} $ can be repeated for any new minimiser point without loss of generality producing $S := S_0\,\#\,S_1\,\#\,\cdots\,\#\,S_{g - 1} \qquad  (g\text{ times})$.
+
+
+![./image/non_linear_3.svg](./image/non_linear_3.svg)
+
+Visual demonstration on surfaces with non-linear constraints, the shaded region is unfeasible. The vertices of the points mapped to infinity have undirected edges, therefore they do not form simplicial complexes in the integral homology. The surfaces of each disconnected simplicial complex $\mathcal{K}_i$ can be constructed from the compact version of the invariance theorem. The rank of the abelian homology groups $\mathbf{H}_1(\mathcal{K}_i)$ is additive over arbitrary direct sums.
+
+
+The full outline of the algorithm can be downloaded [here](files/algorithm.pdf). Detailed description of the properties and their proofs can be found in [[1](#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization)-[2]((#2-endres-sc-2017-a-simplicial-homology-algorithm-for-lipschitz-optimisation))].
 
 The local search method may be specified using the ``minimizer_kwargs`` parameter which is inputted to ``scipy.optimize.minimize``. By default the ``SLSQP`` method is used. Other local minimisation methods more suited to the problem can also be used. In general it is recommended to use the ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints are defined for the problem since the other methods do not use constraints.
 
-The `sobol` method points are generated using the Sobol [2] sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided by [3] by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at [http://web.maths.unsw.edu.au/~fkuo/sobol/](http://web.maths.unsw.edu.au/~fkuo/sobol/) translated to Python 3 by Carl Sandrock 2016-03-31.
+The `sobol` method points are generated using the Sobol [[3]](#3-sobol-im-1967-the-distribution-of-points-in-a-cube-and-the-approximate-evaluation-of-integrals-ussr-comput-math-math-phys-7-86-112) sequence. The primitive polynomials and various sets of initial direction numbers for generating Sobol sequences is provided in [[4]](#4-joe-sw-and-kuo-fy-2008-constructing-sobol-sequences-with-better-two-dimensional-projections-siam-j-sci-comput-30-2635-2654) by Frances Kuo and Stephen Joe. The original program sobol.cc (MIT) is available and described at [http://web.maths.unsw.edu.au/~fkuo/sobol/](http://web.maths.unsw.edu.au/~fkuo/sobol/) translated to Python 3 by Carl Sandrock 2016-03-31.
+
+The deterministic sampling and refinement of shgo provides a more robust alternative to other algorithms commonly used in energy optimisation which rely on random sampling such as monte carlo methods [[5]](#5-li-z-and-scheraga-h-a-1987-monte-carlo-minimization-approach-to-the-multipleminima-problem-in-protein-folding-proceedings-of-the-national-academy-of-sciences-84-19-66116615) and bashinhopping [[6]](#6-wales-d-j-and-doye-j-p-1997-global-optimization-by-basin-hopping-and-the-lowest-energy-structures-of-lennard-jones-clusters-containing-up-to-110-atoms-the-journal-of-physical-chemistry-a-101-28-51115116) which can have varying performance.
 
 The algorithm is generally applicable to low dimensional black problems ([~10-dimensional problems](https://www.youtube.com/watch?v=fhNuspYbMeI)) unless more information can be supplied to the algorithm. This is not necessarily only gradients and hessians. For example if it is known that the decision variables of the objective function are symmetric, then the ``symmetry`` option can be used in order to solve problems with hundreds of variables.
 
+
+
+
+
+##### Further reading
+
+#### Summary of shgo features
+
++ **Convergence** to a global minimum assured.
++ Allows for **non-linear constraint** in the problem statement.
++ Extracts **all the minima** in the limit of an adequately sampled search space (ie attempts to find all the (quasi-)equilibrium solutions).
++ Progress can be tracked after every iteration through the **calculated homology groups**.
++ **Competitive performance** compared to state of the art black-box solvers.
++ All of the above properties hold for **non-continuous functions with non-linear constraints** assuming the search space contains any sub-spaces that are continuous and convex.
 
 Performance summary
 -----------------
 #### Open-source black-box algorithms
 
-The shgo algorithm only makes use of function evaluations without requiring the derivatives of objective functions. This makes it applicable to black-box global optimisation problems. Here we compare the SHGO and TGO algorithms with the SciPy implementations Jones et al. (2001–) of basinhopping (BH) [4-5] and differential evolution (DE) orignally proposed Storn and Price [6]. These algorithms were chosen because the open source versions are readily available in the SciPy project. The test suite contains multi-modal problems with box constraints, they are described in detail in [infinity77.net/global_optimization/](https:infinity77.net/global_optimization/index.html). We used the stopping criteria pe = 0.01% for shgo and tgo. Any local function evaluations were added to the global count. For the stochastic algorithms (BH and DE) the starting points provided by the test suite were used. For every test the algorithm was terminated if the global minimum was not found after 10 minutes of processing time and the test was flagged as a fail.
+The shgo algorithm only makes use of function evaluations without requiring the derivatives of objective functions. This makes it applicable to black-box global optimisation problems. Here we compare the SHGO and TGO algorithms with the SciPy implementation of basinhopping (BH) [[6]](#6-wales-d-j-and-doye-j-p-1997-global-optimization-by-basin-hopping-and-the-lowest-energy-structures-of-lennard-jones-clusters-containing-up-to-110-atoms-the-journal-of-physical-chemistry-a-101-28-51115116)
+ and differential evolution (DE) orignally proposed Storn and Price [[7]](#7-storn-r-and-price-k-1997-differential-evolution--a-simple-and-efficient-heuristic-for-global-optimization-over-continuous-spaces-journal-of-global-optimization-11-4-341359). These algorithms were chosen because the open source versions are readily available in the SciPy project. The test suite contains multi-modal problems with box constraints, they are described in detail in [infinity77.net/global_optimization/](https:infinity77.net/global_optimization/index.html). We used the stopping criteria pe = 0.01% for shgo and tgo. Any local function evaluations were added to the global count. For the stochastic algorithms (BH and DE) the starting points provided by the test suite were used. For every test the algorithm was terminated if the global minimum was not found after 10 minutes of processing time and the test was flagged as a fail.
 
 This figure shows the performance profiles for SHGO, TGO, DE and BH on the SciPy benchmarking test suite using function evaluations and processing run time as performance criteria:
 
@@ -100,47 +159,71 @@ From the figures it can be observed that for this problem set shgo-sobol was the
 
 #### Recently published black-box algorithms
 
-A recent review and experimental comparison of 22 derivative-free optimisation algorithms by Rios and Sahinidis [7] concluded that global optimisation solvers solvers such as TOMLAB/MULTI-MIN, TOMLAB/GLCCLUSTER, MCS and TOMLAB/LGO perform better, on average, than other derivative-free solvers in terms of solution quality within 2500 function evaluations. Both the TOMLAB/GLC-CLUSTER and MCS Huyer and Neumaier (1999) implementations are based on the well-known DIRECT (DIviding RECTangle) algorithm [8].
+A recent review and experimental comparison of 22 derivative-free optimisation algorithms by Rios and Sahinidis [8] concluded that global optimisation solvers solvers such as TOMLAB/MULTI-MIN, TOMLAB/GLCCLUSTER, MCS and TOMLAB/LGO perform better, on average, than other derivative-free solvers in terms of solution quality within 2500 function evaluations. Both the TOMLAB/GLC-CLUSTER and MCS Huyer and Neumaier (1999) implementations are based on the well-known DIRECT (DIviding RECTangle) algorithm [9].
 
-The DISIMPL (DIviding SIMPLices) algorithm was recently proposed by Paulavičius and Žilinskas [9]. The experimental investigation in [9] shows that the proposed simplicial algorithm gives very competitive results compared to the DIRECT algorithm. DISIMPL has been extended in [10-11]. The Gb-DISIMPL (Globally-biased DISIMPL) was compared in Paulavičius et al. (2014) [10] to the DIRECT and DIRECT-l methods in extensive numerical experiments on 800 multidimensional multiextremal. Gb-DISIMPL was shown to provide highly competative results compared the other algorithms.
+The DISIMPL (DIviding SIMPLices) algorithm was recently proposed by Paulavičius and Žilinskas [11-13]. The experimental investigation in [11] shows that the proposed simplicial algorithm gives very competitive results compared to the DIRECT algorithm [9]. DISIMPL has been extended in [10-11]. The Gb-DISIMPL (Globally-biased DISIMPL) was compared in Paulavičius et al. (2014) [11] to the DIRECT and DIRECT-l methods in extensive numerical experiments on 800 multidimensional multiextremal. Gb-DISIMPL was shown to provide highly competative results compared the other algorithms.
 
-More recently the Lc-DISIMPL variant of the algorithm was developed to handle optimisation problems with linear constraints [12]. Below we use an extract of the results with the highest performing Lc-DISIMPL algorithm (Lc-DISIMPL-v) and  DIRECT-L1 with the best performaning parameters (pp = 10). The full table can be found at [here](files/table.pdf). From the table it can be seen shgo provides competative results compared to the other algorithms:
+More recently the Lc-DISIMPL variant of the algorithm was developed to handle optimisation problems with linear constraints [13]. Below we use an extract of the results with the highest performing Lc-DISIMPL algorithm (Lc-DISIMPL-v) and  DIRECT-L1 with the best performaning parameters (pp = 10). The full table can be found at [here](files/table.pdf). From the table it can be seen shgo provides competative results compared to the other algorithms:
 
 
-| Algorithm: | shgo-simpl| shgo-sob | Lc-DISIMPL-v  | PSwarm (avg) | DIRECT-L1 |
-|------------|---:|-----:|------:|-------------:|----------:|
-| horst-1   |  97 |   24 | 7    | 1329$^{b(3)}$  |  287$^a$    |
-| horst-2   |  10 |   11 | 5    | 424            |  265$^a$    |
-| horst-3   |  6  |    7 | 5    | 44             |  5$^a$      |
-| horst-4   |  10 |   25 | 8    | 114          |  58293$^a$  |
-| horst-5   | 20  | 15   | 8    | 134          |  7$^a$      |
-| horst-6   | 22  | 59   | 10   | 110          |  11$^a$     |
-| horst-7   | 10  | 15   | 10   | 380         |  7$^a$      |
-| hs021     | 24  | 23   | 189  | 189         | 97          |
-| hs024     | 24  | 15   | 3    | 118         |  19$^a$     |
-| hs035     | 37  | 41   | 630  | 316           |  >100000    |
-| hs036     | 105 | 20   | 8    | 396         |  25$^a$     |
-| hs037     | 72  | 63   | 186  | 160         |  7$^a$      |
-| hs038     | 225 | 1029 | 3379 | 58576      | 7401        |
-| hs044     | 199 | 35   | 20   |  186$^{b(9)}$  | 90283       |
-| hs076     | 56  | 37   | 548  | 203            | 19135       |
-| s224      | 166 | 165  | 49   | 121            |  7$^a$      |
-| s231      | 99  | 99   | 2137 | 2366           | 1261        |
-| s232      | 24  | 15   | 3    | 119            |  19$^a$     |
-| s250      | 105 | 20   | 8    | 367            |  25$^a$     |
-| s251      | 72  | 63   | 186  | 129             |  7$^a$      |
-| bunnag1   | 34  | 47   | 630  | 214            | 1529        |
-| bunnag2   | 46  | 36   | 16   | 252            |  >100000    |
-|           |     |      |      |                |             |
-| Average   | 66  | 88   | 366  | 3011          |  >17213     |
+| Algorithm: | shgo-simpl| shgo-sob |Lc-DISIMPL-v| PSwarm (avg) | LGO | DIRECT-L1 |
+|------------|---:|-----:|------:|-----------:|----------:|---:|----------:|
+| horst-1   |  97 |   24 | 7    | 1329$^{b(3)}$  |2457|  287$^a$    |
+| horst-2   |  10 |   11 | 5    | 424            |1645|  265$^a$    |
+| horst-3   |  6  |    7 | 5    | 44             |3649|  5$^a$      |
+| horst-4   |  10 |   25 | 8    | 114          |39|  58293$^a$  |
+| horst-5   | 20  | 15   | 8    | 134          |37|  7$^a$      |
+| horst-6   | 22  | 59   | 10   | 110          |8476|  11$^a$     |
+| horst-7   | 10  | 15   | 10   | 380         |5217|  7$^a$      |
+| hs021     | 24  | 23   | 189  | 189         |13| 97          |
+| hs024     | 24  | 15   | 3    | 118         |1809|  19$^a$     |
+| hs035     | 37  | 41   | 630  | 316          |1885 |  >100000    |
+| hs036     | 105 | 20   | 8    | 396         |2756|  25$^a$     |
+| hs037     | 72  | 63   | 186  | 160         |10516|  7$^a$      |
+| hs038     | 225 | 1029 | 3379 | 58576         |221| 7401        |
+| hs044     | 199 | 35   | 20   |  186$^{b(9)}$  |32464| 90283       |
+| hs076     | 56  | 37   | 548  | 203            |221| 19135       |
+| s224      | 166 | 165  | 49   | 121            |24 |  7$^a$      |
+| s231      | 99  | 99   | 2137 | 2366           |1996 | 1261        |
+| s232      | 24  | 15   | 3    | 119            |1826 |  19$^a$     |
+| s250      | 105 | 20   | 8    | 367            |32 |  25$^a$     |
+| s251      | 72  | 63   | 186  | 129             |10575 |  7$^a$      |
+| bunnag1   | 34  | 47   | 630  | 214            | 1884| 1529        |
+| bunnag2   | 46  | 36   | 16   | 252            | 76454|  >100000    |
+|           |     |      |      |                | |             |
+| Average   | 66  | 88   | 366  | 3011          | 6841|  >17213     |
 
 
 $a$ result is outside the feasible region
 
-$b(t)$ $t$ out of 10 times the global solution was not reached 
+$b(t)$ $t$ out of 10 times the global solution was not reached
 
 Lc-DISIMPL-v, PSwarm (avg), DIRECT-L1 results produced by Paulavičius & Žilinskas (2016)
 
+
+Performance profiles for shgo, TGO, Lc-DISIMPL, LGO, PSwarm and DIRECT-
+L1 algorithms on linearly constrained test problems. The figure displays the fraction test
+suite problems that can be solved within a given number of objective function evaluations.
+The results for Lc-DISIMPL-v, PSwarm (avg), DIRECT-L1 were produced by
+
+
+LGO (Lipschitz-continuous Global Optimizer) [14]
+
+J. D. Pintér, Nonlinear optimization with gams /lgo, J. of Global Opti-
+mization 38 (1) (2007) 79–101. doi:10.1007/s10898-006-9084-2.
+URL http://dx.doi.org/10.1007/s10898-006-9084-2
+
+
+![./image/results_add.svg](./image/results_add.svg)
+
+It can be seen that shgo with the simplicial and Sobol sampling method generally
+outperforms every other algorithm. The only exception is the better early
+performance by Lc-DISIMPL. This is attributed to Lc-DISIMPL’s initiation
+step solving the set of equations in the linear constraints. In the test problems
+where the global minimum lie on a vertex of this convex hull, the algorithm
+immediately terminates without a global sampling phase. For more gen-
+eral, non-linear constraints it would not be possible to use this feature of
+Lc-DISIMPL.
 
 
 Installation
@@ -163,7 +246,7 @@ $ python setup.py test
 Examples
 ----------
 
-#### Rosenbrock unimodal function
+#### Unimodal function: Rosenbrock
 
 ##### Bounded variables
 
@@ -189,7 +272,7 @@ Note that bounds determine the dimensionality of the objective function and is t
 array([ 0.99999555,  0.99999111])
 ```
 
-#### Eggholder multimodal function
+#### Multimodal function: Eggholder
 ##### Mapping local minima
 
 Next we consider the [Eggholder function](https://en.wikipedia.org/wiki/Test_functions_for_optimization), a problem with several local minima and one global minimum. We will demonstrate the use of some of the arguments and capabilities of shgo.
@@ -237,7 +320,7 @@ shgo has two built-in low discrepancy sampling sequences. The default ``simplici
    -202.53912972]))
    ```
 
-These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [13].
+These results are useful in applications where there are many global minima and the values of other global minima are desired or where the local minima can provide insight into the system such as for example morphologies in physical chemistry [15].
 
 
 ##### Improving results
@@ -252,9 +335,9 @@ Now suppose we want to find a larger number of local minima (or we hope to find 
 
 Note that there is a difference between specifying arguments for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the promising points contained in the minimiser pool is processed only once. In the latter case it is processed every 60 sampling points for a total of 3 iterations.
 
-#### Cattle feed HS73 problem with non-linear constraints
+#### Non-linear constraints: cattle feed problem (HS73)
 
-To demonstrate solving problems with non-linear constraints consider the following example from Hock and Schittkowski problem 73 (cattle-feed) [14]::
+To demonstrate solving problems with non-linear constraints consider the following example from Hock and Schittkowski problem 73 (cattle-feed) [16]::
 
 \begin{eqnarray} \nonumber
   \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\\\\\ \nonumber
@@ -309,8 +392,14 @@ Approx. answer [4]:
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
 ```
 
+Advanced features
+----------
+(Under construction)
+##### Model structure and performance
+##### Stopping criteria
+##### Parallelization
 
-Parameters
+Code parameters
 ----------
     func : callable
 
@@ -528,17 +617,23 @@ Important attributes are:
 
 References
 ----------
-1. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz        optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
-2. [Sobol, IM (1967) "The distribution of points in a cube and the approximate evaluation of integrals", USSR Comput. Math. Math. Phys. 7, 86-112.](http://www.sciencedirect.com/science/article/pii/0041555367901449)
-3. [Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with better two-dimensional projections", SIAM J. Sci. Comput. 30, 2635-2654.](http://epubs.siam.org/doi/abs/10.1137/070709359?journalCode=sjoce3)
-4. [Li, Z. and Scheraga, H. A. (1987) “Monte carlo-minimization approach to the multipleminima problem in protein folding”, Proceedings of the National Academy of Sciences, 84 (19), 6611–6615.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC299132/)
-5. [Wales, D. J. and Doye, J. P. (1997) “Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms”, The Journal of Physical Chemistry A, 101 (28), 5111–5116.](http://pubs.acs.org/doi/abs/10.1021/jp970984n)
-6. [Storn, R. and Price, K. (1997) “Differential evolution – a simple and efficient heuristic for global optimization over continuous spaces”, Journal of Global Optimization, 11 (4), 341–359 URL http://dx.doi.org/10.1023/A:1008202821328.](http://dx.doi.org/10.1023/A:1008202821328)
-7. [Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of algorithms and comparison of software implementations”, Journal of Global Optimization, 56 (3), 1247–1293.](https://link.springer.com/article/10.1007/s10898-012-9951-y)
-8. [Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimization without the lipschitz constant”, Journal of Optimization theory and Applications,79 (1), 157–181.](https://link.springer.com/article/10.1007/BF00941892)
-9. [Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.](https://link.springer.com/article/10.1007/s10898-013-0089-3)
-10. [Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-biased disimpl algorithm for expensive global optimization”, Journal of Global Optimization, 59 (2), 545–567.](https://link.springer.com/article/10.1007/s10898-014-0180-4)
-11. [Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer](http://www.springer.com/us/book/9781461490920)
-12. [Paulavičius, R. and Žilinskas, J. Feb (2016) “Advantages of simplicial partitioning for lipschitz optimization problems with linear constraints”, Optimization Letters, 10 (2), 237–246.](https://link.springer.com/article/10.1007/s11590-014-0772-4)
-13.  [Wales, DJ (2015) "Perspective: Insight into reaction coordinates and dynamics from the potential energy landscape",        Journal of Chemical Physics, 142(13), 2015.](http://dx.doi.org/10.1063/1.4916307)
-14. [Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear programming codes", Lecture Notes in Economics and mathematical Systems, 187. Springer-Verlag, New York. http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf](http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf)
+
+
+##### 1. [Endres, SC,  Sandrock, C, Focke, WW (2018) A simplicial homology algorithm for lipschitz optimisation, Journal of Global Optimization.](http://dx.doi.org/10.1007/s10898-018-0645-y)
+##### 2. [Endres, SC (2017) "A simplicial homology algorithm for Lipschitz optimisation".](https://github.com/Stefan-Endres/mdissertation/blob/master/dissertation.pdf)
+##### 3. [Sobol, IM (1967) "The distribution of points in a cube and the approximate evaluation of integrals", USSR Comput. Math. Math. Phys. 7, 86-112.](http://www.sciencedirect.com/science/article/pii/0041555367901449)
+##### 4. [Joe, SW and Kuo, FY (2008) "Constructing Sobol sequences with better two-dimensional projections", SIAM J. Sci. Comput. 30, 2635-2654.](http://epubs.siam.org/doi/abs/10.1137/070709359?journalCode=sjoce3)
+##### 5. [Li, Z. and Scheraga, H. A. (1987) “Monte carlo-minimization approach to the multipleminima problem in protein folding”, Proceedings of the National Academy of Sciences, 84 (19), 6611–6615.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC299132/)
+##### 6. [Wales, D. J. and Doye, J. P. (1997) “Global optimization by basin-hopping and the lowest energy structures of lennard-jones clusters containing up to 110 atoms”, The Journal of Physical Chemistry A, 101 (28), 5111–5116.](http://pubs.acs.org/doi/abs/10.1021/jp970984n)
+##### 7. [Storn, R. and Price, K. (1997) “Differential evolution – a simple and efficient heuristic for global optimization over continuous spaces”, Journal of Global Optimization, 11 (4), 341–359](http://dx.doi.org/10.1023/A:1008202821328)
+##### 8. [Rios, L. M. and Sahinidis, N. V. Jul (2013) “Derivative-free optimization: a review of algorithms and comparison of software implementations”, Journal of Global Optimization, 56 (3), 1247–1293.](https://link.springer.com/article/10.1007/s10898-012-9951-y)
+##### 9. [Jones, D. R.; Perttunen, C. D. and Stuckman, B. E. Oct (1993) “Lipschitzian optimization without the lipschitz constant”, Journal of Optimization theory and Applications,79 (1), 157–181.](https://link.springer.com/article/10.1007/BF00941892)
+##### 10. [Paulavičius, R. and Žilinskas, J. May (2014)b “Simplicial lipschitz optimization without the lipschitz constant”, Journal of Global Optimization, 59 (1), 23–40.](https://link.springer.com/article/10.1007/s10898-013-0089-3)
+##### 11. [Paulavičius, R.; Sergeyev, Y. D.; Kvasov, D. E. and Žilinskas, J. Jul (2014) “Globally-biased disimpl algorithm for expensive global optimization”, Journal of Global Optimization, 59 (2), 545–567.](https://link.springer.com/article/10.1007/s10898-014-0180-4)
+##### 12. [Paulavičius, R. and Žilinskas, J. (2014)a Simplicial global optimization, Springer](http://www.springer.com/us/book/9781461490920)
+##### 13. [Paulavičius, R. and Žilinskas, J. Feb (2016) “Advantages of simplicial partitioning for lipschitz optimization problems with linear constraints”, Optimization Letters, 10 (2), 237–246.](https://link.springer.com/article/10.1007/s11590-014-0772-4)
+##### 14. [J. D. Pintér, Nonlinear optimization with gams /lgo, J. of Global Optimization 38 (1) (2007) 79–101.](http://dx.doi.org/10.1007/s10898-006-9084-2)
+##### 15. [Wales, DJ (2015) "Perspective: Insight into reaction coordinates and dynamics from the potential energy landscape",        Journal of Chemical Physics, 142(13), 2015.](http://dx.doi.org/10.1063/1.4916307)
+##### 16. [Hoch, W and Schittkowski, K (1981) "Test examples for nonlinear programming codes", Lecture Notes in Economics and mathematical Systems, 187. Springer-Verlag, New York.](http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf)
+##### 17. Henle, M. (1979) A Combinatorial Introduction to Topology, Unabriged Dover (1994) republication of the edition published by WH Greeman & Company, San Francisco, 1979
+##### 18. Eilenberg, S. and Steenrod, N. (1952) “Foundations of algebraic topology”, Mathematical Reviews (MathSciNet): MR14: 398b Zentralblatt MATH, Princeton, 47.
