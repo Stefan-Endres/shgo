@@ -5,6 +5,7 @@
 
 NOTE:
 Developmental (unstable) repository for the shgo package: https://bitbucket.org/upiamcompthermo/shgo
+
 Stable repository (raise public issues here): https://github.com/Stefan-Endres/shgo
 
 Description
