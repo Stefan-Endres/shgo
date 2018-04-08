@@ -14,6 +14,8 @@ from shgo.shgo_m.triangulation import Complex
 __all__ = ['shgo']
 
 
+__all__ = ['shgo']
+
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
@@ -410,8 +412,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     References
     ----------
-    .. [1] Endres, SC (2017) "A simplicial homology algorithm for Lipschitz
-           optimisation".
+    .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
+           algorithm for lipschitz optimisation", Journal of Global Optimization.
     .. [2] Sobol, IM (1967) "The distribution of points in a cube and the
            approximate evaluation of integrals", USSR Comput. Math. Math. Phys.
            7, 86-112.
