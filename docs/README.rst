@@ -144,7 +144,7 @@ the usual trade-off between a local and global search.
 This is accomplished in several steps. First the construction of a
 simplicial complex :math:`\mathcal{H}` built up from the sampling points
 mapped through :math:`f` as vertices following the constructions
-described in :raw-latex:`\cite{Endres2018}`. Next a homomorphism is
+described in [1]. Next a homomorphism is
 found between :math:`\mathcal{H}` and :math:`\mathcal{K}`; another
 simplicial complex which exists on an abstract constructed surface
 :math:`\mathcal{S}`. The :math:`n`-dimensional manifold
@@ -620,9 +620,9 @@ Code parameters
 Arguments
 ---------
 
---------------
+::
 
-func : callable
+   func : callable
 
 The objective function to be minimized. Must be in the form
 ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
@@ -857,8 +857,6 @@ shape ``n x dim``. See SHGO.sampling_sobol for an example function.
 
 Returns
 -------
-
---------------
 
 ::
 
