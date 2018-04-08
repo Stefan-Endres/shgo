@@ -55,15 +55,14 @@ problems)
 [`1 <#1-endres-sc--sandrock-c-focke-ww-2018-a-simplicial-homology-algorithm-for-lipschitz-optimisation-journal-of-global-optimization>`__-`2 <(#2-endres-sc-2017-a-simplicial-homology-algorithm-for-lipschitz-optimisation)>`__].
 This class of optimisation is also know as CDFO (constrained derivative
 free optimisation). In general, the optimisation problems are of the
-form::
+form:
 
 .. math::
 
-   \begin{eqnarray} \nonumber
-   \min_x && f(x),  x \in \mathbb{R}^n \\\\\\ \nonumber
-   \text{s.t.} && g_i(x) \ge 0, ~ \forall i = 1,...,m \\\\\\ \nonumber
-   && h_j(x) = 0,  ~\forall j = 1,...,p
-   \end{eqnarray}
+   \min_x      & f(x),  x \in \mathbb{R}^n \\
+   \text{s.t.} & g_i(x) \ge 0, ~ \forall i = 1,\dots,m \\
+               & h_j(x) = 0,  ~\forall j = 1,\dots,p
+
 
 where :math:`x` is a vector of one or more variables. :math:`f(x)` is
 the objective function :math:`f: \mathbb{R}^n \rightarrow \mathbb{R}`
@@ -105,8 +104,6 @@ surface:
 .. figure:: ./image/Fig7.svg
    :alt: ./image/Fig7.svg
 
-   ./image/Fig7.svg
-
 The :math:`k-`\ chain :math:`C(\mathcal{H}^k), k = n + 1` of simplices
 in :math:`\textrm{st}\left( v_1 \right)` forms a boundary cycle
 :math:`\partial(C(\mathcal{H}^{n + 1})) = \overline{v_{11} v_{9}} - \overline{v_{9} v_{14}} + \overline{v_{14} v_{4}} - \overline{v_{4} v_{11}}`
@@ -120,10 +117,8 @@ constraints (in :math:`g_i(x)`) when a local minimum lies on it. For
 example, here the star domain around vertex :math:`v_7` is bounded by
 the global constraints of the problem:
 
-.. figure:: ./image/Fig9.svg
+.. figure:: ./image/Fig8.svg
    :alt: ./image/Fig8.svg
-
-   ./image/Fig8.svg
 
 Another important property of shgo is that it is proven that one and
 only one starting point for every strictly unique minimum is produced.
@@ -131,10 +126,8 @@ So the number of locally convex subdomains do not increase with
 increased sampling of the objective function, rather only the
 constraints of the convex subdomains are refined:
 
-.. figure:: ./image/Fig8.svg
-   :alt: ./image/Fig8.svg
-
-   ./image/Fig8.svg
+.. figure:: ./image/Fig9.svg
+   :alt: ./image/Fig9.svg
 
 This distinguishes it from many other global optimisation algorithms
 using graph theory and clustering methods that often show poor
@@ -173,8 +166,6 @@ we draw another homomorphism between the surfaces of :math:`f` and
 .. figure:: ./image/stori_complete.svg
    :alt: ./image/stori_complete.svg
 
-   ./image/stori_complete.svg
-
 The process of puncturing a hypersphere at a minimiser point in a
 compact search space. Start by identifying a minimiser point in the
 :math:`\mathcal{H}^1` (:math:`\cong~\mathcal{K}^1`) graph. By
@@ -194,18 +185,13 @@ constructions.
 .. figure:: ./image/stori_sum.svg
    :alt: ./image/stori_sum.svg
 
-   ./image/stori_sum.svg
-
-The process of puncturing a new hypersphere on $
-:raw-latex:`\mathcal{S}`\ *{0},#,:raw-latex:`\mathcal{S}`*\ {1} $ can be
+The process of puncturing a new hypersphere on :math:`\mathcal{S}` can be
 repeated for any new minimiser point without loss of generality
 producing
 :math:`S := S_0\,\#\,S_1\,\#\,\cdots\,\#\,S_{g - 1} \qquad (g\text{ times})`.
 
 .. figure:: ./image/non_linear_3.svg
    :alt: ./image/non_linear_3.svg
-
-   ./image/non_linear_3.svg
 
 Visual demonstration on surfaces with non-linear constraints, the shaded
 region is unfeasible. The vertices of the points mapped to infinity have
@@ -304,15 +290,12 @@ processing run time as performance criteria:
 .. figure:: ./image/Fig12.svg
    :alt: ./image/Fig12.svg
 
-   ./image/Fig12.svg
-
 Performance profiles zoomed in to the range of f.e. = [0, 1000] function
 evaluations and [0, 0.4] seconds run time:
 
 .. figure:: ./image/Fig13.svg
-   :alt: ./image/Fig12.svg
+   :alt: ./image/Fig13.svg
 
-   ./image/Fig12.svg
 
 From the figures it can be observed that for this problem set shgo-sobol
 was the best performing algorithm, followed closely by tgo and
@@ -357,98 +340,37 @@ parameters (pp = 10). The full table can be found at
 `here <files/table.pdf>`__. From the table it can be seen shgo provides
 competative results compared to the other algorithms:
 
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Algori | shgo-s | shgo-s | Lc-DIS | PSwarm | LGO    | DIRECT |        |
-| thm:   | impl   | ob     | IMPL-v | (avg)  |        | -L1    |        |
-+========+========+========+========+========+========+========+========+
-| horst- | 97     | 24     | 7      | 1329\  | 2457   | 287\ : |        |
-| 1      |        |        |        | :math: |        | math:` |        |
-|        |        |        |        | `^{b(3 |        | ^a`    |        |
-|        |        |        |        | )}`    |        |        |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 10     | 11     | 5      | 424    | 1645   | 265\ : |        |
-| 2      |        |        |        |        |        | math:` |        |
-|        |        |        |        |        |        | ^a`    |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 6      | 7      | 5      | 44     | 3649   | 5\ :ma |        |
-| 3      |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 10     | 25     | 8      | 114    | 39     | 58293\ |        |
-| 4      |        |        |        |        |        |  :math |        |
-|        |        |        |        |        |        | :`^a`  |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 20     | 15     | 8      | 134    | 37     | 7\ :ma |        |
-| 5      |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 22     | 59     | 10     | 110    | 8476   | 11\ :m |        |
-| 6      |        |        |        |        |        | ath:`^ |        |
-|        |        |        |        |        |        | a`     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| horst- | 10     | 15     | 10     | 380    | 5217   | 7\ :ma |        |
-| 7      |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs021  | 24     | 23     | 189    | 189    | 13     | 97     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs024  | 24     | 15     | 3      | 118    | 1809   | 19\ :m |        |
-|        |        |        |        |        |        | ath:`^ |        |
-|        |        |        |        |        |        | a`     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs035  | 37     | 41     | 630    | 316    | 1885   | >10000 |        |
-|        |        |        |        |        |        | 0      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs036  | 105    | 20     | 8      | 396    | 2756   | 25\ :m |        |
-|        |        |        |        |        |        | ath:`^ |        |
-|        |        |        |        |        |        | a`     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs037  | 72     | 63     | 186    | 160    | 10516  | 7\ :ma |        |
-|        |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs038  | 225    | 1029   | 3379   | 58576  | 221    | 7401   |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs044  | 199    | 35     | 20     | 186\ : | 32464  | 90283  |        |
-|        |        |        |        | math:` |        |        |        |
-|        |        |        |        | ^{b(9) |        |        |        |
-|        |        |        |        | }`     |        |        |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| hs076  | 56     | 37     | 548    | 203    | 221    | 19135  |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| s224   | 166    | 165    | 49     | 121    | 24     | 7\ :ma |        |
-|        |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| s231   | 99     | 99     | 2137   | 2366   | 1996   | 1261   |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| s232   | 24     | 15     | 3      | 119    | 1826   | 19\ :m |        |
-|        |        |        |        |        |        | ath:`^ |        |
-|        |        |        |        |        |        | a`     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| s250   | 105    | 20     | 8      | 367    | 32     | 25\ :m |        |
-|        |        |        |        |        |        | ath:`^ |        |
-|        |        |        |        |        |        | a`     |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| s251   | 72     | 63     | 186    | 129    | 10575  | 7\ :ma |        |
-|        |        |        |        |        |        | th:`^a |        |
-|        |        |        |        |        |        | `      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| bunnag | 34     | 47     | 630    | 214    | 1884   | 1529   |        |
-| 1      |        |        |        |        |        |        |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| bunnag | 46     | 36     | 16     | 252    | 76454  | >10000 |        |
-| 2      |        |        |        |        |        | 0      |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-|        |        |        |        |        |        |        |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
-| Averag | 66     | 88     | 366    | 3011   | 6841   | >17213 |        |
-| e      |        |        |        |        |        |        |        |
-+--------+--------+--------+--------+--------+--------+--------+--------+
+==========  ==========  ========  ============  ================  =====  =============
+Algorithm   shgo-simpl  shgo-sob  Lc-DISIMPL-v  PSwarm (avg)      LGO    DIRECT-L1
+==========  ==========  ========  ============  ================  =====  =============
+horst-1     97          24        7             1329 :sup:`b(3)`  2457   287 :sup:`a`
+horst-2     10          11        5             424               1645   265 :sup:`a`
+horst-3     6           7         5             44                3649   5 :sup:`a`
+horst-4     10          25        8             114               39     58293 :sup:`a`
+horst-5     20          15        8             134               37     7 :sup:`a`
+horst-6     22          59        10            110               8476   11 :sup:`a`
+horst-7     10          15        10            380               5217   7 :sup:`a`
+hs021       24          23        189           189               13     97
+hs024       24          15        3             118               1809   19 :sup:`a`
+hs035       37          41        630           316               1885   >100000
+hs036       105         20        8             396               2756   25 :sup:`a`
+hs037       72          63        186           160               10516  7 :sup:`a`
+hs038       225         1029      3379          58576             221    7401
+hs044       199         35        20            186 :sup:`b(9)`   32464  90283
+hs076       56          37        548           203               221    19135
+s224        166         165       49            121               24     7 :sup:`a`
+s231        99          99        2137          2366              1996   1261
+s232        24          15        3             119               1826   19 :sup:`a`
+s250        105         20        8             367               32     25 :sup:`a`
+s251        72          63        186           129               10575  7 :sup:`a`
+bunnag1     34          47        630           214               1884   1529
+bunnag2     46          36        16            252               76454  >100000
+Average     66          88        366           3011              6841   >17213
+==========  ==========  ========  ============  ================  =====  =============
 
-:math:`a` result is outside the feasible region
+a: result is outside the feasible region
 
-:math:`b(t)` :math:`t` out of 10 times the global solution was not
+b(t) :math:`t` out of 10 times the global solution was not
 reached
 
 Lc-DISIMPL-v, PSwarm (avg), DIRECT-L1 results produced by Paulavičius &
@@ -468,8 +390,6 @@ http://dx.doi.org/10.1007/s10898-006-9084-2
 
 .. figure:: ./image/results_add.svg
    :alt: ./image/results_add.svg
-
-   ./image/results_add.svg
 
 It can be seen that shgo with the simplicial and Sobol sampling method
 generally outperforms every other algorithm. The only exception is the
@@ -625,19 +545,17 @@ Non-linear constraints: cattle feed problem (HS73)
 
 To demonstrate solving problems with non-linear constraints consider the
 following example from Hock and Schittkowski problem 73 (cattle-feed)
-[16]::
+[16]:
 
-.. raw:: latex
+.. math:: 
 
-   \begin{eqnarray} \nonumber
-     \textrm{minimize}: f(x)  =&& 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\\\\\ \nonumber
-      \text{s.t.} && 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0, \\\\\\ \nonumber
-      && 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21 & \\\\\\ \nonumber
-      && -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 +
-                                     20.5 x_3^2 + 0.62  x_4^2} &\ge 0, \\\\\\ \nonumber
-   && x_1 + x_2 + x_3 + x_4 - 1 &= 0, \\\\\\ \nonumber
-   && 0 \le x_i \le 1 ~~ \forall i
-   \end{eqnarray}
+    \text{minimize}: f(x) &= 24.55  x_1 + 26.75  x_2 + 39  x_3 + 40.50  x_4 & \\
+    \text{s.t.}           & 2.3 x_1 + 5.6  x_2 + 11.1  x_3 + 1.3  x_4 - 5 &\ge 0, \\
+                          & 12 x_1 + 11.9  x_2 + 41.8 x_3 + 52.1 x_4 - 21 & \\
+                          & -1.645 \sqrt{0.28 x_1^2 + 0.19 x_2^2 + 20.5 x_3^2 + 0.62  x_4^2} &\ge 0, \\
+                          & x_1 + x_2 + x_3 + x_4 - 1 &= 0, \\ 
+                          & 0 \le x_i \le 1 \quad \forall i
+   
 
 Approx. answer [4]:
 :math:`f([0.6355216, -0.12e^{-11}, 0.3127019, 0.05177655]) = 29.894378`
