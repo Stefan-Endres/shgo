@@ -14,8 +14,6 @@ from shgo.shgo_m.triangulation import Complex
 __all__ = ['shgo']
 
 
-__all__ = ['shgo']
-
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """
@@ -400,10 +398,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
        nlhev: 0
        nljev: 5
      success: True
-           x: array([  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-             5.17765506e-02])
-          xl: array([[  6.35521569e-01,   1.13700270e-13,   3.12701881e-01,
-              5.17765506e-02]])
+           x: array([6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02])
+          xl: array([[6.35521569e-01, 1.13700270e-13, 3.12701881e-01, 5.17765506e-02]])
 
     >>> g1(res.x), g2(res.x), h1(res.x)
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
