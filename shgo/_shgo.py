@@ -481,7 +481,7 @@ class SHGO(object):
         abound = numpy.array(bounds, float)
         self.dim = numpy.shape(abound)[0]  # Dimensionality of problem
 
-        # Set none finite values to large floats
+        # Set non-finite values to large floats
         infind = ~numpy.isfinite(abound)
         abound[infind[:, 0], 0] = -1e50  # e308
         abound[infind[:, 1], 1] = 1e50  # e308
@@ -567,67 +567,40 @@ class SHGO(object):
             # Feedback
             self.disp = False
 
-        # Pop unknown arguments in self.minimizer_kwargs
+        # Remove unknown arguments in self.minimizer_kwargs
+        # Start with arguments all the solvers have in common
+        self.min_solver_args = ['fun', 'x0', 'args',
+                                'callback', 'options', 'method']
+        # then add the ones unique to specific solvers
+        solver_args = {
+            '_custom': ['jac', 'hess', 'hessp', 'bounds', 'constraints'],
+            'nelder-mead': [],
+            'powell': [],
+            'cg': ['jac'],
+            'bfgs': ['jac'],
+            'newton-cg': ['jac', 'hess', 'hessp'],
+            'l-bfgs-b': ['jac', 'bounds'],
+            'tnc': ['jac', 'bounds'],
+            'cobyla': ['constraints'],
+            'slsqp': ['jac', 'bounds', 'constraints'],
+            'dogleg': ['jac', 'hess'],
+            'trust-ncg': ['jac', 'hess', 'hessp'],
+            'trust-krylov': ['jac', 'hess', 'hessp'],
+            'trust-exact': ['jac', 'hess'],
+        }
         method = self.minimizer_kwargs['method']
-        meth = method.lower()
-        if meth == '_custom':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'hessp', 'bounds',
-                                    'constraints', 'callback']
-        elif meth == 'nelder-mead':
-            self.min_solver_args = ['fun', 'x0', 'args', 'callback']
-        elif meth == 'powell':
-            self.min_solver_args = ['fun', 'x0', 'args', 'callback']
-        elif meth == 'cg':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'callback']
-        elif meth == 'bfgs':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'callback']
-        elif meth == 'newton-cg':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'hessp', 'callback']
-        elif meth == 'l-bfgs-b':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
-                                    'callback']
-        elif meth == 'tnc':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
-                                    'callback']
-        elif meth == 'cobyla':
-            self.min_solver_args = ['fun', 'x0', 'args', 'constraints']
-        elif meth == 'slsqp':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'bounds',
-                                    'constraints', 'callback']
-        elif meth == 'dogleg':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'callback']
-        elif meth == 'trust-ncg':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'hessp', 'callback']
-        elif meth == 'trust-krylov':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'hessp', 'callback']
-        elif meth == 'trust-exact':
-            self.min_solver_args = ['fun', 'x0', 'args', 'jac', 'hess',
-                                    'callback']
+        self.min_solver_args += solver_args[method.lower()]
 
-        self.min_solver_args.append('options')
-        self.min_solver_args.append('method')
-        kwarg_dict = self.minimizer_kwargs.copy()
-        kwarg_opt_dict = self.minimizer_kwargs['options'].copy()
-        for key in kwarg_dict:
-            if key not in self.min_solver_args:
-                self.minimizer_kwargs.pop(key, None)
-                if key is 'ftol':
-                    pass
-                else:
-                    self.minimizer_kwargs['options'].pop(key, None)
+        # Only retain the known arguments
+        def _restrict_to_keys(dictionary, goodkeys):
+            """Remove keys from dictionary if not in goodkeys - inplace"""
+            existingkeys = set(dictionary)
+            for key in existingkeys - set(goodkeys):
+                dictionary.pop(key, None)
 
-        for key in kwarg_opt_dict:
-            if key not in self.min_solver_args:
-                self.minimizer_kwargs.pop(key, None)
-                if key is 'ftol':
-                    pass
-                else:
-                    self.minimizer_kwargs['options'].pop(key, None)
+        _restrict_to_keys(self.minimizer_kwargs, self.min_solver_args)
+        _restrict_to_keys(self.minimizer_kwargs['options'],
+                          self.min_solver_args + ['ftol'])
 
         # Algorithm controls
         # Global controls
