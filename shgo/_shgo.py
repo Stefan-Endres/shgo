@@ -684,72 +684,39 @@ class SHGO(object):
         """
         self.minimizer_kwargs['options'].update(options)
         # Default settings:
-        if 'minimize_every_iter' in options:
-            self.minimize_every_iter = options['minimize_every_iter']
-        else:
-            self.minimize_every_iter = False
+        self.minimize_every_iter = options.get('minimize_every_iter', False)
 
         # Algorithm limits
-        if 'maxiter' in options:
-            # Maximum number of iterations to perform.
-            self.maxiter = options['maxiter']
-        else:
-            self.maxiter = None
-        if 'maxfev' in options:
-            # Maximum number of function evaluations in the feasible domain
-            self.maxfev = options['maxfev']
-        else:
-            self.maxfev = None
-        if 'maxev' in options:
-            # Maximum number of sampling evaluations (includes searching in
-            # infeasible points
-            self.maxev = options['maxev']
-        else:
-            self.maxev = None
-        if 'maxtime' in options:
-            # Maximum processing runtime allowed
-            self.maxtime = options['maxtime']
-            self.init = time.time()
-        else:
-            self.maxtime = None
+        # Maximum number of iterations to perform.
+        self.maxiter = options.get('maxiter', None)
+        # Maximum number of function evaluations in the feasible domain
+        self.maxfev = options.get('maxfev', None)
+        # Maximum number of sampling evaluations (includes searching in
+        # infeasible points
+        self.maxev = options.get('maxev', None)
+        # Maximum processing runtime allowed
+        self.init = time.time()
+        self.maxtime = options.get('maxtime', None)
         if 'f_min' in options:
             # Specify the minimum objective function value, if it is known.
             self.f_min_true = options['f_min']
-            if 'f_tol' in options:
-                self.f_tol = options['f_tol']
-            else:
-                self.f_tol = 1e-4
-        elif 'f_min' not in options:
+            self.f_tol = options.get('f_tol', 1e-4)
+        else:
             self.f_min_true = None
 
-        if 'minhgrd' in options:
-            self.minhgrd = options['minhgrd']
-        else:
-            self.minhgrd = None
+        self.minhgrd = options.get('minhgrd', None)
 
         # Objective function knowledge
-        if 'symmetry' in options:
-            self.symmetry = True
-        else:
-            self.symmetry = False
+        self.symmetry = 'symmetry' in options
 
         # Algorithm functionality
-        if 'local_iter' in options:  # Only evaluate a few of the best candiates
-            self.local_iter = options['local_iter']
-        else:  # Evaluate all minimisers
-            self.local_iter = False
+        # Only evaluate a few of the best candiates
+        self.local_iter = options.get('local_iter', False)
 
-        if 'infty_constraints' in options:
-            self.infty_cons_sampl = options['infty_constraints']
-        else:
-            self.infty_cons_sampl = True
+        self.infty_cons_sampl = options.get('infty_constraints', True)
 
         # Feedback
-        if 'disp' in options:
-            self.disp = options['disp']
-        else:
-            self.disp = False
-        return
+        self.disp = options.get('disp', False)
 
     # Iteration properties
     # Main construction loop:
