@@ -465,11 +465,10 @@ class SHGO(object):
                  options=None, sampling_method='sobol'):
 
         # Input checks
-        if (type(sampling_method) is str) and ((sampling_method is not 'sobol')
-                                               and (
-                        sampling_method is not 'simplicial')):
-            raise ValueError("""Unknown sampling_method specified, use either 
-                                 'sobol' or 'simplicial' """)
+        methods = ['sobol', 'simplicial']
+        if sampling_method not in methods:
+            raise ValueError(("Unknown sampling_method specified."
+                              " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
         self.func = func
