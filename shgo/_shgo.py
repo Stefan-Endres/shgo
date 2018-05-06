@@ -1669,7 +1669,6 @@ class LMapCache:
         """
         Sort results and build the global return object
         """
-        import numpy
         results = {}
         # Sort results and save
         self.xl_maps = numpy.array(self.xl_maps)
