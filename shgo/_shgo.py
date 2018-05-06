@@ -18,8 +18,7 @@ __all__ = ['shgo']
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
-    """
-    Finds the global minimum of a function using simplicial homology global
+    """Finds the global minimum of a function using simplicial homology global
     optimisation.
 
     Parameters
@@ -305,8 +304,8 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> result.x, result.fun
     (array([ 512.        ,  404.23180542]), -959.64066272085051)
 
-    ``shgo_m`` also has a return for any other local minima that was found, these
-     can be called using:
+    ``shgo_m`` also returns any other local minima that were found. These are
+     stored in `result.xl`, with associated function values in `result.funl`:
 
     >>> result.xl
     array([[ 512.        ,  404.23180542],
@@ -331,20 +330,19 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     These results are useful in applications where there are many global minima
     and the values of other global minima are desired or where the local minima
-    can provide insight into the system such are for example morphologies
-    in physical chemistry [5]_.
+    can provide insight into the system (for example morphologies
+    in physical chemistry [5]_).
 
-    Now suppose we want to find a larger number of local minima, this can be
-    accomplished for example by increasing the amount of sampling points or the
-    number of iterations. We'll increase the number of sampling points to 60 and
-    the number of iterations to 5 increased from the default 1 for a total of
-    60 x 5 = 300 initial sampling points.
+    If we want to find a larger number of local minima, we can increase the
+    number of sampling points or the number of iterations. We'll increase the
+    number of sampling points to 60 and the number of iterations from the
+    default of 1 to 5. This gives us 60 x 5 = 300 initial sampling points.
 
     >>> result_2 = shgo(eggholder, bounds, n=60, iters=5, sampling_method='sobol')
     >>> len(result.xl), len(result_2.xl)
     (13, 39)
 
-    Note that there is a difference between specifying arguments for
+    Note that even though the same number of initial points result from pecifying arguments for
     ex. ``n=180, iters=1`` and ``n=60, iters=3``.
     In the first case the promising points contained in the minimiser pool
     is processed only once. In the latter case it is processed every 60 sampling
@@ -409,7 +407,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     (-5.0626169922907138e-14, -2.9594104944408173e-12, 0.0)
 
 
-
     References
     ----------
     .. [1] Endres, SC, Sandrock, C, Focke, WW (2018) "A simplicial homology
@@ -441,7 +438,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
     if not shc.break_routine:
         if shc.disp:
-            print("Succesfully completed construction of complex.")
+            print("Successfully completed construction of complex.")
 
     # Test post iterations success
     if len(shc.LMC.xl_maps) == 0:
@@ -455,7 +452,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         shc.res.x = shc.x_lowest
         shc.res.nfev = shc.fn
 
-    # Confirm the routine ran succesfully
+    # Confirm the routine ran successfully
     if not shc.break_routine:
         shc.res.message = 'Optimization terminated successfully.'
         shc.res.success = True
