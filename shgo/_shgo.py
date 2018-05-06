@@ -518,46 +518,28 @@ class SHGO(object):
             self.g_args = None
 
         # Define local minimization keyword arguments
+        # Start with defaults
+        self.minimizer_kwargs = {'args': self.args,
+                                 'method': 'SLSQP',
+                                 'bounds': self.bounds,
+                                 'options': {},
+                                 'callback': self.callback
+                                 }
         if minimizer_kwargs is not None:
-            self.minimizer_kwargs = minimizer_kwargs
-            if 'args' not in minimizer_kwargs:
-                self.minimizer_kwargs['args'] = self.args
+            # Overwrite with supplied values
+            self.minimizer_kwargs.update(minimizer_kwargs)
 
-            if 'method' not in minimizer_kwargs:
-                self.minimizer_kwargs['method'] = 'SLSQP'
-
-            if 'bounds' not in minimizer_kwargs:
-                self.minimizer_kwargs['bounds'] = self.bounds
-
-            if 'callback' not in minimizer_kwargs:
-                self.minimizer_kwargs['callback'] = self.callback
-
-            if self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA'):
-                if 'constraints' not in minimizer_kwargs:
-                    if constraints is not None:
-                        self.minimizer_kwargs['constraints'] = self.min_cons
-
-            if 'options' not in minimizer_kwargs:
-                self.minimizer_kwargs['options'] = {}
-            # Update remaining options such as jac, hess, f_tol etc:
-            if options is not None:
-                self.minimizer_kwargs.update(options)
         else:
-            self.minimizer_kwargs = {'args': self.args,
-                                     'method': 'SLSQP',
-                                     'bounds': self.bounds,
-                                     'options': {'ftol': 1e-12
-                                                 # ,'eps': 1e-15
-                                                 },
-                                     'callback': self.callback
-                                     }
-            if self.g_cons is not None:
-                if self.minimizer_kwargs['method'] == 'SLSQP' or \
-                                self.minimizer_kwargs['method'] == 'COBYLA':
-                    self.minimizer_kwargs['constraints'] = self.min_cons
+            self.minimizer_kwargs['options'] = {'ftol': 1e-12,
+                                                # 'eps': 1e-15
+                                                }
 
-            if options is not None:
-                self.minimizer_kwargs['options'].update(options)
+        if (self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA') and
+                (minimizer_kwargs is not None and
+                 'constraints' not in minimizer_kwargs and
+                 constraints is not None) or
+                (self.g_cons is not None)):
+            self.minimizer_kwargs['constraints'] = self.min_cons
 
         # Process options dict
         if options is not None:
