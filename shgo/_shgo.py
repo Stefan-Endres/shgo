@@ -1509,39 +1509,20 @@ class SHGO(object):
 
             # First check if index is on the boundary of the sampling points:
             if self.Xi_ind_pos[i] == 0:
-                if self.Ftp[:, i][0] > 0:  # if boundary is in basin
-                    self.Xi_ind_topo_i.append(True)
-                else:
-                    self.Xi_ind_topo_i.append(False)
+                # if boundary is in basin
+                self.Xi_ind_topo_i.append(self.Ftp[:, i][0] > 0)
 
             elif self.Xi_ind_pos[i] == self.fn - 1:
                 # Largest value at sample size
-                if self.Ftp[:, i][self.fn - 2] < 0:
-                    self.Xi_ind_topo_i.append(True)
-                else:
-                    self.Xi_ind_topo_i.append(False)
+                self.Xi_ind_topo_i.append(self.Ftp[:, i][self.fn - 2] < 0)
 
             # Find axial reference for other points
             else:
-                if self.Ftp[:, i][self.Xi_ind_pos[i]] > 0:
-                    Xi_ind_top_p = True
-                else:
-                    Xi_ind_top_p = False
+                Xi_ind_top_p = self.Ftp[:, i][self.Xi_ind_pos[i]] > 0
+                Xi_ind_top_m = self.Ftm[:, i][self.Xi_ind_pos[i] - 1] > 0
+                self.Xi_ind_topo_i.append(Xi_ind_top_p and Xi_ind_top_m)
 
-                if self.Ftm[:, i][self.Xi_ind_pos[i] - 1] > 0:
-                    Xi_ind_top_m = True
-                else:
-                    Xi_ind_top_m = False
-
-                if Xi_ind_top_p and Xi_ind_top_m:
-                    self.Xi_ind_topo_i.append(True)
-                else:
-                    self.Xi_ind_topo_i.append(False)
-
-        if numpy.array(self.Xi_ind_topo_i).all():
-            self.Xi_ind_topo = True
-        else:
-            self.Xi_ind_topo = False
+        self.Xi_ind_topo = numpy.array(self.Xi_ind_topo_i).all()
 
         return self.Xi_ind_topo
 
@@ -1603,10 +1584,7 @@ class SHGO(object):
             self.Xi_ind_topo_i.append(rel_topo_bool)
 
         # Check if minimizer
-        if numpy.array(self.Xi_ind_topo_i).all():
-            self.Xi_ind_topo = True
-        else:
-            self.Xi_ind_topo = False
+        self.Xi_ind_topo = numpy.array(self.Xi_ind_topo_i).all()
 
         return self.Xi_ind_topo
 
