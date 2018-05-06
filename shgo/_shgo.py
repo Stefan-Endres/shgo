@@ -667,7 +667,6 @@ class SHGO(object):
         self.res.nlfev = 0  # Local function evals for all minimisers
         self.res.nljev = 0  # Local Jacobian evals for all minimisers
         self.res.nlhev = 0  # Local Hessian evals for all minimisers
-        return
 
     # Initiation aids
     def init_options(self, options):
@@ -746,7 +745,6 @@ class SHGO(object):
                 self.find_minima()
 
         self.res.nit = self.iters_done + 1
-        return
 
     def find_minima(self):
         """Construct the minimiser pool, map the minimisers to local minima
@@ -765,7 +763,6 @@ class SHGO(object):
             self.x_lowest = self.res.x
         else:
             self.find_lowest_vertex()
-        return
 
     def find_lowest_vertex(self):
         # Find the lowest objective function value on one of
@@ -809,7 +806,6 @@ class SHGO(object):
         # Finite evaluations including infeasible sampling points
         if self.n_sampled >= self.maxev:
             self.stop_global = True
-        pass
 
     def finite_time(self):
         if (time.time() - self.init) >= self.maxtime:
@@ -877,8 +873,6 @@ class SHGO(object):
             self.finite_precision()
         if self.minhgrd is not None:
             self.finite_homology_growth()
-
-        return
 
     def iterate(self):
         self.iterate_complex()
@@ -1037,17 +1031,14 @@ class SHGO(object):
 
     def sort_min_pool(self):
         # Sort to find minimum func value in min_pool
-        self.ind_f_min = numpy.argsort(self.minimizer_pool_F)
-        self.minimizer_pool = numpy.array(self.minimizer_pool)[self.ind_f_min]
-        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[
-            self.ind_f_min]
-        return
+        ind_f_min = numpy.argsort(self.minimizer_pool_F)
+        self.minimizer_pool = numpy.array(self.minimizer_pool)[ind_f_min]
+        self.minimizer_pool_F = numpy.array(self.minimizer_pool_F)[ind_f_min]
 
     def trim_min_pool(self, trim_ind):
         self.X_min = numpy.delete(self.X_min, trim_ind, axis=0)
         self.minimizer_pool_F = numpy.delete(self.minimizer_pool_F, trim_ind)
         self.minimizer_pool = numpy.delete(self.minimizer_pool, trim_ind)
-        return
 
     def g_topograph(self, x_min, X_min):
         """
@@ -1057,15 +1048,12 @@ class SHGO(object):
         negative values.
         """
         x_min = numpy.array([x_min])
-        self.Y = scipy.spatial.distance.cdist(x_min,
-                                              X_min,
-                                              'euclidean')
+        self.Y = scipy.spatial.distance.cdist(x_min, X_min, 'euclidean')
         # Find sorted indexes of spatial distances:
         self.Z = numpy.argsort(self.Y, axis=-1)
 
-        self.Ss = X_min[self.Z]
+        self.Ss = X_min[self.Z][0]
         self.minimizer_pool = self.minimizer_pool[self.Z]
-        self.Ss = self.Ss[0]
         self.minimizer_pool = self.minimizer_pool[0]
         return self.Ss
 
@@ -1082,9 +1070,8 @@ class SHGO(object):
         -------
         cbounds : List of size dim with tuple of bounds for each dimension
         """
-        cbounds = []
-        for x_b_i in self.bounds:
-            cbounds.append([x_b_i[0], x_b_i[1]])
+        # FIXME: is this just cbounds = self.bounds[:]?
+        cbounds = [[x_b_i[0], x_b_i[1]] for x_b_i in self.bounds]
         # Loop over all bounds
         for vn in v_min.nn:
             for i, x_i in enumerate(vn.x_a):
@@ -1237,7 +1224,6 @@ class SHGO(object):
         self.res.success = False
         self.X_min = [None]
         self.res.message = mes
-        return
 
     def sampled_surface(self, infty_cons_sampl=False):
         """
@@ -1258,7 +1244,7 @@ class SHGO(object):
             print('Generating sampling points')
         self.sampling(self.nc, self.dim)
 
-        if not self.infty_cons_sampl:
+        if not infty_cons_sampl:
             # Find subspace of feasible points
             if self.g_cons is not None:
                 self.sampling_subspace()
@@ -1270,8 +1256,6 @@ class SHGO(object):
         self.fun_ref()
 
         self.n_sampled = self.nc
-
-        return
 
     def delaunay_complex_minimisers(self):
         # Construct complex minimisers on the current sampling set.
@@ -1420,8 +1404,6 @@ class SHGO(object):
                 if self.disp:
                     print(self.res.message)
 
-        return
-
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
         self.Ind_sorted = numpy.argsort(self.C, axis=0)
@@ -1439,8 +1421,6 @@ class SHGO(object):
             self.Ci.append(self.C[:, i])
             self.Ii.append(self.Ind_sorted[:, i])
             self.Xs_i.append(self.Xs[:, i])
-
-        return
 
     def fun_ref(self):
         """
@@ -1492,7 +1472,6 @@ class SHGO(object):
         self.Ft = self.F[self.Ind_sorted]
         self.Ftp = numpy.diff(self.Ft, axis=0)  # FD
         self.Ftm = numpy.diff(self.Ft[::-1], axis=0)[::-1]  # BD
-        return
 
     def sample_topo(self, ind):
         # Find the position of the sample in the component axial directions
@@ -1566,7 +1545,6 @@ class SHGO(object):
         """
         Returns the indexes of points connected to ``pindex``  on the Gabriel
         chain subgraph of the Delaunay triangulation.
-
         """
         return triang.vertex_neighbor_vertices[1][
                triang.vertex_neighbor_vertices[0][pindex]:
