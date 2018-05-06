@@ -14,8 +14,6 @@ from shgo.shgo_m.triangulation import Complex
 __all__ = ['shgo']
 
 
-__all__ = ['shgo']
-
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial'):
     """Finds the global minimum of a function using simplicial homology global
