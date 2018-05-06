@@ -489,8 +489,8 @@ class SHGO(object):
         # Check if bounds are correctly specified
         bnderr = abound[:, 0] > abound[:, 1]
         if bnderr.any():
-            raise ValueError('Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
+            raise ValueError('Error: lb > ub in bounds {}.'
+                             .format(', '.join(str(b) for b in bnderr)))
 
         self.bounds = abound
 
@@ -786,7 +786,7 @@ class SHGO(object):
            and sort the results into a global return object"""
         self.minimizers()
         if len(self.X_min) is not 0:
-            # Minimise the pool of minisers with local minimisation methods
+            # Minimise the pool of minimisers with local minimisation methods
             # Note that if Options['local_iter'] is an `int` instead of default
             # value False then only that number of candidates will be minimised
             self.minimise_pool(self.local_iter)
