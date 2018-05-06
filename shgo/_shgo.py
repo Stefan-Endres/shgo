@@ -1339,7 +1339,7 @@ class SHGO(object):
         f = gzip.open(path, 'rb')
         unsigned = "uint64"
         # swallow header
-        buffer = next(f)
+        next(f)
 
         L = int(numpy.log(N) // numpy.log(2.0)) + 1
 
