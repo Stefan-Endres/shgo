@@ -85,11 +85,11 @@ except ImportError:  # Python 2:
                     except KeyError:
                         pass
                 # Call the function and store the data in the cache (call it
-                # with the caller in case it's an instance function
-                # - Ternary condition):
-                cur_caller_cache_dict[key] = self._input_func(caller, *args,
-                                                              **kwargs) if caller is not None else self._input_func(
-                    *args, **kwargs)
+                # with the caller in case it's an instance function)
+                if caller is not None:
+                    args = (caller,) + args
+                cur_caller_cache_dict[key] = self._input_func(*args, **kwargs)
+
                 return cur_caller_cache_dict[key]
 
         # Return the decorator wrapping the class (also wraps the instance to
