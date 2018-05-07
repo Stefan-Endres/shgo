@@ -2,12 +2,15 @@
 shgo: The simplicial homology global optimisation algorithm
 """
 from __future__ import division, print_function, absolute_import
-import numpy
-import time
+
 import logging
+import time
 import warnings
+
+import numpy
 import scipy.optimize
 import scipy.spatial
+
 import shgo.shgo_m.sobol_seq as sobol_seq
 from shgo.shgo_m.triangulation import Complex
 
