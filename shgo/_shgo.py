@@ -343,11 +343,11 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     >>> len(result.xl), len(result_2.xl)
     (13, 39)
 
-    Note that even though the same number of initial points result from pecifying arguments for
-    ex. ``n=180, iters=1`` and ``n=60, iters=3``.
-    In the first case the promising points contained in the minimiser pool
-    is processed only once. In the latter case it is processed every 60 sampling
-    points for a total of 3 times.
+    Note that the same number of initial points result from specifying arguments
+    for ex. ``n=180, iters=1`` and ``n=60, iters=3``. In the first case the
+    promising points contained in the minimiser pool is processed only once. In
+    the latter case it is processed every 60 sampling points for a total of 3
+    times.
 
     To demonstrate solving problems with non-linear constraints consider the
     following example from Hock and Schittkowski problem 73 (cattle-feed) [4]_::
@@ -613,7 +613,7 @@ class SHGO(object):
         self.iters_done = 0  # Iterations to be ran
         self.n = n  # Sampling points per iteration
         self.nc = n  # Sampling points to sample in current iteration
-        self.n_prc = 0  # Number of processed points (used to track Delaunay iters)
+        self.n_prc = 0  # Processed points (used to track Delaunay iters)
         self.n_sampled = 0  # To track no. of sampling points already generated
         self.fn = 0  # Number of feasible sampling points evaluations performed
         self.hgr = 0  # Homology group rank
@@ -1217,12 +1217,12 @@ class SHGO(object):
         self.res.fun = results['fun']
 
         # Add local func evals to sampling func evals
-        # Count the number of feasible vertices and add to local function evaluations:
+        # Count the number of feasible vertices and add to local func evals:
         self.res.nfev = self.fn + self.res.nlfev
         return self.res
 
     # Algorithm controls
-    def fail_routine(self, mes=("Failed to converge")):
+    def fail_routine(self, mes="Failed to converge"):
         self.break_routine = True
         self.res.success = False
         self.X_min = [None]
