@@ -1,9 +1,11 @@
 from setuptools import setup, find_packages
 
+
 # Get the long description from the README file
 def readme():
     with open('README.rst') as f:
         return f.read()
+
 
 setup(name='shgo',
       version='0.4.3',
@@ -36,7 +38,7 @@ setup(name='shgo',
           'Topic :: Scientific/Engineering :: Mathematics',
 
           # Pick your license as you wish (should match "license" above)
-           'License :: OSI Approved :: MIT License',
+          'License :: OSI Approved :: MIT License',
 
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
