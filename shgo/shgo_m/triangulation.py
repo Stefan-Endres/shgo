@@ -252,15 +252,6 @@ class Complex:
         self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
-        if 0:  # Constrained centroid
-            v_sum = 0
-            for v in self.C0():
-                v_sum += numpy.array(v.x)
-
-            self.centroid = list(v_sum / len(self.C0()))
-            self.C0.add_vertex(self.V[tuple(self.centroid)])
-            self.C0.centroid = self.centroid
-
         # Disconnect origin and suprenum
         self.V[tuple(self.origin)].disconnect(self.V[tuple(self.suprenum)])
 

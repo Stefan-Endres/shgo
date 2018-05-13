@@ -1104,25 +1104,6 @@ class SHGO(object):
         for x_b_i in self.bounds:
             cbounds.append([x_b_i[0], x_b_i[1]])
 
-        if 0:  # TODO: Routine is currently not working well on tests
-            if self.dim == 1:  # No triangulation
-                return cbounds
-
-            nn = self.find_neighbors_delaunay(ind, self.Tri)
-            nc = self.Tri.points[nn]
-            for v in nc:
-                for i, x_i in enumerate(v):
-                    # Lower bound
-                    if (x_i < v_min[i]) and (x_i > cbounds[i][0]):
-                        cbounds[i][0] = x_i
-
-                    # Upper bound
-                    if (x_i > v_min[i]) and (x_i < cbounds[i][1]):
-                        cbounds[i][1] = x_i
-            if self.disp:
-                logging.info(
-                    'cbounds found for v_min.x_a = {}'.format(v_min.x_a))
-                logging.info('cbounds = {}'.format(cbounds))
         return cbounds
 
     # Minimize a starting point locally
