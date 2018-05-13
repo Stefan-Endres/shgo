@@ -85,11 +85,11 @@ except ImportError:  # Python 2:
                     except KeyError:
                         pass
                 # Call the function and store the data in the cache (call it
-                # with the caller in case it's an instance function
-                # - Ternary condition):
-                cur_caller_cache_dict[key] = self._input_func(caller, *args,
-                                                              **kwargs) if caller is not None else self._input_func(
-                    *args, **kwargs)
+                # with the caller in case it's an instance function)
+                if caller is not None:
+                    args = (caller,) + args
+                cur_caller_cache_dict[key] = self._input_func(*args, **kwargs)
+
                 return cur_caller_cache_dict[key]
 
         # Return the decorator wrapping the class (also wraps the instance to
@@ -156,8 +156,7 @@ class Complex:
         supremum = list(numpy.ones(dim, dtype=int))
         self.suprenum = supremum
 
-        x_parents = []
-        x_parents.append(tuple(self.origin))
+        x_parents = [tuple(self.origin)]
 
         if symmetry:
             # self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)
@@ -335,7 +334,7 @@ class Complex:
 
         # Destroy the old cell
         if C_i is not self.C0:  # Garbage collector does this anyway; not needed
-            del (C_i)
+            del C_i
 
         # TODO: Recalculate all the homology group ranks of each cell
         return H_new
