@@ -122,7 +122,6 @@ class Complex:
 
         # TODO: Assign functions to a the complex instead
         if symmetry:
-            pass
             self.generation_cycle = 1
             # self.centroid = self.C0()[-1].x
             # self.C0.centroid = self.centroid
