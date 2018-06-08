@@ -606,12 +606,8 @@ class Complex:
         return
 
 
-class Cell:
-    """
-    Contains a cell that is symmetric to the initial hypercube triangulation
-    """
-
-    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
+class VertexGroup:
+    def __init__(self, p_gen, p_hgr, p_hgr_h):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
         self.p_hgr_h = p_hgr_h  #
@@ -622,10 +618,7 @@ class Cell:
         # This is the sum off all previously split cells
         # cumulatively throughout its entire history
         self.C = []
-        self.origin = origin
-        self.suprenum = suprenum
-        self.centroid = None  # (Not always used)
-        # TODO: self.bounds
+
 
     def __call__(self):
         return self.C
@@ -638,27 +631,20 @@ class Cell:
         """
         Returns the homology group order of the current cell
         """
-        if self.hg_n is not None:
-            return self.hg_n
-        else:
-            hg_n = 0
-            for v in self.C:
-                if v.minimiser():
-                    hg_n += 1
+        if self.hg_n is None:
+            self.hg_n = sum(1 for v in self.C if v.minimiser())
 
-            self.hg_n = hg_n
-            return hg_n
+        return self.hg_n
 
     def homology_group_differential(self):
         """
         Returns the difference between the current homology group of the
         cell and it's parent group
         """
-        if self.hg_d is not None:
-            return self.hg_d
-        else:
+        if self.hg_d is None:
             self.hgd = self.hg_n - self.p_hgr
-            return self.hgd
+
+        return self.hgd
 
     def polytopial_sperner_lemma(self):
         """
@@ -681,80 +667,30 @@ class Cell:
             print('Order = {}'.format(v.order))
 
 
-class Simplex:
+class Cell(VertexGroup):
+    """
+    Contains a cell that is symmetric to the initial hypercube triangulation
+    """
+
+    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
+        super().__init__(p_gen, p_hgr, p_hgr_h)
+
+        self.origin = origin
+        self.suprenum = suprenum
+        self.centroid = None  # (Not always used)
+        # TODO: self.bounds
+
+
+class Simplex(VertexGroup):
     """
     Contains a simplex that is symmetric to the initial symmetry constrained
     hypersimplex triangulation
     """
 
     def __init__(self, p_gen, p_hgr, p_hgr_h, generation_cycle, dim):
-        self.p_gen = p_gen  # parent generation
-        self.p_hgr = p_hgr  # parent homology group rank
-        self.p_hgr_h = p_hgr_h  #
-        self.hg_n = None
-        self.hg_d = None
+        super().__init__(p_gen, p_hgr, p_hgr_h)
 
-        gci_n = (generation_cycle + 1) % (dim - 1)
-        gci = gci_n
-        self.generation_cycle = gci
-
-        # Maybe add parent homology group rank total history
-        # This is the sum off all previously split cells
-        # cumulatively throughout its entire history
-        self.C = []
-
-    def __call__(self):
-        return self.C
-
-    def add_vertex(self, V):
-        if V not in self.C:
-            self.C.append(V)
-
-    def homology_group_rank(self):
-        """
-        Returns the homology group order of the current cell
-        """
-        if self.hg_n is not None:
-            return self.hg_n
-        else:
-            hg_n = 0
-            for v in self.C:
-                if v.minimiser():
-                    hg_n += 1
-
-            self.hg_n = hg_n
-            return hg_n
-
-    def homology_group_differential(self):
-        """
-        Returns the difference between the current homology group of the
-        cell and it's parent group
-        """
-        if self.hg_d is not None:
-            return self.hg_d
-        else:
-            self.hgd = self.hg_n - self.p_hgr
-            return self.hgd
-
-    def polytopial_sperner_lemma(self):
-        """
-        Returns the number of stationary points theoretically contained in the
-        cell based information currently known about the cell
-        """
-        pass
-
-    def print_out(self):
-        """
-        Print the current cell to console
-        """
-        for v in self():
-            print("Vertex: {}".format(v.x))
-            constr = 'Connections: '
-            for vc in v.nn:
-                constr += '{} '.format(vc.x)
-
-            print(constr)
-            print('Order = {}'.format(v.order))
+        self.generation_cycle = (generation_cycle + 1) % (dim - 1)
 
 
 class Vertex:
