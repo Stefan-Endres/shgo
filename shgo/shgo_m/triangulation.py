@@ -699,15 +699,11 @@ class Vertex:
         import numpy
         self.x = x
         self.order = sum(x)
-        if bounds is None:
-            x_a = numpy.array(x, dtype=float)
-        else:
-            x_a = numpy.array(x, dtype=float)
-            for i in range(len(bounds)):
-                x_a[i] = (x_a[i] * (bounds[i][1] - bounds[i][0])
-                          + bounds[i][0])
+        x_a = numpy.array(x, dtype=float)
+        if bounds is not None:
+            for i, (lb, ub) in enumerate(bounds):
+                x_a[i] = x_a[i] * (ub - lb) + lb
 
-                # print(f'x = {x}; x_a = {x_a}')
         # TODO: Make saving the array structure optional
         self.x_a = x_a
 
