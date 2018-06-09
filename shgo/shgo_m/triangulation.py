@@ -272,7 +272,7 @@ class Complex:
 
         for v in self.HC.C0():
             for v2 in v.nn:
-                self.structure[v.Ind, v2.Ind] = 1
+                self.structure[v.index, v2.index] = 1
 
         return
 
@@ -282,7 +282,7 @@ class Complex:
         incidence, each list element contains a list of indexes
         corresponding to that entries neighbours"""
 
-        self.graph = [[v2.Ind for v2 in v.nn] for v in self.C0()]
+        self.graph = [[v2.index for v2 in v.nn] for v in self.C0()]
 
     # Graph structure method:
     # 0. Capture the indices of the initial cell.
@@ -683,7 +683,7 @@ class Simplex(VertexGroup):
 
 class Vertex:
     def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
-                 g_cons_args=(), nn=None, Ind=None):
+                 g_cons_args=(), nn=None, index=None):
         import numpy
         self.x = x
         self.order = sum(x)
@@ -717,8 +717,8 @@ class Vertex:
         self.check_min = True
 
         # Index:
-        if Ind is not None:
-            self.Ind = Ind
+        if index is not None:
+            self.index = index
 
     def __hash__(self):
         return hash(self.x)
@@ -777,19 +777,19 @@ class VertexCache:
         self.size = 0
 
         if indexed:
-            self.Index = -1
+            self.index = -1
 
     def __getitem__(self, x, indexed=True):
         try:
             return self.cache[x]
         except KeyError:
             if indexed:
-                self.Index += 1
+                self.index += 1
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args,
                               g_cons=self.g_cons,
                               g_cons_args=self.g_cons_args,
-                              Ind=self.Index)
+                              index=self.index)
             else:
                 xval = Vertex(x, bounds=self.bounds,
                               func=self.func, func_args=self.func_args,
