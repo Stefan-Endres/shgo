@@ -153,7 +153,7 @@ class Complex:
         origin = list(numpy.zeros(dim, dtype=int))
         self.origin = origin
         supremum = list(numpy.ones(dim, dtype=int))
-        self.suprenum = supremum
+        self.supremum = supremum
 
         x_parents = [tuple(self.origin)]
 
@@ -166,7 +166,7 @@ class Complex:
             self.C0.add_vertex(self.V[tuple(supremum)])
         else:
             self.C0 = Cell(0, 0, self.origin,
-                           self.suprenum)  # Initial cell object
+                           self.supremum)  # Initial cell object
             self.C0.add_vertex(self.V[tuple(origin)])
             self.C0.add_vertex(self.V[tuple(supremum)])
 
@@ -243,15 +243,15 @@ class Complex:
         self.perm_symmetry(i_s, x_parents2, xi2)
 
     def add_centroid(self):
-        """Split the central edge between the origin and suprenum of
+        """Split the central edge between the origin and supremum of
         a cell and add the new vertex to the complex"""
         self.centroid = list(
-            (numpy.array(self.origin) + numpy.array(self.suprenum)) / 2.0)
+            (numpy.array(self.origin) + numpy.array(self.supremum)) / 2.0)
         self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
-        # Disconnect origin and suprenum
-        self.V[tuple(self.origin)].disconnect(self.V[tuple(self.suprenum)])
+        # Disconnect origin and supremum
+        self.V[tuple(self.origin)].disconnect(self.V[tuple(self.supremum)])
 
         # Connect centroid to all other vertices
         for v in self.C0():
@@ -285,9 +285,9 @@ class Complex:
 
     # Graph structure method:
     # 0. Capture the indices of the initial cell.
-    # 1. Generate new origin and suprenum scalars based on current generation
+    # 1. Generate new origin and supremum scalars based on current generation
     # 2. Generate a new set of vertices corresponding to a new
-    #    "origin" and "suprenum"
+    #    "origin" and "supremum"
     # 3. Connected based on the indices of the previous graph structure
     # 4. Disconnect the edges in the original cell
 
@@ -303,13 +303,13 @@ class Complex:
         except IndexError:
             self.H.append([])
 
-        # Generate subcubes using every extreme vertex in C_i as a suprenum
+        # Generate subcubes using every extreme vertex in C_i as a supremum
         # and the centroid of C_i as the origin
         H_new = []  # list storing all the new cubes split from C_i
         for i, v in enumerate(C_i()[:-1]):
-            suprenum = tuple(v.x)
+            supremum = tuple(v.x)
             H_new.append(
-                self.construct_hypercube(origin_new, suprenum, gen, C_i.hg_n))
+                self.construct_hypercube(origin_new, supremum, gen, C_i.hg_n))
 
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
@@ -345,7 +345,7 @@ class Complex:
         return no_splits  # USED IN SHGO
 
     # @lru_cache(maxsize=None)
-    def construct_hypercube(self, origin, suprenum, gen, hgr,
+    def construct_hypercube(self, origin, supremum, gen, hgr,
                             printout=False):
         """
         Build a hypercube with triangulations symmetric to C0.
@@ -353,15 +353,15 @@ class Complex:
         Parameters
         ----------
         origin : vec
-        suprenum : vec (tuple)
+        supremum : vec (tuple)
         gen : generation
         hgr : parent homology group rank
         """
 
         # Initiate new cell
-        C_new = Cell(gen, hgr, origin, suprenum)
+        C_new = Cell(gen, hgr, origin, supremum)
         C_new.centroid = tuple(
-            (numpy.array(origin) + numpy.array(suprenum)) / 2.0)
+            (numpy.array(origin) + numpy.array(supremum)) / 2.0)
 
         # Build new indexed vertex list
         V_new = []
@@ -369,7 +369,7 @@ class Complex:
         # Cached calculation
         for i, v in enumerate(self.C0()[:-1]):
             t1 = self.generate_sub_cell_t1(origin, v.x)
-            t2 = self.generate_sub_cell_t2(suprenum, v.x)
+            t2 = self.generate_sub_cell_t2(supremum, v.x)
 
             vec = t1 + t2
 
@@ -390,7 +390,7 @@ class Complex:
         if printout:
             print("A sub hyper cube with:")
             print("origin: {}".format(origin))
-            print("suprenum: {}".format(suprenum))
+            print("supremum: {}".format(supremum))
             for v in C_new():
                 v.print_out()
 
@@ -464,9 +464,9 @@ class Complex:
         return
 
     @lru_cache(maxsize=None)
-    def generate_sub_cell_2(self, origin, suprenum, v_x_t):  # No hits
+    def generate_sub_cell_2(self, origin, supremum, v_x_t):  # No hits
         """
-        Use the origin and suprenum vectors to find a new cell in that
+        Use the origin and supremum vectors to find a new cell in that
         subspace direction
 
         NOTE: NOT CURRENTLY IN USE!
@@ -474,14 +474,14 @@ class Complex:
         Parameters
         ----------
         origin : tuple vector (hashable)
-        suprenum : tuple vector (hashable)
+        supremum : tuple vector (hashable)
 
         Returns
         -------
 
         """
         t1 = self.generate_sub_cell_t1(origin, v_x_t)
-        t2 = self.generate_sub_cell_t2(suprenum, v_x_t)
+        t2 = self.generate_sub_cell_t2(supremum, v_x_t)
         vec = t1 + t2
         return tuple(vec)
 
@@ -492,8 +492,8 @@ class Complex:
         return v_o - v_o * numpy.array(v_x)
 
     @lru_cache(maxsize=None)
-    def generate_sub_cell_t2(self, suprenum, v_x):
-        v_s = numpy.array(suprenum)
+    def generate_sub_cell_t2(self, supremum, v_x):
+        v_s = numpy.array(supremum)
         return v_s * numpy.array(v_x)
 
     # Plots
@@ -598,7 +598,6 @@ class VertexGroup(object):
         # cumulatively throughout its entire history
         self.C = []
 
-
     def __call__(self):
         return self.C
 
@@ -645,11 +644,11 @@ class Cell(VertexGroup):
     Contains a cell that is symmetric to the initial hypercube triangulation
     """
 
-    def __init__(self, p_gen, p_hgr, origin, suprenum):
+    def __init__(self, p_gen, p_hgr, origin, supremum):
         super(Cell, self).__init__(p_gen, p_hgr)
 
         self.origin = origin
-        self.suprenum = suprenum
+        self.supremum = supremum
         self.centroid = None  # (Not always used)
         # TODO: self.bounds
 
