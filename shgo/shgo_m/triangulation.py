@@ -179,15 +179,7 @@ class Complex:
         if printout:
             print("Initial hyper cube:")
             for v in self.C0():
-                print(self.C0())
-                print("Vertex: {}".format(v.x))
-                print("v.f: {}".format(v.f))
-                constr = 'Connections: '
-                for vc in v.nn:
-                    constr += '{} '.format(vc.x)
-
-                print(constr)
-                print('Order = {}'.format(v.order))
+                v.print_out()
 
     def perm(self, i_parents, x_parents, xi):
         # TODO: Cut out of for if outside linear constraint cutting planes
