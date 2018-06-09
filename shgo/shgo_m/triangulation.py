@@ -729,7 +729,7 @@ class Vertex:
             v.nn.add(self)
 
             if self.minimiser():
-                v.min = False
+                v._min = False
                 v.check_min = False
 
             # TEMPORARY
@@ -744,14 +744,12 @@ class Vertex:
             v.check_min = True
 
     def minimiser(self):
-        # NOTE: This works pretty well, never call self.min,
-        #       call this function instead
+        """Check whether this vertex is strictly less than all its neighbours"""
         if self.check_min:
-            # Check if the current vertex is a minimiser
-            self.min = all(self.f < v.f for v in self.nn)
+            self._min = all(self.f < v.f for v in self.nn)
             self.check_min = False
 
-        return self.min
+        return self._min
 
 
 class VertexCache:
