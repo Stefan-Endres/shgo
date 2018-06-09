@@ -429,45 +429,45 @@ class Complex:
 
         # Find new vertex.
         # V_new_x = tuple((numpy.array(C()[0].x) + numpy.array(C()[1].x)) / 2.0)
-        V_new = self.V[
-            tuple((numpy.array(S()[0].x) + numpy.array(S()[-1].x)) / 2.0)]
+        s = S()
+        firstx = s[0].x
+        lastx = s[-1].x
+        V_new = self.V[tuple((numpy.array(firstx) + numpy.array(lastx)) / 2.0)]
 
         # Disconnect old longest edge
-        self.V[S()[0].x].disconnect(self.V[S()[-1].x])
+        self.V[firstx].disconnect(self.V[lastx])
 
         # Connect new vertices to all other vertices
-        for v in S()[:]:
+        for v in s[:]:
             v.connect(self.V[V_new.x])
 
         # New "lower" simplex
         S_new_l = Simplex(gen, S.hg_n, S.p_hgr_h, self.generation_cycle,
                           self.dim)
-        S_new_l.add_vertex(S()[0])
+        S_new_l.add_vertex(s[0])
         S_new_l.add_vertex(V_new)  # Add new vertex
-        for v in S()[1:-1]:  # Add all other vertices
+        for v in s[1:-1]:  # Add all other vertices
             S_new_l.add_vertex(v)
 
         # New "upper" simplex
         S_new_u = Simplex(gen, S.hg_n, S.p_hgr_h, S.generation_cycle, self.dim)
-        S_new_u.add_vertex(
-            S()[S_new_u.generation_cycle + 1])  # First vertex on new long edge
 
-        for v in S()[1:-1]:  # Remaining vertices
+        # First vertex on new long edge
+        S_new_u.add_vertex(s[S_new_u.generation_cycle + 1])
+
+        for v in s[1:-1]:  # Remaining vertices
             S_new_u.add_vertex(v)
 
-        for k, v in enumerate(S()[1:-1]):  # iterate through inner vertices
-            # for easier k / gci tracking
-            k += 1
-            if k == (S.generation_cycle + 1):
+        for k, v in enumerate(s[1:-1]):  # iterate through inner vertices
+            if k == S.generation_cycle:
                 S_new_u.add_vertex(V_new)
             else:
                 S_new_u.add_vertex(v)
 
-        S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
+        S_new_u.add_vertex(s[-1])  # Second vertex on new long edge
 
         self.H[gen].append(S_new_l)
-        if 1:
-            self.H[gen].append(S_new_u)
+        self.H[gen].append(S_new_u)
 
         return
 
