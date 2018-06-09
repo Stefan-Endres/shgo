@@ -394,13 +394,7 @@ class Complex:
             print("origin: {}".format(origin))
             print("suprenum: {}".format(suprenum))
             for v in C_new():
-                print("Vertex: {}".format(v.x))
-                constr = 'Connections: '
-                for vc in v.nn:
-                    constr += '{} '.format(vc.x)
-
-                print(constr)
-                print('Order = {}'.format(v.order))
+                v.print_out()
 
         # Append the new cell to the to complex
         self.H[gen].append(C_new)
@@ -646,13 +640,7 @@ class VertexGroup(object):
         Print the current cell to console
         """
         for v in self():
-            print("Vertex: {}".format(v.x))
-            constr = 'Connections: '
-            for vc in v.nn:
-                constr += '{} '.format(vc.x)
-
-            print(constr)
-            print('Order = {}'.format(v.order))
+            v.print_out()
 
 
 class Cell(VertexGroup):
@@ -750,6 +738,15 @@ class Vertex:
             self.check_min = False
 
         return self._min
+
+    def print_out(self):
+        print("Vertex: {}".format(self.x))
+        constr = 'Connections: '
+        for vc in self.nn:
+            constr += '{} '.format(vc.x)
+
+        print(constr)
+        print('Order = {}'.format(self.order))
 
 
 class VertexCache:
