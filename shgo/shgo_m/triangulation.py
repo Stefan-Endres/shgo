@@ -158,15 +158,14 @@ class Complex:
         x_parents = [tuple(self.origin)]
 
         if symmetry:
-            # self.C0 = Cell(0, 0, 0, self.origin, self.suprenum)
-            self.C0 = Simplex(0, 0, 0, 0, self.dim)  # Initial cell object
+            self.C0 = Simplex(0, 0, 0, self.dim)  # Initial cell object
             self.C0.add_vertex(self.V[tuple(origin)])
 
             i_s = 0
             self.perm_symmetry(i_s, x_parents, origin)
             self.C0.add_vertex(self.V[tuple(supremum)])
         else:
-            self.C0 = Cell(0, 0, 0, self.origin,
+            self.C0 = Cell(0, 0, self.origin,
                            self.suprenum)  # Initial cell object
             self.C0.add_vertex(self.V[tuple(origin)])
             self.C0.add_vertex(self.V[tuple(supremum)])
@@ -310,8 +309,7 @@ class Complex:
         for i, v in enumerate(C_i()[:-1]):
             suprenum = tuple(v.x)
             H_new.append(
-                self.construct_hypercube(origin_new, suprenum,
-                                         gen, C_i.hg_n, C_i.p_hgr_h))
+                self.construct_hypercube(origin_new, suprenum, gen, C_i.hg_n))
 
         for i, connections in enumerate(self.graph):
             # Present vertex V_new[i]; connect to all connections:
@@ -347,7 +345,7 @@ class Complex:
         return no_splits  # USED IN SHGO
 
     # @lru_cache(maxsize=None)
-    def construct_hypercube(self, origin, suprenum, gen, hgr, p_hgr_h,
+    def construct_hypercube(self, origin, suprenum, gen, hgr,
                             printout=False):
         """
         Build a hypercube with triangulations symmetric to C0.
@@ -361,7 +359,7 @@ class Complex:
         """
 
         # Initiate new cell
-        C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
+        C_new = Cell(gen, hgr, origin, suprenum)
         C_new.centroid = tuple(
             (numpy.array(origin) + numpy.array(suprenum)) / 2.0)
 
@@ -436,7 +434,7 @@ class Complex:
             v.connect(self.V[V_new.x])
 
         # New "lower" simplex
-        S_new_l = Simplex(gen, S.hg_n, S.p_hgr_h, self.generation_cycle,
+        S_new_l = Simplex(gen, S.hg_n, self.generation_cycle,
                           self.dim)
         S_new_l.add_vertex(s[0])
         S_new_l.add_vertex(V_new)  # Add new vertex
@@ -444,7 +442,7 @@ class Complex:
             S_new_l.add_vertex(v)
 
         # New "upper" simplex
-        S_new_u = Simplex(gen, S.hg_n, S.p_hgr_h, S.generation_cycle, self.dim)
+        S_new_u = Simplex(gen, S.hg_n, S.generation_cycle, self.dim)
 
         # First vertex on new long edge
         S_new_u.add_vertex(s[S_new_u.generation_cycle + 1])
@@ -589,10 +587,9 @@ class Complex:
 
 
 class VertexGroup(object):
-    def __init__(self, p_gen, p_hgr, p_hgr_h):
+    def __init__(self, p_gen, p_hgr):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
-        self.p_hgr_h = p_hgr_h  #
         self.hg_n = None
         self.hg_d = None
 
@@ -648,8 +645,8 @@ class Cell(VertexGroup):
     Contains a cell that is symmetric to the initial hypercube triangulation
     """
 
-    def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
-        super(Cell, self).__init__(p_gen, p_hgr, p_hgr_h)
+    def __init__(self, p_gen, p_hgr, origin, suprenum):
+        super(Cell, self).__init__(p_gen, p_hgr)
 
         self.origin = origin
         self.suprenum = suprenum
@@ -663,8 +660,8 @@ class Simplex(VertexGroup):
     hypersimplex triangulation
     """
 
-    def __init__(self, p_gen, p_hgr, p_hgr_h, generation_cycle, dim):
-        super(Simplex, self).__init__(p_gen, p_hgr, p_hgr_h)
+    def __init__(self, p_gen, p_hgr, generation_cycle, dim):
+        super(Simplex, self).__init__(p_gen, p_hgr)
 
         self.generation_cycle = (generation_cycle + 1) % (dim - 1)
 
