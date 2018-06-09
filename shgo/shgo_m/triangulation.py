@@ -396,7 +396,7 @@ class Complex:
 
     def split_simplex_symmetry(self, S, gen):
         """
-        Split a hypersimplex S into two sub simplcies by building a hyperplane
+        Split a hypersimplex S into two sub simplices by building a hyperplane
         which connects to a new vertex on an edge (the longest edge in
         dim = {2, 3}) and every other vertex in the simplex that is not
         connected to the edge being split.
