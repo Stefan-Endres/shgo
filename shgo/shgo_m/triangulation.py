@@ -155,20 +155,23 @@ class Complex:
         supremum = list(numpy.ones(dim, dtype=int))
         self.supremum = supremum
 
-        x_parents = [tuple(self.origin)]
+        # tuple versions for indexing
+        origintuple = tuple(origin)
+        supremumtuple = tuple(supremum)
+
+        x_parents = [origintuple]
 
         if symmetry:
             self.C0 = Simplex(0, 0, 0, self.dim)  # Initial cell object
-            self.C0.add_vertex(self.V[tuple(origin)])
+            self.C0.add_vertex(self.V[origintuple])
 
             i_s = 0
             self.perm_symmetry(i_s, x_parents, origin)
-            self.C0.add_vertex(self.V[tuple(supremum)])
+            self.C0.add_vertex(self.V[supremumtuple])
         else:
-            self.C0 = Cell(0, 0, self.origin,
-                           self.supremum)  # Initial cell object
-            self.C0.add_vertex(self.V[tuple(origin)])
-            self.C0.add_vertex(self.V[tuple(supremum)])
+            self.C0 = Cell(0, 0, origin, supremum)  # Initial cell object
+            self.C0.add_vertex(self.V[origintuple])
+            self.C0.add_vertex(self.V[supremumtuple])
 
             i_parents = []
             self.perm(i_parents, x_parents, origin)
