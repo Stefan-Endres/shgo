@@ -594,7 +594,7 @@ class Complex:
         return
 
 
-class VertexGroup:
+class VertexGroup(object):
     def __init__(self, p_gen, p_hgr, p_hgr_h):
         self.p_gen = p_gen  # parent generation
         self.p_hgr = p_hgr  # parent homology group rank
@@ -661,7 +661,7 @@ class Cell(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, p_hgr_h, origin, suprenum):
-        super().__init__(p_gen, p_hgr, p_hgr_h)
+        super(Cell, self).__init__(p_gen, p_hgr, p_hgr_h)
 
         self.origin = origin
         self.suprenum = suprenum
@@ -676,7 +676,7 @@ class Simplex(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, p_hgr_h, generation_cycle, dim):
-        super().__init__(p_gen, p_hgr, p_hgr_h)
+        super(Simplex, self).__init__(p_gen, p_hgr, p_hgr_h)
 
         self.generation_cycle = (generation_cycle + 1) % (dim - 1)
 
