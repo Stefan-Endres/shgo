@@ -748,16 +748,7 @@ class Vertex:
         #       call this function instead
         if self.check_min:
             # Check if the current vertex is a minimiser
-            # self.min = all(self.f <= v.f for v in self.nn)
-            self.min = True
-            for v in self.nn:
-                # if self.f <= v.f:
-                # if self.f > v.f: #TODO: LAST STABLE
-                if self.f >= v.f:  # TODO: AttributeError: 'Vertex' object has no attribute 'f'
-                    # if self.f >= v.f:
-                    self.min = False
-                    break
-
+            self.min = all(self.f < v.f for v in self.nn)
             self.check_min = False
 
         return self.min
