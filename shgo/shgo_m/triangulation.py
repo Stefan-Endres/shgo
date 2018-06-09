@@ -272,7 +272,6 @@ class Complex:
 
         for v in self.HC.C0():
             for v2 in v.nn:
-                # self.structure[0, 15] = 1
                 self.structure[v.Ind, v2.Ind] = 1
 
         return
@@ -365,9 +364,7 @@ class Complex:
         C_new = Cell(gen, hgr, p_hgr_h, origin, suprenum)
         C_new.centroid = tuple(
             (numpy.array(origin) + numpy.array(suprenum)) / 2.0)
-        # C_new.centroid =
 
-        # centroid_index = len(self.C0()) - 1
         # Build new indexed vertex list
         V_new = []
 
@@ -429,8 +426,6 @@ class Complex:
             self.H[gen]
         except IndexError:
             self.H.append([])
-        # gen, hgr, p_hgr_h,
-        # gen, C_i.hg_n, C_i.p_hgr_h
 
         # Find new vertex.
         # V_new_x = tuple((numpy.array(C()[0].x) + numpy.array(C()[1].x)) / 2.0)
@@ -463,18 +458,12 @@ class Complex:
         for k, v in enumerate(S()[1:-1]):  # iterate through inner vertices
             # for easier k / gci tracking
             k += 1
-            # if k == 0:
-            #    continue  # We do this rather than S[1:-1]
-            # for easier k / gci tracking
             if k == (S.generation_cycle + 1):
                 S_new_u.add_vertex(V_new)
             else:
                 S_new_u.add_vertex(v)
 
         S_new_u.add_vertex(S()[-1])  # Second vertex on new long edge
-
-        # for i, v in enumerate(S_new_u()):
-        #    print(f'S_new_u()[{i}].x = {v.x}')
 
         self.H[gen].append(S_new_l)
         if 1:
@@ -575,7 +564,6 @@ class Complex:
             pyplot.show()
 
         elif self.dim == 3:
-            from mpl_toolkits.mplot3d import Axes3D
             fig = pyplot.figure()
             ax = fig.add_subplot(111, projection='3d')
 
@@ -735,7 +723,6 @@ class Vertex:
             self.Ind = Ind
 
     def __hash__(self):
-        # return hash(tuple(self.x))
         return hash(self.x)
 
     def connect(self, v):
@@ -743,11 +730,7 @@ class Vertex:
             self.nn.add(v)
             v.nn.add(self)
 
-            # self.min = self.minimiser()
             if self.minimiser():
-                # if self.f > v.f:
-                #    self.min = False
-                # else:
                 v.min = False
                 v.check_min = False
 
@@ -787,7 +770,6 @@ class VertexCache:
                  g_cons_args=(), indexed=True):
 
         self.cache = {}
-        # self.cache = set()
         self.func = func
         self.g_cons = g_cons
         self.g_cons_args = g_cons_args
@@ -823,7 +805,6 @@ class VertexCache:
             # TODO: Check
             if self.func is not None:
                 if self.g_cons is not None:
-                    # print(f'xval.feasible = {xval.feasible}')
                     if xval.feasible:
                         self.nfev += 1
                         self.size += 1
