@@ -695,19 +695,17 @@ class Vertex:
         # TODO: Make saving the array structure optional
         self.x_a = x_a
 
-        # Note Vertex is only initiate once for all x so only
+        # Note Vertex is only initiated once for all x so only
         # evaluated once
         if func is not None:
+            self.feasible = True
             if g_cons is not None:
-                self.feasible = True
-                for ind, g in enumerate(g_cons):
-                    if g(self.x_a, *g_cons_args[ind]) < 0.0:
+                for g, args in zip(g_cons, g_cons_args):
+                    if g(self.x_a, *args) < 0.0:
                         self.f = numpy.inf
                         self.feasible = False
-                if self.feasible:
-                    self.f = func(x_a, *func_args)
-
-            else:
+                        break
+            if self.feasible:
                 self.f = func(x_a, *func_args)
 
         if nn is not None:
