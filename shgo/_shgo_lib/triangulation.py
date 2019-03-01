@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import copy
 
 try:
@@ -149,10 +149,9 @@ class Complex:
         Generate the simplicial triangulation of the n dimensional hypercube
         containing 2**n vertices
         """
-        import numpy
-        origin = list(numpy.zeros(dim, dtype=int))
+        origin = list(np.zeros(dim, dtype=int))
         self.origin = origin
-        supremum = list(numpy.ones(dim, dtype=int))
+        supremum = list(np.ones(dim, dtype=int))
         self.supremum = supremum
 
         # tuple versions for indexing
@@ -241,7 +240,7 @@ class Complex:
         """Split the central edge between the origin and supremum of
         a cell and add the new vertex to the complex"""
         self.centroid = list(
-            (numpy.array(self.origin) + numpy.array(self.supremum)) / 2.0)
+            (np.array(self.origin) + np.array(self.supremum)) / 2.0)
         self.C0.add_vertex(self.V[tuple(self.centroid)])
         self.C0.centroid = self.centroid
 
@@ -258,10 +257,10 @@ class Complex:
     # Construct incidence array:
     def incidence(self):
         if self.centroid_added:
-            self.structure = numpy.zeros([2 ** self.dim + 1, 2 ** self.dim + 1],
+            self.structure = np.zeros([2 ** self.dim + 1, 2 ** self.dim + 1],
                                          dtype=int)
         else:
-            self.structure = numpy.zeros([2 ** self.dim, 2 ** self.dim],
+            self.structure = np.zeros([2 ** self.dim, 2 ** self.dim],
                                          dtype=int)
 
         for v in self.HC.C0():
@@ -356,7 +355,7 @@ class Complex:
         # Initiate new cell
         C_new = Cell(gen, hgr, origin, supremum)
         C_new.centroid = tuple(
-            (numpy.array(origin) + numpy.array(supremum)) / 2.0)
+            (np.array(origin) + np.array(supremum)) / 2.0)
 
         # Build new indexed vertex list
         V_new = []
@@ -415,11 +414,11 @@ class Complex:
             self.H.append([])
 
         # Find new vertex.
-        # V_new_x = tuple((numpy.array(C()[0].x) + numpy.array(C()[1].x)) / 2.0)
+        # V_new_x = tuple((np.array(C()[0].x) + np.array(C()[1].x)) / 2.0)
         s = S()
         firstx = s[0].x
         lastx = s[-1].x
-        V_new = self.V[tuple((numpy.array(firstx) + numpy.array(lastx)) / 2.0)]
+        V_new = self.V[tuple((np.array(firstx) + np.array(lastx)) / 2.0)]
 
         # Disconnect old longest edge
         self.V[firstx].disconnect(self.V[lastx])
@@ -483,13 +482,13 @@ class Complex:
     @lru_cache(maxsize=None)
     def generate_sub_cell_t1(self, origin, v_x):
         # TODO: Calc these arrays outside
-        v_o = numpy.array(origin)
-        return v_o - v_o * numpy.array(v_x)
+        v_o = np.array(origin)
+        return v_o - v_o * np.array(v_x)
 
     @lru_cache(maxsize=None)
     def generate_sub_cell_t2(self, supremum, v_x):
-        v_s = numpy.array(supremum)
-        return v_s * numpy.array(v_x)
+        v_s = np.array(supremum)
+        return v_s * np.array(v_x)
 
     # Plots
     def plot_complex(self):
@@ -506,9 +505,9 @@ class Complex:
                 for c in C:
                     for v in c():
                         if self.bounds is None:
-                            x_a = numpy.array(v.x, dtype=float)
+                            x_a = np.array(v.x, dtype=float)
                         else:
-                            x_a = numpy.array(v.x, dtype=float)
+                            x_a = np.array(v.x, dtype=float)
                             for i in range(len(self.bounds)):
                                 x_a[i] = (x_a[i] * (self.bounds[i][1]
                                                     - self.bounds[i][0])
@@ -522,9 +521,9 @@ class Complex:
                         ylines = []
                         for vn in v.nn:
                             if self.bounds is None:
-                                xn_a = numpy.array(vn.x, dtype=float)
+                                xn_a = np.array(vn.x, dtype=float)
                             else:
-                                xn_a = numpy.array(vn.x, dtype=float)
+                                xn_a = np.array(vn.x, dtype=float)
                                 for i in range(len(self.bounds)):
                                     xn_a[i] = (xn_a[i] * (self.bounds[i][1]
                                                           - self.bounds[i][0])
@@ -663,10 +662,9 @@ class Simplex(VertexGroup):
 class Vertex:
     def __init__(self, x, bounds=None, func=None, func_args=(), g_cons=None,
                  g_cons_args=(), nn=None, index=None):
-        import numpy
         self.x = x
         self.order = sum(x)
-        x_a = numpy.array(x, dtype=float)
+        x_a = np.array(x, dtype=float)
         if bounds is not None:
             for i, (lb, ub) in enumerate(bounds):
                 x_a[i] = x_a[i] * (ub - lb) + lb
@@ -681,7 +679,7 @@ class Vertex:
             if g_cons is not None:
                 for g, args in zip(g_cons, g_cons_args):
                     if g(self.x_a, *args) < 0.0:
-                        self.f = numpy.inf
+                        self.f = np.inf
                         self.feasible = False
                         break
             if self.feasible:

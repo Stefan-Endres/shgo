@@ -2,8 +2,8 @@ import logging
 import numpy
 import pytest
 from pytest import raises as assert_raises, warns
-from shgo._shgo import shgo
-from shgo._shgo import SHGO
+from scipy.optimize import shgo
+from scipy.optimize._shgo import SHGO
 
 
 class StructTestFunction(object):
