@@ -8,14 +8,14 @@ def readme():
 
 
 setup(name='shgo',
-      version='0.4.3',
+      version='0.4.4',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres, Carl Sandrock',
       author_email='stefan.c.endres@gmail.com',
       license='MIT',
-      packages=['shgo', 'shgo.shgo_m', 'shgo.tests'],
-      package_data={'shgo.shgo_m': ['sobol_vec.gz']},
+      packages=['shgo', 'shgo._shgo_lib', 'shgo.tests'],
+      package_data={'shgo._shgo_lib': ['sobol_vec.gz']},
       install_requires=[
           'scipy',
           'numpy',
