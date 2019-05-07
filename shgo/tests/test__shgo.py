@@ -2,8 +2,8 @@ import logging
 import numpy
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo
-from scipy.optimize._shgo import SHGO
+from shgo import shgo
+from shgo._shgo import SHGO
 
 
 class StructTestFunction(object):
@@ -645,6 +645,12 @@ class TestShgoArguments(object):
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
 
+    def test_16_custom_sampling(self):
+        """Test the functionality to add custom sampling methods to shgo"""
+        def sample(n, d):
+            return numpy.random.uniform(size=(n,d))
+        
+        run_test(test1_1, n=30, sampling_method=sample)
 
 # Failure test functions
 class TestShgoFailures(object):

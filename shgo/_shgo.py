@@ -454,7 +454,7 @@ class SHGO(object):
 
         # Input checks
         methods = ['sobol', 'simplicial']
-        if sampling_method not in methods:
+        if isinstance(sampling_method, str) and sampling_method not in methods:
             raise ValueError(("Unknown sampling_method specified."
                               " Valid methods: {}").format(', '.join(methods)))
 
@@ -618,7 +618,7 @@ class SHGO(object):
             self.minimizers = self.simplex_minimizers
             self.sampling_method = sampling_method
 
-        elif (sampling_method == 'sobol') or (type(sampling_method) is not str):
+        elif sampling_method == 'sobol' or not isinstance(sampling_method, str):
             self.iterate_complex = self.iterate_delaunay
             self.minimizers = self.delaunay_complex_minimisers
             # Sampling method used
@@ -633,7 +633,9 @@ class SHGO(object):
             else:
                 # A user defined sampling method:
                 # self.sampling_points = sampling_method
-                self.sampling = sampling_method
+                self.sampling = self.sampling_custom
+                self.sampling_function = sampling_method  # F(n, d)
+                self.sampling_method = 'custom'
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -1366,6 +1368,21 @@ class SHGO(object):
             self.C = self.sobol_points(n, dim)
         else:
             self.C = self.sobol_points(n, dim, skip=self.n_sampled)
+        # Distribute over bounds
+        for i in range(len(self.bounds)):
+            self.C[:, i] = (self.C[:, i] *
+                            (self.bounds[i][1] - self.bounds[i][0])
+                            + self.bounds[i][0])
+        return self.C
+
+    def sampling_custom(self, n, dim):
+        """
+        Generates uniform sampling points in a hypercube and scales the points
+        to the bound limits.
+        """
+        # Generate sampling points.
+        # Generate uniform sample points in [0, 1]^m \subset R^m
+        self.C = self.sampling_function(n, dim)
         # Distribute over bounds
         for i in range(len(self.bounds)):
             self.C[:, i] = (self.C[:, i] *
