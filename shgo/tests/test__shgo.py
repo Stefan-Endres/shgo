@@ -759,3 +759,4 @@ class TestShgoFailures(object):
                   'sampling_method': 'sobol'
                   }
         warns(UserWarning, shgo, *args, **kwargs)
+
