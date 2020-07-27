@@ -11,10 +11,10 @@ import warnings
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize
 from shgo._shgo_lib import sobol_seq
-from shgo._shgo_lib.triangulation import Complex
+#from shgo._shgo_lib.triangulation import Complex
+from shgo._shgo_lib._complex import Complex
 
-
-__all__ = ['shgo']
+__all__ = ['shgo', 'SHGO']
 
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
@@ -45,7 +45,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         Constraints definition.
         Function(s) ``R**n`` in the form::
 
-            g(x) <= 0 applied as g : R^n -> R^m
+            g(x) >= 0 applied as g : R^n -> R^m
             h(x) == 0 applied as h : R^n -> R^p
 
         Each constraint is defined in a dictionary with fields:
@@ -139,7 +139,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
         Objective function knowledge:
 
-        * symmetry : bool
+        * symmetry : list or None
             Specify True if the objective function contains symmetric variables.
             The search space (and therefore performance) is decreased by O(n!).
 
@@ -197,7 +197,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         problems where the convergence is relatively fast.
         User defined sampling functions must accept two arguments of ``n``
         sampling points of dimension ``dim`` per call and output an array of
-        sampling points with shape `n x dim`. 
+        sampling points with shape `n x dim`.
 
     Returns
     -------
@@ -450,7 +450,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='sobol'):
+                 options=None, sampling_method='simplicial'):
 
         # Input checks
         methods = ['sobol', 'simplicial']
@@ -483,6 +483,7 @@ class SHGO(object):
 
         # Constraints
         # Process constraint dict sequence:
+        self.constraints = constraints
         if constraints is not None:
             self.min_cons = constraints
             self.g_cons = []
@@ -542,7 +543,7 @@ class SHGO(object):
             self.minhgrd = None
 
             # Objective function knowledge
-            self.symmetry = False
+            self.symmetry = None
 
             # Algorithm functionality
             self.local_iter = False
@@ -658,7 +659,7 @@ class SHGO(object):
     def init_options(self, options):
         """
         Initiates the options.
-        
+
         Can also be useful to change parameters after class initiation.
 
         Parameters
@@ -695,7 +696,7 @@ class SHGO(object):
         self.minhgrd = options.get('minhgrd', None)
 
         # Objective function knowledge
-        self.symmetry = 'symmetry' in options
+        self.symmetry = options.get('symmetry', None)
 
         # Algorithm functionality
         # Only evaluate a few of the best candiates
@@ -734,7 +735,7 @@ class SHGO(object):
             if not self.break_routine:
                 self.find_minima()
 
-        self.res.nit = self.iters_done + 1
+        self.res.nit = self.iters_done #+ 1
 
     def find_minima(self):
         """
@@ -765,6 +766,12 @@ class SHGO(object):
                 if self.HC.V[x].f < self.f_lowest:
                     self.f_lowest = self.HC.V[x].f
                     self.x_lowest = self.HC.V[x].x_a
+            #TODO: TEMPORARY CHECK, FIX:
+            for lmc in self.LMC.cache:
+                if self.LMC[lmc].f_min < self.f_lowest:
+                    self.f_lowest = self.LMC[lmc].f_min
+                    self.x_lowest = self.LMC[lmc].x_l
+
             if self.f_lowest == np.inf:  # no feasible point
                 self.f_lowest = None
                 self.x_lowest = None
@@ -811,14 +818,11 @@ class SHGO(object):
         and the tolerance with ``f_tol = options['f_tol']``
         """
         # If no minimiser has been found use the lowest sampling value
-        if len(self.LMC.xl_maps) == 0:
-            self.find_lowest_vertex()
-
+        self.find_lowest_vertex()
         # Function to stop algorithm at specified percentage error:
-        if self.f_lowest == 0.0:
-            if self.f_min_true == 0.0:
-                if self.f_lowest <= self.f_tol:
-                    self.stop_global = True
+        if self.f_min_true == 0.0:
+            if self.f_lowest <= self.f_tol:
+                self.stop_global = True
         else:
             pe = (self.f_lowest - self.f_min_true) / abs(self.f_min_true)
             if self.f_lowest <= self.f_min_true:
@@ -840,6 +844,7 @@ class SHGO(object):
         self.hgrd = self.LMC.size - self.hgr
 
         self.hgr = self.LMC.size
+        print(f' self.hgrd')
         if self.hgrd <= self.minhgrd:
             self.stop_global = True
         return self.stop_global
@@ -887,11 +892,22 @@ class SHGO(object):
         # Iterate the complex
         if self.n_sampled == 0:
             # Initial triangulation of the hyper-rectangle
-            self.HC = Complex(self.dim, self.func, self.args,
-                              self.symmetry, self.bounds, self.g_cons,
-                              self.g_args)
+            self.HC = Complex(dim=self.dim, domain=self.bounds,
+                              sfield=self.func, sfield_args=self.args,
+                              symmetry=self.symmetry,
+                              constraints=self.constraints,
+                              #constraints=self.g_cons,
+                              constraints_args=self.g_args)
+
+        if self.n is None:
+            self.HC.refine_all()
         else:
-            self.HC.split_generation()
+            self.HC.refine(self.n)
+
+
+        self.HC.V.process_gpool()
+        self.HC.V.process_fpool()
+        self.HC.V.proc_minimisers()
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
@@ -982,11 +998,16 @@ class SHGO(object):
 
         while not self.stop_l_iter:
             # Global stopping criteria:
-            if self.f_min_true is not None:
-                if (lres_f_min.fun - self.f_min_true) / abs(
-                        self.f_min_true) <= self.f_tol:
-                    self.stop_l_iter = True
-                    break
+            self.stopping_criteria()
+            if self.stop_global:
+                self.stop_l_iter = True
+                break
+            if 0:
+                if self.f_min_true is not None:
+                    if (lres_f_min.fun - self.f_min_true) / abs(
+                            self.f_min_true) <= self.f_tol:
+                        self.stop_l_iter = True
+                        break
             # Note first iteration is outside loop:
             if self.local_iter is not None:
                 if self.disp:
@@ -1617,7 +1638,10 @@ class LMapCache:
         self.size = 0
 
     def __getitem__(self, v):
-        v = np.ndarray.tolist(v)
+        try:
+            v = np.ndarray.tolist(v)
+        except TypeError:
+            pass
         v = tuple(v)
         try:
             return self.cache[v]
