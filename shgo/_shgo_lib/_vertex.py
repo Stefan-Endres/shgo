@@ -13,7 +13,7 @@ class VertexBase(ABC):
     def __init__(self, x, nn=None, index=None):
         self.x = x
         self.hash = hash(self.x)  # Save precomputed hash
-        #self.order = sum(x)  #TODO: Delete if we can't prove the order triangulation conjecture
+        #self.orderv = sum(x)  #TODO: Delete if we can't prove the order triangulation conjecture
 
         if nn is not None:
             self.nn = set(nn)  # can use .indexupdate to add a new list
@@ -29,7 +29,7 @@ class VertexBase(ABC):
         if item not in ['x_a']:
             raise AttributeError(f"{type(self)} object has no attribute "
                                  f"'{item}'")
-        if item is 'x_a':
+        if item == 'x_a':
             self.x_a = np.array(self.x)
             return self.x_a
 
@@ -183,6 +183,57 @@ class VertexCacheBase(object):
             yield self.cache[v]
         return
 
+    def move(self, v, x):
+        """
+        Move a vertex object v to a new set of coordinates x
+
+        :param v: Vertex object to move
+        :param x: tuple, new coordinates
+        :return:
+        """
+        self.cache.pop(v.x)
+
+        # Note that we need to remove the object from the nn sets since the hash
+        # value is changed although the object stays the same.
+        vn = copy.copy(v.nn)
+        for vn in vn:
+            v.disconnect(vn)
+
+        v.x = x
+        v.hash = hash(x)
+        try:
+            v.x_a = np.array(x)
+        except AttributeError:
+            pass
+
+        self.cache[x] = v
+        # Reconnect new hashes
+        vn = copy.copy(v.nn)
+        for vn in vn:
+            v.connect(vn)
+
+        return self.cache[x]
+
+    def remove(self, v):
+        """
+
+        :param v:  Vertex object to remove
+        :return:
+        """
+        ind = v.index
+
+        vn = copy.copy(v.nn)
+        for vn in vn:
+            v.disconnect(vn)
+
+        self.cache.pop(v.x)
+
+        for v in self:
+            if v.index > ind:
+                v.index -= 1
+        self.index -= 1
+
+        return
 
     def size(self):
         """
@@ -275,6 +326,12 @@ class VertexCacheField(VertexCacheBase):
         del self_dict['pool']
         return self_dict
 
+    def process_pools(self):
+        if self.g_cons is not None:
+            self.process_gpool()
+        self.process_fpool()
+        self.proc_minimisers()
+
     def recompute_pools(self):
         pass
         #TODO: This will recompute pools to include vertices with missing info
@@ -306,7 +363,6 @@ class VertexCacheField(VertexCacheBase):
     def feasibility_check(self, v):
         v.feasible = True
         for g, args in zip(self.g_cons, self.g_cons_args):
-            print(f'g(v.x_a, *args)  = {g(v.x_a, *args) }')
             if g(v.x_a, *args) < 0.0:
                 v.f = np.inf
                 v.feasible = False
@@ -339,7 +395,7 @@ class VertexCacheField(VertexCacheBase):
             v.feasible = g  # set vertex object attribute v.feasible = g (bool)
 
 
-    def proc_fpool_nog(self):
+    def proc_fpool_g(self):
         # TODO: do try check if v.f exists
         for v in self.fpool:
             if v.feasible:
