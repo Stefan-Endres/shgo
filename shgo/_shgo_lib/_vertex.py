@@ -25,6 +25,10 @@ class VertexBase(ABC):
     def __hash__(self):
         return self.hash
 
+    def __mul__(self, v2):
+        s = SimplexOrdered([self, v2])
+        return s
+
     def __getattr__(self, item):
         if item not in ['x_a']:
             raise AttributeError(f"{type(self)} object has no attribute "
@@ -32,6 +36,7 @@ class VertexBase(ABC):
         if item == 'x_a':
             self.x_a = np.array(self.x)
             return self.x_a
+
 
     @abstractmethod
     def connect(self, v):
@@ -122,7 +127,6 @@ class VertexScalarField(VertexBase):
             self.check_max = True
             v.check_min = True
             v.check_max = True
-
 
     def disconnect(self, v):
         if v in self.nn:
@@ -372,6 +376,7 @@ class VertexCacheField(VertexCacheBase):
     def compute_sfield(self, v):
         try: #TODO: Remove exception handling?
             v.f = self.field(v.x_a, *self.field_args)
+            self.nfev += 1
         except:  #TODO: except only various floating issues
             #logging.warning(f"Field function not found at x = {self.x_a}")
             v.f = np.inf
@@ -427,6 +432,7 @@ class VertexCacheField(VertexCacheBase):
         for va, f in zip(fpool_l, F):
             vt = tuple(va)
             self[vt].f = f  # set vertex object attribute v.f = f
+            self.nfev += 1
 
         print(f'self.cache = {self.cache}')
 

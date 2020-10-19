@@ -3151,6 +3151,133 @@ class Complex:
         """
         return self.V[v_x].star()
 
+
+    def in_st(self, v_x, v=None):
+        """
+        Insert a new vertex at location v_x into star domain, if a vertex `v` is
+        specified then the routine skips the distance computation and is
+        significantly faster.
+
+        :param v_x:
+        :param v: Vertex, object, if the v is the near
+        :return:
+        """
+        if v is not None:
+            pass
+        else:
+            pass
+            # Distance computation
+
+    def boundary(self, V=None):
+        """
+        Compute the boundary of a set of vertices
+
+        :param V: Iterable object containing vertices, if None entire complex is
+                  used.
+        :return: dV, boundary set of V
+        """
+        dV = set()
+        if V is None:
+            V = self.V
+
+        for v in V:
+            print(f'====')
+            print(f'v = {v.x}')
+            v_nn = copy.copy(v.nn)
+            for v2 in v_nn:
+                if v in v_nn:
+                    pass
+
+
+            if 0:
+                comb_iter = itertools.combinations(v_nn, self.dim)
+                for s in comb_iter:
+                    print('=')
+                    print(f's = {s}')
+                    ss = set(s)
+                    for v2 in s:
+                        print(f'v2.x = {v2.x}')
+                    continue
+                    print('-')
+                    for v2 in s:
+                        print('--')
+                        print(f'v2.x = {v2.x}')
+                        print(f'v2.nn = {v2.nn}')
+                        v2_nn = copy.copy(v2.nn - ss - set((v,)))
+                        #for v3 in v2.nn:
+                        for v3 in v2_nn:
+                            print(f'v3.x = {v3.x}')
+                        print(f's.issubset(v2.nn) = {set(s).issubset(v2.nn) }')
+                        #if set(s).issubset(v2.nn):
+                        if set(s).issubset(v2_nn):
+                            print('!!!!!')
+
+            #for v2 in v_nn:
+            #    v2_nn = copy.copy(v.nn)
+           #     comb_iter = itertools.combinations(v2_nn, self.dim)
+            #    for s in comb_iter:
+            #        print(f's = {s}')
+
+                #for v3 in v2_nn:
+                #    print(f'')
+               #     if v3 in v_nn:
+               #         print(f'v3 = {v3.x}')
+               #         print(f'v3 = {v3}')
+               #         print(f'v_nn = {v_nn}')
+                        # v.disconnect(v3)
+               #         v2.disconnect(v3)
+
+        if 0:
+            dV = set()
+            if V is None:
+                V = self.V
+
+            V_nn = {}
+
+            #TODO: Make copies of lists
+            for v in V:
+                print(f'v.x = {v.x}')
+                V_nn[v.x] = copy.copy(v.nn)
+
+            print(f'V_nn = {V_nn}')
+            for v in V:
+                print(f'-')
+                print(f'v = {v.x}')
+                v_nn = V_nn[v.x]#copy.copy(v.nn)
+                for v2 in v_nn:
+                    v2_nn = V_nn[v2.x]#copy.copy(v.nn)
+                    for v3 in v2_nn:
+                        print(f'')
+                        if v3 in v_nn:
+                            print(f'v3 = {v3.x}')
+                            print(f'v3 = {v3}')
+                            print(f'v_nn = {v_nn}')
+                            #v.disconnect(v3)
+                            v2.disconnect(v3)
+
+            for v in V:
+                if len(v.nn) == 0:
+                    pass#self.V.remove(v)
+
+    def boundary_d(self, V=None):
+        """
+        Compute the boundary self.boundary and then delete all vertices
+        not in the boundary of V. Faster than boundary, but does not preserve
+        pruned vertices.
+
+        :param V:
+        :return: dV, boundary set of V
+        """
+        dV = set()  # Known boundary vertices
+        iV = set()  # Known inner vertices
+        for v in V:
+            v_nn = copy.copy(v.nn)
+            for v2 in v_nn:
+                v2_nn = copy.copy(v.nn)
+                for v3 in v2_nn:
+                    if v3 == v:
+                        pass
+
     # %% Discrete differential geometry
     def clifford(self, dim, q=''):
         """
@@ -3993,6 +4120,34 @@ class Complex:
                 vl.append(v.x)
 
         return numpy.array(vl)
+
+
+    def vf_to_vv(self, vertices, simplices):
+        """
+        Convert a vertex-face mesh to a vertex-vertex mesh used by this class
+
+        :param vertices: list of vertices
+        :param simplices: list of simplices
+        :return:
+        """
+        if self.dim > 1:
+            for s in simplices:
+                edges = itertools.combinations(s, self.dim)
+                for e in edges:
+                    self.V[tuple(vertices[e[0]])].connect(
+                        self.V[tuple(vertices[e[1]])])
+        else:
+            for e in simplices:
+                self.V[tuple(vertices[e[0]])].connect(
+                    self.V[tuple(vertices[e[1]])])
+                #print(f'e = {e}')
+            #for v in s:
+                #print(f'v = {v}')
+                #print(f's = {s}')
+                #print(f'vertices[v] = {vertices[v]}')
+                #print(f'tuple(vertices[v])= {tuple(vertices[v])}')
+                #self.V[tuple(vertices[v])]
+        return
 
     def vertex_face_mesh(self, field_conversions=True):
         """
