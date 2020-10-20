@@ -8,6 +8,9 @@ from collections import namedtuple
 import time
 import logging
 import warnings
+
+import sys
+
 # Scientific python imports
 import numpy as np
 from scipy import spatial
@@ -552,8 +555,8 @@ class SHGO(object):
             self.symmetry = None
 
             # Algorithm functionality
-            self.local_iter = False
             self.infty_cons_sampl = True
+            self.local_iter = False
 
             # Feedback
             self.disp = False
@@ -630,8 +633,6 @@ class SHGO(object):
                           # constraints=self.g_cons,
                           constraints_args=self.g_args)
 
-
-
         # Choose complex constructor
         if sampling_method == 'simplicial':
             self.iterate_complex = self.iterate_hypercube
@@ -654,6 +655,9 @@ class SHGO(object):
                 self.sampling = self.sampling_custom
                 self.sampling_function = sampling_method  # F(n, d)
                 self.sampling_method = 'custom'
+
+            # QHull options
+            self.qhull_incremental = True
 
         # Local controls
         self.stop_l_iter = False  # Local minimisation iterations
@@ -762,6 +766,9 @@ class SHGO(object):
         Construct the minimiser pool, map the minimisers to local minima
         and sort the results into a global return object.
         """
+        if self.disp:
+            print('Search for minimiser pool')
+
         self.minimizers()
         logging.info(f'self.X_min = {self.X_min}')
         if len(self.X_min) != 0:
@@ -781,6 +788,7 @@ class SHGO(object):
         if self.disp:
             logging.info(
                 "Minimiser pool = SHGO.X_min = {}".format(self.X_min))
+            print("Minimiser pool = SHGO.X_min = {}".format(self.X_min))
 
 
     def find_lowest_vertex(self):
@@ -935,6 +943,9 @@ class SHGO(object):
         Note: called with ``self.iterate_complex()`` after class initiation
         """
         # Iterate the complex
+        if self.disp:
+            print('Constructing and refining simplicial complex graph '
+                  'structure')
         if self.n is None:
             self.HC.refine_all()
             self.n_sampled = self.HC.V.size()  # nevs counted
@@ -942,12 +953,17 @@ class SHGO(object):
             self.HC.refine(self.n)
             self.n_sampled += self.n
 
+        if self.disp:
+            print('Triangulation completed, evaluating all contraints and o'
+                  'bjective function values.')
+
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
+        if self.disp:
+            print('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
-
         return
 
     def iterate_delaunay(self):
@@ -957,13 +973,12 @@ class SHGO(object):
         Note: called with ``self.iterate_complex()`` after class initiation
         """
         self.nc += self.n  # TODO: IS THIS CORRECT?
-        print(f'self.n = {self.n}')
-        print(f'self.nc = {self.nc}')
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Add sampled points to a triangulation, construct self.Tri
         if self.disp:
-            print('Constructing Gabrial graph and minimizer pool')
+            print('Constructing and refining simplicial complex graph '
+                  'structure from sampling points.')
 
         #TODO: Find another solution for triangulating 1D,
         if self.dim < 2:
@@ -980,13 +995,13 @@ class SHGO(object):
             self.Tri = namedtuple('Tri', ['points', 'simplices'])(self.C, tris)
             self.points = {}
         else:
-            print(f'self.C.shape[0] = {self.C.shape[0]}')
             if self.C.shape[0] > self.dim + 1:  # Ensure a simplex can be built
                 self.delaunay_triangulation(n_prc=self.n_prc)
             self.n_prc = self.C.shape[0]
 
         if self.disp:
-            print('Triangulation completed, building minimizer pool')
+            print('Triangulation completed, evaluating all contraints and o'
+                  'bjective function values.')
 
         # self.delaunay_minimizers()
         if hasattr(self, 'Tri'):
@@ -998,13 +1013,18 @@ class SHGO(object):
         # Process all pools
         #self.n_sampled = self.nc
         # Evaluate all constraints and functions
+        if self.disp:
+            print('Triangulation completed, evaluating all contraints and o'
+                  'bjective function values.')
+
+        # Evaluate all constraints and functions
         self.HC.V.process_pools()
+        if self.disp:
+            print('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         #self.fn = self.HC.V.nfev
         self.n_sampled = self.nc#self.HC.V.size()  # nevs counted in triangulation.py
-        print(f'self.n_sampled = {self.n_sampled}')
-        print(f'self.HC.V.nfev = {self.HC.V.nfev}')
         #print(f'self.Tri.points= {self.Tri.points}')
         #print(f'self.Tri.simplices = {self.Tri.simplices}')
         return
@@ -1068,6 +1088,7 @@ class SHGO(object):
                      globally or locally)
 
         """
+        print(f'force_iter = {force_iter}')
         # Find first local minimum
         # NOTE: Since we always minimize this value regardless it is a waste to
         # build the topograph first before minimizing
@@ -1075,10 +1096,6 @@ class SHGO(object):
         logging.info(f'lres_f_min = {lres_f_min}')
         # Trim minimised point from current minimiser set
         self.trim_min_pool(0)
-
-        # Force processing to only
-        if force_iter:
-            self.local_iter = force_iter
 
         while not self.stop_l_iter:
             logging.info(f'self.stop_l_iter = {self.stop_l_iter}')
@@ -1099,13 +1116,14 @@ class SHGO(object):
                         self.stop_l_iter = True
                         break
             # Note first iteration is outside loop:
-            if self.local_iter is not None:
+            if force_iter:
+                print(f'RUNNING!')
                 if self.disp:
                     logging.info(
                         'SHGO.iters in function minimise_pool = {}'.format(
-                            self.local_iter))
-                self.local_iter -= 1
-                if self.local_iter == 0:
+                            loc_iter))
+                force_iter -= 1
+                if force_iter == 0:
                     self.stop_l_iter = True
                     break
 
@@ -1245,7 +1263,7 @@ class SHGO(object):
                   'minimizer starting at {}:'.format(x_min))
 
         if self.disp:
-            print('Starting '
+            print('--- Starting '
                   'minimization at {}...'.format(x_min))
 
         if self.sampling_method == 'simplicial':
@@ -1354,45 +1372,6 @@ class SHGO(object):
         self.fun_ref()
 
         self.n_sampled = self.nc
-
-    def delaunay_complex_minimisers(self):
-        # Construct complex minimisers on the current sampling set.
-        # if self.fn >= (self.dim + 1):
-        if self.fn >= (self.dim + 2):
-            # TODO: Check on strange Qhull error where the number of vertices
-            # required for an initial simplex is higher than n + 1?
-            if self.dim < 2:  # Scalar objective functions
-                if self.disp:
-                    print('Constructing 1D minimizer pool')
-
-                self.ax_subspace()
-                self.surface_topo_ref()
-                self.minimizers_1D()
-
-            else:  # Multivariate functions.
-                if self.disp:
-                    print('Constructing Gabrial graph and minimizer pool')
-
-                self.delaunay_triangulation(n_prc=self.n_prc)
-                self.n_prc = self.C.shape[0]
-
-                if self.disp:
-                    print('Triangulation completed, building minimizer pool')
-
-                self.delaunay_minimizers()
-
-            if self.disp:
-                logging.info(
-                    "Minimiser pool = SHGO.X_min = {}".format(self.X_min))
-        else:
-            if self.disp:
-                print(
-                    'Not enough sampling points found in the feasible domain.')
-            self.minimizer_pool = [None]
-            try:
-                self.X_min
-            except AttributeError:
-                self.X_min = []
 
     def sobol_points_40(self, n, d, skip=0):
         """
@@ -1644,12 +1623,28 @@ class SHGO(object):
         return self.X_min
 
     def delaunay_triangulation(self, n_prc=0):
-        if hasattr(self, 'Tri'):
+        if hasattr(self, 'Tri') and self.qhull_incremental:
             # TODO: Uncertain if n_prc needs to add len(self.LMC.xl_maps)
             # in self.sampled_surface
             self.Tri.add_points(self.C[n_prc:, :])
         else:
-            self.Tri = spatial.Delaunay(self.C, incremental=True)
+            try:
+                self.Tri = spatial.Delaunay(self.C,
+                                            incremental=self.qhull_incremental,
+                                            )
+            except:
+                if str(sys.exc_info()[1])[:6] == 'QH6239':
+                    logging.warning('QH6239 Qhull precision error detected, '
+                        'this usually occurs when no bounds are specified, '
+                        'Qhull can only run with the "Qz" option on for '
+                        'handling cocircular/cospherical points and in this '
+                        'case incremental mode is switched off. The performance'
+                        ' of shgo will be reduced in this mode.')
+                    self.qhull_incremental = False
+                    self.Tri = spatial.Delaunay(self.C,
+                                   incremental=self.qhull_incremental)
+                else:
+                    raise
 
         return self.Tri
 

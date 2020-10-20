@@ -1732,12 +1732,12 @@ class Complex:
 
                 for j, (VL, VC, VU) in enumerate(zip(cCox, cCcx, cCux)):
                     for k, (vl, vc, vu) in enumerate(zip(VL, VC, VU)):
-                        print(f'Normal run')
-                        print(f'----------')
-                        print(f'vl = {vl.x}')
-                        print(f'vc = {vc.x}')
-                        print(f'vu = {vu.x}')
-                        print(f'----------')
+                        #print(f'Normal run')
+                        #print(f'----------')
+                        #print(f'vl = {vl.x}')
+                        #print(f'vc = {vc.x}')
+                        #print(f'vu = {vu.x}')
+                        #print(f'----------')
                         # Build aN vertices for each lower-upper C3 group in N:
                         a_vl = list(vl.x)
                         a_vu = list(vu.x)

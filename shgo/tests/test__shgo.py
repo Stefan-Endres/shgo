@@ -6,6 +6,8 @@ from nose.tools import nottest
 from shgo import shgo
 from shgo._shgo import SHGO
 
+#TODO DELETE
+
 
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
@@ -308,7 +310,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
         numpy.testing.assert_allclose(res.funl,
                                       test.expected_funl,
                                       atol=test_atol)
-    print(f'res = {res}')
+    logging.info(f'res = {res}')
     return
 
 
@@ -332,7 +334,8 @@ class TestShgoSobolTestFunctions(object):
     def test_f1_3_sobol(self):
         """Multivariate test function 1:
         x[0]**2 + x[1]**2 with bounds=[(None, None),(None, None)]"""
-        run_test(test1_3)
+        options = {'disp': True}
+        run_test(test1_3, options=options)
 
     def test_f2_1_sobol(self):
         """Univariate test function on
@@ -527,7 +530,7 @@ class TestShgoArguments(object):
         run_test(test4_1, n=300, test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
-    @nottest
+    #@nottest
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evaluations for 1D funcs"""
         options = {  # Specify known function value
@@ -583,8 +586,6 @@ class TestShgoArguments(object):
             # unittests which run test4_1 normally
             minimizer_kwargs = {'method': solver,
                                 'constraints': test3_1.cons}
-            print("Solver = {}".format(solver))
-            print("=" * 100)
             run_test(test3_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs, sampling_method='sobol')
 
@@ -631,18 +632,20 @@ class TestShgoArguments(object):
         res = shgo(test1_1.f, test1_1.bounds, n=1, iters=None,
                    options=options, sampling_method='sobol')
 
-    def test_11_f_min_time(self):
+    def test_11_f_min_0(self):
         """Test to cover the case where f_lowest == 0"""
-        options = {'maxtime': 1e-15,
-                   'f_min': 0.0}
-        res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
+        options = {'f_min': 0.0}
+        res = shgo(test1_2.f, test1_2.bounds, n=10, iters=None,
                    options=options, sampling_method='sobol')
         numpy.testing.assert_equal(0, res.x[0])
         numpy.testing.assert_equal(0, res.x[1])
 
+    @nottest
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
-        #TODO: IS THIS TEST COVERING WHAT WE THINK IT DOES?
+        #TODO: This test doesn't cover anything new, it is unknown what the
+        # original test was intended for as it was never complete. Delete or
+        # replace in the future.
         options = {'maxtime': 1e-15,
                    'f_min': 0.0}
         res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
@@ -651,10 +654,8 @@ class TestShgoArguments(object):
 
     def test_13_high_sobol(self):
         """Test init of high-dimensional sobol sequences"""
-
         def f(x):
             return 0
-
         bounds = [(None, None), ] * 41
         SHGOc = SHGO(f, bounds, sampling_method='sobol')
         SHGOc.sobol_points(2, 50)
@@ -662,7 +663,6 @@ class TestShgoArguments(object):
     def test_14_local_iter(self):
         """Test limited local iterations for a pseudo-global mode"""
         options = {'local_iter': 4}
-        #run_test(test5_1, n=30, options=options)
         run_test(test5_1, n=60, options=options)
 
     def test_15_min_every_iter(self):
@@ -770,9 +770,8 @@ class TestShgoFailures(object):
 
         numpy.testing.assert_equal(False, res.success)
 
-    @nottest
     def test_6_1_lower_known_f_min(self):
-        """Test Global mode limiting local evalutions with f* too high"""
+        """Test Global mode limiting local evaluations with f* too high"""
         options = {  # Specify known function value
             'f_min': test2_1.expected_fun + 2.0,
             'f_tol': 1e-6,
