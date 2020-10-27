@@ -39,7 +39,7 @@ Latest:
 
 .. code::
 
-    $ git clone https://bitbucket.org/upiamcompthermo/shgo
+    $ git clone https://github.com/Stefan-Endres/shgo
     $ cd shgo
     $ python setup.py install
     $ python setup.py test
