@@ -746,7 +746,7 @@ class SHGO(object):
         while not self.stop_global:
             if self.break_routine:
                 break
-            # Iterate complex, proc144ess minimisers
+            # Iterate complex, process minimisers
             self.iterate()
             self.stopping_criteria()
 
@@ -794,31 +794,23 @@ class SHGO(object):
     def find_lowest_vertex(self):
         # Find the lowest objective function value on one of
         # the vertices of the simplicial complex
-        if self.sampling_method == 'simplicial':
-            self.f_lowest = np.inf
-            for x in self.HC.V.cache:
+        self.f_lowest = np.inf
+        for x in self.HC.V.cache:
+            logging.info(f'self.HC.V[x].f = {self.HC.V[x].f}')
+            if self.HC.V[x].f < self.f_lowest:
                 logging.info(f'self.HC.V[x].f = {self.HC.V[x].f}')
-                if self.HC.V[x].f < self.f_lowest:
-                    logging.info(f'self.HC.V[x].f = {self.HC.V[x].f}')
-                    self.f_lowest = self.HC.V[x].f
-                    self.x_lowest = self.HC.V[x].x_a
-            # TODO: TEMPORARY CHECK, FIX:
-            for lmc in self.LMC.cache:
-                if self.LMC[lmc].f_min < self.f_lowest:
-                    self.f_lowest = self.LMC[lmc].f_min
-                    self.x_lowest = self.LMC[lmc].x_l
+                self.f_lowest = self.HC.V[x].f
+                self.x_lowest = self.HC.V[x].x_a
+        # TODO: TEMPORARY CHECK, FIX:
+        for lmc in self.LMC.cache:
+            if self.LMC[lmc].f_min < self.f_lowest:
+                self.f_lowest = self.LMC[lmc].f_min
+                self.x_lowest = self.LMC[lmc].x_l
 
-            if self.f_lowest == np.inf:  # no feasible point
-                self.f_lowest = None
-                self.x_lowest = None
-        else:
-            if self.fn == 0:
-                self.f_lowest = None
-                self.x_lowest = None
-            else:
-                self.f_I = np.argsort(self.F, axis=-1)
-                self.f_lowest = self.F[self.f_I[0]]
-                self.x_lowest = self.C[self.f_I[0]]
+        if self.f_lowest == np.inf:  # no feasible point
+            self.f_lowest = None
+            self.x_lowest = None
+
 
     # Stopping criteria functions:
     def finite_iterations(self):
@@ -1023,7 +1015,7 @@ class SHGO(object):
             print('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
-        #self.fn = self.HC.V.nfev
+        self.fn = self.HC.V.nfev
         self.n_sampled = self.nc#self.HC.V.size()  # nevs counted in triangulation.py
         #print(f'self.Tri.points= {self.Tri.points}')
         #print(f'self.Tri.simplices = {self.Tri.simplices}')
@@ -1088,7 +1080,6 @@ class SHGO(object):
                      globally or locally)
 
         """
-        print(f'force_iter = {force_iter}')
         # Find first local minimum
         # NOTE: Since we always minimize this value regardless it is a waste to
         # build the topograph first before minimizing
@@ -1369,7 +1360,7 @@ class SHGO(object):
         self.sorted_samples()
 
         # Find objective function references
-        self.fun_ref()
+        #self.fun_ref()
 
         self.n_sampled = self.nc
 
@@ -1500,128 +1491,6 @@ class SHGO(object):
         self.Xs = self.C[self.Ind_sorted]
         return self.Ind_sorted, self.Xs
 
-    def ax_subspace(self):  # Validated
-        """
-        Finds the subspace vectors along each component axis.
-        """
-        self.Ci = []
-        self.Xs_i = []
-        self.Ii = []
-        for i in range(self.dim):
-            self.Ci.append(self.C[:, i])
-            self.Ii.append(self.Ind_sorted[:, i])
-            self.Xs_i.append(self.Xs[:, i])
-
-    def fun_ref(self):
-        """
-        Find the objective function output reference table
-        """
-        # TODO: Replace with cached wrapper
-
-        # Note: This process can be pooled easily
-        # Obj. function returns to be used as reference table.:
-        f_cache_bool = False
-        if self.fn > 0:  # Store old function evaluations
-            Ftemp = self.F
-            fn_old = self.fn
-            f_cache_bool = True
-
-        self.F = np.zeros(np.shape(self.C)[0])
-        # NOTE: It might be easier to replace this with a cached
-        #      objective function
-        for i in range(self.fn, np.shape(self.C)[0]):
-            eval_f = True
-            if self.g_cons is not None:
-                for g in self.g_cons:
-                    if g(self.C[i, :], *self.args) < 0.0:
-                        eval_f = False
-                        break  # Breaks the g loop
-
-            if eval_f:
-                self.F[i] = self.func(self.C[i, :], *self.args)
-                self.fn += 1
-            elif self.infty_cons_sampl:
-                self.F[i] = np.inf
-                self.fn += 1
-        if f_cache_bool:
-            if fn_old > 0:  # Restore saved function evaluations
-                self.F[0:fn_old] = Ftemp
-
-        return self.F
-
-    def surface_topo_ref(self):  # Validated
-        """
-        Find the BD and FD finite differences along each component vector.
-        """
-        # Replace numpy inf, -inf and nan objects with floating point numbers
-        # nan --> float
-        self.F[np.isnan(self.F)] = np.inf
-        # inf, -inf  --> floats
-        self.F = np.nan_to_num(self.F)
-
-        self.Ft = self.F[self.Ind_sorted]
-        self.Ftp = np.diff(self.Ft, axis=0)  # FD
-        self.Ftm = np.diff(self.Ft[::-1], axis=0)[::-1]  # BD
-
-    def sample_topo(self, ind):
-        # Find the position of the sample in the component axial directions
-        self.Xi_ind_pos = []
-        self.Xi_ind_topo_i = []
-
-        for i in range(self.dim):
-            for x, I_ind in zip(self.Ii[i], range(len(self.Ii[i]))):
-                if x == ind:
-                    self.Xi_ind_pos.append(I_ind)
-
-            # Use the topo reference tables to find if point is a minimizer on
-            # the current axis
-
-            # First check if index is on the boundary of the sampling points:
-            if self.Xi_ind_pos[i] == 0:
-                # if boundary is in basin
-                self.Xi_ind_topo_i.append(self.Ftp[:, i][0] > 0)
-
-            elif self.Xi_ind_pos[i] == self.fn - 1:
-                # Largest value at sample size
-                self.Xi_ind_topo_i.append(self.Ftp[:, i][self.fn - 2] < 0)
-
-            # Find axial reference for other points
-            else:
-                Xi_ind_top_p = self.Ftp[:, i][self.Xi_ind_pos[i]] > 0
-                Xi_ind_top_m = self.Ftm[:, i][self.Xi_ind_pos[i] - 1] > 0
-                self.Xi_ind_topo_i.append(Xi_ind_top_p and Xi_ind_top_m)
-
-        if np.array(self.Xi_ind_topo_i).all():
-            self.Xi_ind_topo = True
-        else:
-            self.Xi_ind_topo = False
-        self.Xi_ind_topo = np.array(self.Xi_ind_topo_i).all()
-
-        return self.Xi_ind_topo
-
-    def minimizers_1D(self):
-        """
-        Returns the indexes of all minimizers
-        """
-        self.minimizer_pool = []
-        # Note: Can implement parallelization here
-        for ind in range(self.fn):
-            min_bool = self.sample_topo(ind)
-            if min_bool:
-                self.minimizer_pool.append(ind)
-
-        self.minimizer_pool_F = self.F[self.minimizer_pool]
-
-        # Sort to find minimum func value in min_pool
-        self.sort_min_pool()
-        if not len(self.minimizer_pool) == 0:
-            self.X_min = self.C[self.minimizer_pool]
-            # If function is called again and pool is found unbreak:
-        else:
-            self.X_min = []
-
-        return self.X_min
-
     def delaunay_triangulation(self, n_prc=0):
         if hasattr(self, 'Tri') and self.qhull_incremental:
             # TODO: Uncertain if n_prc needs to add len(self.LMC.xl_maps)
@@ -1647,31 +1516,6 @@ class SHGO(object):
                     raise
 
         return self.Tri
-
-    @staticmethod
-    def find_neighbors_delaunay(pindex, triang):
-        """
-        Returns the indexes of points connected to ``pindex`` on the Gabriel
-        chain subgraph of the Delaunay triangulation.
-        """
-        return triang.vertex_neighbor_vertices[1][
-               triang.vertex_neighbor_vertices[0][pindex]:
-               triang.vertex_neighbor_vertices[0][pindex + 1]]
-
-    def sample_delaunay_topo(self, ind):
-        self.Xi_ind_topo_i = []
-
-        # Find the position of the sample in the component Gabrial chain
-        G_ind = self.find_neighbors_delaunay(ind, self.Tri)
-        # Find finite deference between each point
-        for g_i in G_ind:
-            rel_topo_bool = self.F[ind] < self.F[g_i]
-            self.Xi_ind_topo_i.append(rel_topo_bool)
-
-        # Check if minimizer
-        self.Xi_ind_topo = np.array(self.Xi_ind_topo_i).all()
-
-        return self.Xi_ind_topo
 
 class LMap:
     def __init__(self, v):

@@ -527,7 +527,8 @@ class TestShgoArguments(object):
             'local_iter': 1,
             'infty_constraints': False}
 
-        run_test(test4_1, n=300, test_atol=1e-5, options=options,
+        run_test(test4_1, n=300000,
+                 test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
     #@nottest
@@ -634,7 +635,8 @@ class TestShgoArguments(object):
 
     def test_11_f_min_0(self):
         """Test to cover the case where f_lowest == 0"""
-        options = {'f_min': 0.0}
+        options = {'f_min': 0.0,
+                   'disp': True}
         res = shgo(test1_2.f, test1_2.bounds, n=10, iters=None,
                    options=options, sampling_method='sobol')
         numpy.testing.assert_equal(0, res.x[0])
