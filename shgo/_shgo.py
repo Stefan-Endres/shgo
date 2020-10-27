@@ -25,7 +25,7 @@ __all__ = ['shgo', 'SHGO']
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
          minimizer_kwargs=None, options=None, sampling_method='simplicial',
-         workers=1):
+         workers=None):
     """
     Finds the global minimum of a function using SHG optimization.
 
@@ -631,7 +631,8 @@ class SHGO(object):
                           symmetry=self.symmetry,
                           constraints=self.constraints,
                           # constraints=self.g_cons,
-                          constraints_args=self.g_args)
+                          constraints_args=self.g_args,
+                          workers=workers)
 
         # Choose complex constructor
         if sampling_method == 'simplicial':
@@ -1316,7 +1317,7 @@ class SHGO(object):
         # Add local func evals to sampling func evals
         # Count the number of feasible vertices and add to local func evals:
         self.res.nfev = self.fn + self.res.nlfev
-        self.res.tnev = self.n_sampled
+        self.res.tnev = self.n_sampled + self.res.nlfev
         return self.res
 
     # Algorithm controls

@@ -295,21 +295,8 @@ class Complex:
         #C1x = [[self.V[tuple(a_vo)]]]
         ab_C = []  # Container for a + b operations
 
-        print(f'bounds = {bounds}')
         # Loop over remaining bounds
         for i, x in enumerate(bounds[1:]):
-            print(f'C0x = {C0x}')
-            for ind, V in enumerate(C0x):
-                 print(f'ind = {ind}')
-                 for v in V:
-                     print(f'v.x = {v.x}')
-            print(f'-')
-            print(f'C1x = {C1x}')
-            for ind, V in enumerate(C1x):
-                 print(f'ind = {ind}')
-                 for v in V:
-                     print(f'v.x = {v.x}')
-            print(f'-')
             # Update lower and upper containers
             C0x.append([])
             C1x.append([])

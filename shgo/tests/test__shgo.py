@@ -279,14 +279,14 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        expected_x=None
                                        )
 
-
+@nottest
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
-             sampling_method='sobol'):
+             sampling_method='sobol', workers=None):
     res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
                n=n, iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs, options=options,
-               sampling_method=sampling_method)
+               sampling_method=sampling_method, workers=workers)
 
     logging.info(res)
 
@@ -686,6 +686,11 @@ class TestShgoArguments(object):
             return numpy.random.uniform(size=(n,d))
         
         run_test(test1_1, n=30, sampling_method=sample)
+
+    def test_18_parallelization(self):
+        """Test the functionality to add custom sampling methods to shgo"""
+
+        run_test(test1_1, n=30, workers=1)
 
 # Failure test functions
 class TestShgoFailures(object):

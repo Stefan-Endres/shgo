@@ -8,7 +8,7 @@ def readme():
 
 
 setup(name='shgo',
-      version='0.4.7',
+      version='0.4.8',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres, Carl Sandrock',
