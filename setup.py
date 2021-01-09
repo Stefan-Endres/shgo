@@ -23,6 +23,7 @@ setup(name='shgo',
           'pytest-cov'
       ],
       long_description=readme(),
+      long_description_content_type='text/markdown',
       keywords='optimization',
       classifiers=[
           # How mature is this project? Common values are
