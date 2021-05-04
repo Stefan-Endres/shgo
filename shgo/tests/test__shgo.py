@@ -767,6 +767,21 @@ class TestShgoArguments(object):
         res_modConstr_sobol = shgo(f, bounds, iters=3, constraints=cons,
                                    sampling_method='sobol')
 
+    def test_20_jac_true(self):
+        """Test that shgo can handle objective functions that return the
+        gradient alongside the objective value"""
+        def func(x):
+            return np.sum(np.power(x, 2)), 2 * x
+
+        shgo(
+            func,
+            bounds=[[-1, 1], [1, 2]],
+            n=100, iters=5,
+            sampling_method="sobol",
+            minimizer_kwargs={'method': 'SLSQP', 'jac': True}
+        )
+
+        
 # Failure test functions
 class TestShgoFailures(object):
     def test_1_maxiter(self):

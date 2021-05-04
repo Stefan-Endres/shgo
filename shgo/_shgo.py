@@ -14,7 +14,7 @@ import sys
 # Scientific python imports
 import numpy as np
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize import OptimizeResult, minimize#, MemoizeJac
 # Library imports
 from shgo._shgo_lib import sobol_seq
 from shgo._shgo_lib._complex import Complex
@@ -463,7 +463,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
                  iters=None, callback=None, minimizer_kwargs=None,
-                 options=None, sampling_method='simplicial',workers=1):
+                 options=None, sampling_method='simplicial', workers=1):
 
         # Input checks
         methods = ['sobol', 'simplicial']
@@ -472,7 +472,20 @@ class SHGO(object):
                               " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
-        self.func = func
+        
+        # Split obj func if given with Jac
+        try:
+            if ((minimizer_kwargs['jac'] is True) and 
+               (not callable(minimizer_kwargs['jac']))):
+                self.func = MemoizeJac(func)
+                jac = self.func.derivative
+                minimizer_kwargs['jac'] = jac
+                func = self.func  #.fun
+            else:
+                self.func = func  # Normal definition of objective function
+        except (TypeError, KeyError):
+            self.func = func  # Normal definition of objective function
+
         self.bounds = bounds
         self.args = args
         self.callback = callback
@@ -1599,3 +1612,32 @@ class LMapCache:
         self.xl_maps = np.ndarray.tolist(self.xl_maps)
         self.f_maps = np.ndarray.tolist(self.f_maps)
         return results
+
+# TODO: In scipy version delete this
+class MemoizeJac(object):
+    """ Decorator that caches the return values of a function returning `(fun, grad)`
+        each time it is called. """
+
+    def __init__(self, fun):
+        self.fun = fun
+        self.jac = None
+        self._value = None
+        self.x = None
+
+    def _compute_if_needed(self, x, *args):
+        if not np.all(x == self.x) or self._value is None or self.jac is None:
+            self.x = np.asarray(x).copy()
+            fg = self.fun(x, *args)
+            self.jac = fg[1]
+            self._value = fg[0]
+
+    def __call__(self, x, *args):
+        """ returns the the function value """
+        self._compute_if_needed(x, *args)
+        return self._value
+
+    def derivative(self, x, *args):
+        self._compute_if_needed(x, *args)
+        return self.jac
+    
+    
