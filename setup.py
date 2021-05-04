@@ -8,7 +8,7 @@ def readme():
 
 
 setup(name='shgo',
-      version='0.4.8',
+      version='0.5.0',
       description='Simplicial homology global optimisation',
       url='https://github.com/stefan-endres/shgo',
       author='Stefan Endres, Carl Sandrock',
@@ -30,7 +30,7 @@ setup(name='shgo',
           #   3 - Alpha
           #   4 - Beta
           #   5 - Production/Stable
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
 
           # Indicate who your project is intended for
           'Intended Audience :: Science/Research',
@@ -47,6 +47,7 @@ setup(name='shgo',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
       ],
       test_suite='shgo.tests.test__shgo',
       zip_safe=False)
