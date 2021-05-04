@@ -1,13 +1,10 @@
 import logging
-import numpy
+import numpy as np
 import pytest
 from pytest import raises as assert_raises, warns
 from nose.tools import nottest
 from shgo import shgo
 from shgo._shgo import SHGO
-
-#TODO DELETE
-
 
 class StructTestFunction(object):
     def __init__(self, bounds, expected_x, expected_fun=None,
@@ -40,7 +37,7 @@ class StructTest1(StructTestFunction):
         return x[0] ** 2 + x[1] ** 2
 
     def g(x):
-        return -(numpy.sum(x, axis=0) - 6.0)
+        return -(np.sum(x, axis=0) - 6.0)
 
     cons = wrap_constraints(g)
 
@@ -52,17 +49,16 @@ test1_2 = StructTest1(bounds=[(0, 1), (0, 1)],
 test1_3 = StructTest1(bounds=[(None, None), (None, None)],
                       expected_x=[0, 0])
 
-
 class StructTest2(StructTestFunction):
     """
     Scalar function with several minima to test all minimiser retrievals
     """
 
     def f(self, x):
-        return (x - 30) * numpy.sin(x)
+        return (x - 30) * np.sin(x)
 
     def g(x):
-        return 58 - numpy.sum(x, axis=0)
+        return 58 - np.sum(x, axis=0)
 
     cons = wrap_constraints(g)
 
@@ -71,7 +67,7 @@ test2_1 = StructTest2(bounds=[(0, 60)],
                       expected_x=[1.53567906],
                       expected_fun=-28.44677132,
                       # Important: test that funl return is in the correct order
-                      expected_xl=numpy.array([[1.53567906],
+                      expected_xl=np.array([[1.53567906],
                                                [55.01782167],
                                                [7.80894889],
                                                [48.74797493],
@@ -82,7 +78,7 @@ test2_1 = StructTest2(bounds=[(0, 60)],
                                                [26.43039605],
                                                [30.76371366]]),
 
-                      expected_funl=numpy.array([-28.44677132, -24.99785984,
+                      expected_funl=np.array([-28.44677132, -24.99785984,
                                                  -22.16855376, -18.72136195,
                                                  -15.89423937, -12.45154942,
                                                  -9.63133158, -6.20801301,
@@ -92,8 +88,8 @@ test2_1 = StructTest2(bounds=[(0, 60)],
 test2_2 = StructTest2(bounds=[(0, 4.5)],
                       expected_x=[1.53567906],
                       expected_fun=[-28.44677132],
-                      expected_xl=numpy.array([[1.53567906]]),
-                      expected_funl=numpy.array([-28.44677132])
+                      expected_xl=np.array([[1.53567906]]),
+                      expected_funl=np.array([-28.44677132])
                       )
 
 
@@ -178,8 +174,8 @@ test4_1 = StructTest4(bounds=[(-10, 10), ] * 7,
 class StructTest5(StructTestFunction):
     def f(self, x):
         return (-(x[1] + 47.0)
-                * numpy.sin(numpy.sqrt(abs(x[0] / 2.0 + (x[1] + 47.0))))
-                - x[0] * numpy.sin(numpy.sqrt(abs(x[0] - (x[1] + 47.0))))
+                * np.sin(np.sqrt(abs(x[0] / 2.0 + (x[1] + 47.0))))
+                - x[0] * np.sin(np.sqrt(abs(x[0] - (x[1] + 47.0))))
                 )
 
     g = None
@@ -233,6 +229,24 @@ testLJ = StructTestLJ(bounds=boundsLJ,
                       #            -1.50000222e+00]
                       )
 
+
+class StructTestS(StructTestFunction):
+    #def f(self, x):
+    #    print(f'np.sum(x)**2 = {np.sum(x)**2}')
+    #    return np.sum(x)**2
+
+    def f(self, x):
+        return ((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2
+                + (x[2] - 0.5) ** 2  + (x[3] - 0.5) ** 2 )
+    
+    g = None
+    cons = wrap_constraints(g)
+
+
+test_s = StructTestS(bounds=[(0, 2.0), ] * 4,
+                     expected_fun=0.0,
+                     expected_x=np.ones(4) - 0.5
+                     )
 
 class StructTestTable(StructTestFunction):
     def f(self, x):
@@ -291,23 +305,23 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
     logging.info(res)
 
     if test.expected_x is not None:
-        numpy.testing.assert_allclose(res.x, test.expected_x,
+        np.testing.assert_allclose(res.x, test.expected_x,
                                       rtol=test_atol,
                                       atol=test_atol)
 
     # (Optional tests)
     if test.expected_fun is not None:
-        numpy.testing.assert_allclose(res.fun,
+        np.testing.assert_allclose(res.fun,
                                       test.expected_fun,
                                       atol=test_atol)
 
     if test.expected_xl is not None:
-        numpy.testing.assert_allclose(res.xl,
+        np.testing.assert_allclose(res.xl,
                                       test.expected_xl,
                                       atol=test_atol)
 
     if test.expected_funl is not None:
-        numpy.testing.assert_allclose(res.funl,
+        np.testing.assert_allclose(res.funl,
                                       test.expected_funl,
                                       atol=test_atol)
     logging.info(f'res = {res}')
@@ -416,7 +430,7 @@ class TestShgoSimplicialTestFunctions(object):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
         run_test(test4_1, n=1, sampling_method='simplicial')
 
-    def test_lj_symmetry(self):
+    def test_f5_1_lj_symmetry(self):
         """LJ: Symmetry constrained test function"""
         options = {'symmetry': [0, ]*6,
                    'disp': True}
@@ -434,6 +448,30 @@ class TestShgoSimplicialTestFunctions(object):
         #         options=options, iters=4,
         #         sampling_method='simplicial')
 
+    def test_f5_2_cons_symmetry(self):
+        """Symmetry constrained test function"""
+        options = {'symmetry': [0, 0],
+                   'disp': True}
+
+        #dim = len(options['symmetry'])
+        #test_s = StructTestS(bounds=[(0, 2.0),]*dim,
+        #                     expected_fun=np.zeros(dim),
+        #                      expected_x=np.zeros(dim))
+
+        run_test(test1_1, n=100,
+                 options=options, iters=2,
+                 sampling_method='simplicial')
+
+    def test_f5_3_cons_symmetry(self):
+        """Assymmetrically constrained test function"""
+        options = {'symmetry': [0, 0, 0, 3],
+                   'disp': True}
+
+        run_test(test_s, #n=10000,
+                 options=options,
+                 #iters=2,
+                 iters=3,
+                 sampling_method='simplicial')
 
 # Argument test functions
 class TestShgoArguments(object):
@@ -460,9 +498,9 @@ class TestShgoArguments(object):
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
                    n=None, iters=1, sampling_method='sobol')
 
-        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
-        numpy.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
+        np.testing.assert_allclose(res.fun, test2_1.expected_fun, atol=1e-5)
 
     def test_3_1_disp_simplicial(self):
         """Iterative sampling on TestFunction 1 and 2  (multi and univariate)"""
@@ -545,20 +583,20 @@ class TestShgoArguments(object):
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
                    n=None, iters=None, options=options,
                    sampling_method='sobol')
-        numpy.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
 
     def test_5_1_simplicial_argless(self):
         """Test Default simplicial sampling settings on TestFunction 1"""
         res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons)
-        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
 
     def test_5_2_sobol_argless(self):
         """Test Default sobol sampling settings on TestFunction 1"""
         res = shgo(test1_1.f, test1_1.bounds, constraints=test1_1.cons,
                    sampling_method='sobol')
-        numpy.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test1_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
 
     def test_6_1_simplicial_max_iter(self):
@@ -566,18 +604,18 @@ class TestShgoArguments(object):
         options = {'max_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
-        numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
+        np.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
     def test_6_2_simplicial_min_iter(self):
         """Test that maximum iteration option works on TestFunction 3"""
         options = {'min_iter': 2}
         res = shgo(test3_1.f, test3_1.bounds, constraints=test3_1.cons,
                    options=options, sampling_method='simplicial')
-        numpy.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
+        np.testing.assert_allclose(res.x, test3_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
-        numpy.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
+        np.testing.assert_allclose(res.fun, test3_1.expected_fun, atol=1e-5)
 
     def test_7_1_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers with constraints"""
@@ -603,10 +641,10 @@ class TestShgoArguments(object):
                        'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg', 'trust-exact',
                        'trust-krylov']:
             def jac(x):
-                return numpy.array([2 * x[0], 2 * x[1]]).T
+                return np.array([2 * x[0], 2 * x[1]]).T
 
             def hess(x):
-                return numpy.array([[2, 0], [0, 2]])
+                return np.array([[2, 0], [0, 2]])
 
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
@@ -639,8 +677,8 @@ class TestShgoArguments(object):
                    'disp': True}
         res = shgo(test1_2.f, test1_2.bounds, n=10, iters=None,
                    options=options, sampling_method='sobol')
-        numpy.testing.assert_equal(0, res.x[0])
-        numpy.testing.assert_equal(0, res.x[1])
+        np.testing.assert_equal(0, res.x[0])
+        np.testing.assert_equal(0, res.x[1])
 
     @nottest
     def test_12_sobol_inf_cons(self):
@@ -652,7 +690,7 @@ class TestShgoArguments(object):
                    'f_min': 0.0}
         res = shgo(test1_2.f, test1_2.bounds, n=1, iters=None,
                    options=options, sampling_method='sobol')
-        numpy.testing.assert_equal(0.0, res.fun)
+        np.testing.assert_equal(0.0, res.fun)
 
     def test_13_high_sobol(self):
         """Test init of high-dimensional sobol sequences"""
@@ -683,14 +721,16 @@ class TestShgoArguments(object):
     def test_17_custom_sampling(self):
         """Test the functionality to add custom sampling methods to shgo"""
         def sample(n, d):
-            return numpy.random.uniform(size=(n,d))
+            return np.random.uniform(size=(n,d))
         
         run_test(test1_1, n=30, sampling_method=sample)
 
     def test_18_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 
-        run_test(test1_1, n=30, workers=1)
+        run_test(test1_1, n=30, workers=1)  # Constrained
+        run_test(test_s, n=30, workers=1)  # Unconstrained
+
 
 # Failure test functions
 class TestShgoFailures(object):
@@ -700,9 +740,9 @@ class TestShgoFailures(object):
         res = shgo(test4_1.f, test4_1.bounds, n=2, iters=None,
                    options=options, sampling_method='sobol')
 
-        numpy.testing.assert_equal(False, res.success)
-        #numpy.testing.assert_equal(4, res.nfev)
-        numpy.testing.assert_equal(4, res.tnev)
+        np.testing.assert_equal(False, res.success)
+        #np.testing.assert_equal(4, res.nfev)
+        np.testing.assert_equal(4, res.tnev)
 
     def test_2_sampling(self):
         """Rejection of unknown sampling method"""
@@ -717,9 +757,9 @@ class TestShgoFailures(object):
                    'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='sobol')
-        numpy.testing.assert_equal(False, res.success)
-        # numpy.testing.assert_equal(9, res.nfev)
-        numpy.testing.assert_equal(12, res.nfev)
+        np.testing.assert_equal(False, res.success)
+        # np.testing.assert_equal(9, res.nfev)
+        np.testing.assert_equal(12, res.nfev)
 
     def test_3_2_no_min_pool_simplicial(self):
         """Check that the routine stops when no minimiser is found
@@ -728,7 +768,7 @@ class TestShgoFailures(object):
                    'disp': True}
         res = shgo(test_table.f, test_table.bounds, n=3, options=options,
                    sampling_method='simplicial')
-        numpy.testing.assert_equal(False, res.success)
+        np.testing.assert_equal(False, res.success)
 
     def test_4_1_bound_err(self):
         """Specified bounds ub > lb"""
@@ -750,7 +790,7 @@ class TestShgoFailures(object):
                    constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='sobol')
 
-        numpy.testing.assert_equal(False, res.success)
+        np.testing.assert_equal(False, res.success)
 
     def test_5_1_2_infeasible_sobol(self):
         """Ensures the algorithm terminates on infeasible problems
@@ -763,7 +803,7 @@ class TestShgoFailures(object):
                    constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='sobol')
 
-        numpy.testing.assert_equal(False, res.success)
+        np.testing.assert_equal(False, res.success)
 
     def test_5_2_infeasible_simplicial(self):
         """Ensures the algorithm terminates on infeasible problems
@@ -775,7 +815,7 @@ class TestShgoFailures(object):
                    constraints=test_infeasible.cons, n=100, options=options,
                    sampling_method='simplicial')
 
-        numpy.testing.assert_equal(False, res.success)
+        np.testing.assert_equal(False, res.success)
 
     def test_6_1_lower_known_f_min(self):
         """Test Global mode limiting local evaluations with f* too high"""

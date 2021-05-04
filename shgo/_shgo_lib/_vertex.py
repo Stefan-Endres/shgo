@@ -10,10 +10,24 @@ import multiprocessing as mp
 
 """Vertex objects"""
 class VertexBase(ABC):
+    """
+    Base class for a vertex.
+    """
     def __init__(self, x, nn=None, index=None):
+        """
+        Initiation of a vertex object.
+
+        Parameters
+        ----------
+        x : tuple or vector
+            The geometric location (domain).
+        nn : list, optional
+            Nearest neighbour list.
+        index : int, optional
+            Index of vertex.
+        """
         self.x = x
         self.hash = hash(self.x)  # Save precomputed hash
-        #self.orderv = sum(x)  #TODO: Delete if we can't prove the order triangulation conjecture
 
         if nn is not None:
             self.nn = set(nn)  # can use .indexupdate to add a new list
@@ -24,10 +38,6 @@ class VertexBase(ABC):
 
     def __hash__(self):
         return self.hash
-
-    def __mul__(self, v2):
-        s = SimplexOrdered([self, v2])
-        return s
 
     def __getattr__(self, item):
         if item not in ['x_a']:
@@ -55,7 +65,6 @@ class VertexBase(ABC):
             constr += '{} '.format(vc.x)
 
         print(constr)
-        #print('Order = {}'.format(self.order))
 
     def star(self):
         """
@@ -67,23 +76,6 @@ class VertexBase(ABC):
         self.st = self.nn
         self.st.add(self)
         return self.st
-
-class VertexCube(VertexBase):
-    """Vertex class to be used for a pure simplicial complex with no associated
-    differential geometry (single level domain that exists in R^n)"""
-    def __init__(self, x, nn=None, index=None):
-        super().__init__(x, nn=nn, index=index)
-
-    def connect(self, v):
-        if v is not self and v not in self.nn:
-            self.nn.add(v)  #TODO: Use update for adding multiple vectors?
-            v.nn.add(self)
-
-    def disconnect(self, v):
-        if v in self.nn:
-            self.nn.remove(v)
-            v.nn.remove(self)
-
 
 class VertexScalarField(VertexBase):
     """Add homology properties of a scalar field f: R^n --> R associated with
@@ -118,6 +110,13 @@ class VertexScalarField(VertexBase):
 
 
     def connect(self, v):
+        """
+        Connects self to another vertex object v.
+
+        Parameters
+        ----------
+        v : VertexBase or VertexScalarField object
+        """
         if v is not self and v not in self.nn:
             self.nn.add(v)
             v.nn.add(self)
@@ -171,6 +170,9 @@ class VertexVectorField(VertexBase):
 Cache objects
 """
 class VertexCacheBase(object):
+    """
+    Base class for a vertex cache for a simplicial complex.
+    """
     def __init__(self):
 
         self.cache = collections.OrderedDict()  #TODO: Perhaps unneeded?
@@ -185,58 +187,6 @@ class VertexCacheBase(object):
     def __iter__(self):
         for v in self.cache:
             yield self.cache[v]
-        return
-
-    def move(self, v, x):
-        """
-        Move a vertex object v to a new set of coordinates x
-
-        :param v: Vertex object to move
-        :param x: tuple, new coordinates
-        :return:
-        """
-        self.cache.pop(v.x)
-
-        # Note that we need to remove the object from the nn sets since the hash
-        # value is changed although the object stays the same.
-        vn = copy.copy(v.nn)
-        for vn in vn:
-            v.disconnect(vn)
-
-        v.x = x
-        v.hash = hash(x)
-        try:
-            v.x_a = np.array(x)
-        except AttributeError:
-            pass
-
-        self.cache[x] = v
-        # Reconnect new hashes
-        vn = copy.copy(v.nn)
-        for vn in vn:
-            v.connect(vn)
-
-        return self.cache[x]
-
-    def remove(self, v):
-        """
-
-        :param v:  Vertex object to remove
-        :return:
-        """
-        ind = v.index
-
-        vn = copy.copy(v.nn)
-        for vn in vn:
-            v.disconnect(vn)
-
-        self.cache.pop(v.x)
-
-        for v in self:
-            if v.index > ind:
-                v.index -= 1
-        self.index -= 1
-
         return
 
     def size(self):
@@ -255,28 +205,33 @@ class VertexCacheBase(object):
         for v in self.cache:
             self.cache[v].print_out()
 
-class VertexCacheIndex(VertexCacheBase):
-    def __init__(self):
-        #TODO: Allow for optional constraint arguments for non-linear
-        # triangulations
-        super().__init__()
-        self.Vertex = VertexCube
 
-    def __getitem__(self, x, nn=None):  #TODO: Check if no_index is significant speedup
-        try:
-            return self.cache[x]
-        except KeyError:
-            self.index += 1
-            xval = self.Vertex(x, index=self.index)
-            # logging.info("New generated vertex at x = {}".format(x))
-            # NOTE: Surprisingly high performance increase if logging is commented out
-            self.cache[x] = xval
-            return self.cache[x]
-
+#TODO: Make a non-linear constraint cache with no scalar field
 class VertexCacheField(VertexCacheBase):
     def __init__(self, field=None, field_args=(), g_cons=None, g_cons_args=(),
                  workers=None):
-        #TODO: Make a non-linear constraint cache with no scalar field
+        """
+        Class for a vertex cache for a simplicial complex with an associated
+        field.
+
+        Parameters
+        ----------
+        field : callable
+            Scalar or vector field callable.
+        field_args : tuple, optional
+            Any additional fixed parameters needed to completely specify the
+            field function
+        g_cons : dict or sequence of dict, optional
+            Constraints definition.
+            Function(s) ``R**n`` in the form::
+        g_cons_args : tuple, optional
+            Any additional fixed parameters needed to completely specify the
+            constraint functions
+        workers : int  optional
+            Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
+             functions in parrallel.
+
+        """
         #TODO: add possible h_cons tolerance check
         super().__init__()
         self.index = -1
@@ -312,7 +267,6 @@ class VertexCacheField(VertexCacheBase):
 
 
     def __getitem__(self, x, nn=None): #TODO: Test to add optional nn argument?
-        #NOTE: To use nn arg do ex. V.__getitem__((1,2,3), [3,4,7])
         try:
             return self.cache[x]
         except KeyError:
@@ -337,34 +291,6 @@ class VertexCacheField(VertexCacheBase):
         self.process_fpool()
         self.proc_minimisers()
 
-    def recompute_pools(self):
-        pass
-        #TODO: This will recompute pools to include vertices with missing info
-        #      and purge vertices that already have info computed. Only to be
-        #      run when loading data from hard drive disk
-        for v in self:
-            # Update function checks
-            try:
-                v.f
-                try:
-                    self.fpool.remove(v)
-                except KeyError:
-                    pass
-            except AttributeError:
-                self.fpool.add(v)
-
-            # Update feasibility checks
-            try:
-                v.feasible
-                try:
-                    self.gpool.remove(v)
-                except KeyError:
-                    pass
-            except AttributeError:
-                self.gpool.add(v)
-
-        return self.fpool, self.gpool
-
     def feasibility_check(self, v):
         v.feasible = True
         for g, args in zip(self.g_cons, self.g_cons_args):
@@ -374,16 +300,26 @@ class VertexCacheField(VertexCacheBase):
                 break
 
     def compute_sfield(self, v):
-        try: #TODO: Remove exception handling?
+        """
+        Compute the scalar field values of a vertex object `v`.
+
+        Parameters
+        ----------
+        v : VertexBase or VertexScalarField object
+        """
+        try:
             v.f = self.field(v.x_a, *self.field_args)
             self.nfev += 1
-        except:  #TODO: except only various floating issues
-            #logging.warning(f"Field function not found at x = {self.x_a}")
+        except:
             v.f = np.inf
+            #logging.warning(f"Field function not found at x = {self.x_a}")
         if np.isnan(v.f):
             v.f = np.inf
 
     def proc_gpool(self):
+        """
+        Process all constraints.
+        """
         if self.g_cons is not None:
             for v in self.gpool:
                 self.feasibility_check(v)
@@ -391,6 +327,9 @@ class VertexCacheField(VertexCacheBase):
         self.gpool = set()
 
     def pproc_gpool(self):
+        """
+        Process all constraints in parallel.
+        """
         gpool_l = []
         for v in self.gpool:
             gpool_l.append(v.x_a)
@@ -400,6 +339,9 @@ class VertexCacheField(VertexCacheBase):
             v.feasible = g  # set vertex object attribute v.feasible = g (bool)
 
     def proc_fpool_g(self):
+        """
+        Process all field functions with constraints supplied.
+        """
         # TODO: do try check if v.f exists
         for v in self.fpool:
             if v.feasible:
@@ -408,6 +350,9 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()
 
     def proc_fpool_nog(self):
+        """
+        Process all field functions with no constraints supplied.
+        """
         # TODO: do try check if v.f exists
         for v in self.fpool:
             self.compute_sfield(v)
@@ -416,6 +361,9 @@ class VertexCacheField(VertexCacheBase):
 
     #TODO: Make static method to possibly improve pickling speed
     def pproc_fpool_g(self):
+        """
+        Process all field functions with constraints supplied in parallel.
+        """
         #TODO: Ensure that .f is not already computed? (it shouldn't be addable
         #      to the self.fpool if it is).
         self.wfield.func
@@ -434,6 +382,9 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()
 
     def pproc_fpool_nog(self):
+        """
+        Process all field functions with no constraints supplied in parallel.
+        """
         #TODO: Ensure that .f is not already computed? (it shouldn't be addable
         #      to the self.fpool if it is).
         self.wfield.func
@@ -451,22 +402,16 @@ class VertexCacheField(VertexCacheBase):
     def proc_minimisers(self):
         """
         Check for minimisers
-        :return:
         """
         for v in self:
             v.minimiser()
             v.maximiser()
 
-        if 0:
-            if v.minimiser():
-                v2._min = False
-                v2.check_min = False
-            if v.maximiser():
-                v2._max = False
-                v2.check_max = False
-
 
 class ConstraintWraper(object):
+    """
+    Object to wrap constraints to pass to `multiprocessing.Pool`.
+    """
     def __init__(self, g_cons, g_cons_args):
         self.g_cons = g_cons
         self.g_cons_args = g_cons_args
@@ -480,6 +425,9 @@ class ConstraintWraper(object):
         return vfeasible
 
 class FieldWraper(object):
+    """
+    Object to wrap field to pass to `multiprocessing.Pool`.
+    """
     def __init__(self, field, field_args):
         self.field = field
         self.field_args = field_args
@@ -494,47 +442,3 @@ class FieldWraper(object):
             v_f = np.inf
 
         return v_f
-
-if __name__ == '__main__':  # TODO: Convert these to unittests
-    v1 = VertexCube((1,2,-3.3))
-
-    print(v1)
-    print(v1.x)
-
-    Vertex = VertexCube
-
-    v1 = Vertex((1, 2, 3))
-    v1 = Vertex((1, 2, 3))
-    print(v1)
-    #print(v1.x_a)
-
-    def func(x):
-        return np.sum((x - 3) ** 2) + 2.0 * (x[0] + 10)
-
-
-    def g_cons(x):  # (Requires n > 2)
-        # return x[0] - 0.5 * x[2] + 0.5
-        return x[0]  # + x[2] #+ 0.5
-
-
-    v1 = VertexScalarField((1, 2, -3.3), func)
-    print(v1)
-    print(v1.x)
-    print(v1.x_a)
-
-    def func(x):
-        return np.sum((x - 3) ** 2) + 2.0 * (x[0] + 10)
-
-
-    def g_cons(x):  # (Requires n > 2)
-        # return x[0] - 0.5 * x[2] + 0.5
-        return x[0]  # + x[2] #+ 0.5
-
-    #V = VertexCache()
-    V = VertexCacheField(func)
-    print(V)
-    V[(1,2,3)]
-    V[(1,2,3)]
-    V.__getitem__((1,2,3), None)
-    V.__getitem__((1,2,3), [3,4,7])
-    #TODO: ADD THIS TO COMPLEX:

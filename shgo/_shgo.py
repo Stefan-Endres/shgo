@@ -20,7 +20,7 @@ from shgo._shgo_lib import sobol_seq
 from shgo._shgo_lib._complex import Complex
 __all__ = ['shgo', 'SHGO']
 
-
+#TODO: Add symmetry contraints for the random sampling (?)
 
 
 def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
@@ -205,6 +205,10 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         User defined sampling functions must accept two arguments of ``n``
         sampling points of dimension ``dim`` per call and output an array of
         sampling points with shape `n x dim`.
+
+    workers : int  optional
+        Uses `multiprocessing.Pool <multiprocessing>`) to sample and run the 
+        local serial minimizatons in parrallel.
 
     Returns
     -------
@@ -1109,7 +1113,6 @@ class SHGO(object):
                         break
             # Note first iteration is outside loop:
             if force_iter:
-                print(f'RUNNING!')
                 if self.disp:
                     logging.info(
                         'SHGO.iters in function minimise_pool = {}'.format(
@@ -1347,7 +1350,7 @@ class SHGO(object):
         if self.disp:
             print('Generating sampling points')
         self.sampling(self.nc, self.dim)
-
+        print(f'self.sampling(self.nc, self.dim) = {self.sampling(self.nc, self.dim)}')
         # Append minimizer points
         #TODO: n_prc needs to add len(self.LMC.xl_maps) for self.delaunay_triangulation
         if len(self.LMC.xl_maps) > 0:
