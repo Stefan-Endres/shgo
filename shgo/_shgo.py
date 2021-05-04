@@ -1350,7 +1350,7 @@ class SHGO(object):
         if self.disp:
             print('Generating sampling points')
         self.sampling(self.nc, self.dim)
-        print(f'self.sampling(self.nc, self.dim) = {self.sampling(self.nc, self.dim)}')
+        #print(f'self.sampling(self.nc, self.dim) = {self.sampling(self.nc, self.dim)}')
         # Append minimizer points
         #TODO: n_prc needs to add len(self.LMC.xl_maps) for self.delaunay_triangulation
         if len(self.LMC.xl_maps) > 0:

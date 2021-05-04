@@ -1,43 +1,5 @@
 """
 Base classes for low memory simplicial complex structures.
-
-TODO: -Allow for sub-triangulations to track arbitrary points. Detect which
-      simplex it is in and then connect the new points to it
-      -Turn the triangulation into a generator that yields a specified number
-      of finite points. Ideas:
-       https://docs.python.org/2/library/itertools.html#itertools.product
-      -Track only origin-suprenum vectors instead of using vertex group struct-
-       tures for mesh refinement
-
-
-TODO: -Approximate vector field if no vfield is field. Construct by finding the
-      - average vector field at a vertex???  Note that we can compute vector
-      field approximations by solving a LP that fits the scalar approximations
-      (dotted with unit vectors)
-
-TODO: -The ugliness of H.V[(0,)] for 1-dimensional complexes
-
-TODO: -Replace split_generation with refine (for limited points)
-
-TODO: -Get rid of Complex.H (vertex group) structures
-
-TODO: -Check domains for degeneracy
-
-TODO: -Method to purge infeasible points
-
-TODO: -Add hash tables to store vector pair values in the ab_C container in
-       refine_local_space method
-
-FUTURE: Triangulate arbitrary domains other than n-cubes
-(ex. using delaunay and low disc. sampling subject to constraints, or by adding
-     n-cubes and other geometries)
-
-     Starting point:
-     An algorithm for automatic Delaunay triangulation of arbitrary planar domains
-     https://www.sciencedirect.com/science/article/pii/096599789600004X
-
-    Also note that you can solve a linear system of constraints to find all the
-    initial vertices (NP-hard operation)
 """
 # Std. Library
 import copy

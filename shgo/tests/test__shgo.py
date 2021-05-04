@@ -731,6 +731,41 @@ class TestShgoArguments(object):
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
 
+    def test_19_constrained_args(self):
+        """Test that constraints can be passed to arguments"""
+        def eggholder(x):
+            return (-(x[1] + 47.0)
+                    * np.sin(np.sqrt(abs(x[0] / 2.0 + (x[1] + 47.0))))
+                    - x[0] * np.sin(np.sqrt(abs(x[0] - (x[1] + 47.0))))
+                    )
+
+        def f(x):  # (cattle-feed)
+            return 24.55 * x[0] + 26.75 * x[1] + 39 * x[2] + 40.50 * x[3]
+
+        bounds = [(0, 1.0), ] * 4
+        
+        def g1_modified(x, i):
+            return i * 2.3 * x[0] + i * 5.6 * x[1] + 11.1 * x[2] + 1.3 * x[
+                3] - 5  # >=0
+
+        def g2(x):
+            return (12 * x[0] + 11.9 * x[1] + 41.8 * x[2] + 52.1 * x[3] - 21
+                    - 1.645 * np.sqrt(0.28 * x[0] ** 2 + 0.19 * x[1] ** 2
+                                      + 20.5 * x[2] ** 2 + 0.62 * x[3] ** 2)
+                    )  # >=0
+
+        def h1(x):
+            return x[0] + x[1] + x[2] + x[3] - 1  # == 0
+
+
+        cons = ({'type': 'ineq', 'fun': g1_modified, "args": (0,)},
+                {'type': 'ineq', 'fun': g2},
+                {'type': 'eq', 'fun': h1})
+
+        res_modConstr = shgo(f, bounds, iters=3, constraints=cons)
+        # using constrain with arguments AND sampling method sobol
+        res_modConstr_sobol = shgo(f, bounds, iters=3, constraints=cons,
+                                   sampling_method='sobol')
 
 # Failure test functions
 class TestShgoFailures(object):
