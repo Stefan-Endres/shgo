@@ -231,9 +231,6 @@ testLJ = StructTestLJ(bounds=boundsLJ,
 
 
 class StructTestS(StructTestFunction):
-    #def f(self, x):
-    #    print(f'np.sum(x)**2 = {np.sum(x)**2}')
-    #    return np.sum(x)**2
 
     def f(self, x):
         return ((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2
@@ -368,8 +365,6 @@ class TestShgoSobolTestFunctions(object):
     @pytest.mark.slow
     def test_f4_sobol(self):
         """NLP: (High dimensional) Hock and Schittkowski 11 problem (HS11)"""
-        # run_test(test4_1, n=500)
-        # run_test(test4_1, n=800)
         options = {'infty_constraints': False}
         #run_test(test4_1, n=990, options=options)
         run_test(test4_1, n=990*2, options=options)
@@ -440,23 +435,10 @@ class TestShgoSimplicialTestFunctions(object):
                  options=options, iters=3,
                  sampling_method='simplicial')
 
-        #run_test(testLJ, args=args, n=None,
-        #         options=options, iters=3,
-        #         sampling_method='simplicial')
-
-        #run_test(testLJ, args=args, n=None,
-        #         options=options, iters=4,
-        #         sampling_method='simplicial')
-
     def test_f5_2_cons_symmetry(self):
         """Symmetry constrained test function"""
         options = {'symmetry': [0, 0],
                    'disp': True}
-
-        #dim = len(options['symmetry'])
-        #test_s = StructTestS(bounds=[(0, 2.0),]*dim,
-        #                     expected_fun=np.zeros(dim),
-        #                      expected_x=np.zeros(dim))
 
         run_test(test1_1, n=100,
                  options=options, iters=2,
@@ -469,7 +451,6 @@ class TestShgoSimplicialTestFunctions(object):
 
         run_test(test_s, #n=10000,
                  options=options,
-                 #iters=2,
                  iters=3,
                  sampling_method='simplicial')
 
@@ -482,12 +463,8 @@ class TestShgoArguments(object):
     def test_1_2_simpl_iter(self):
         """Iterative simplicial on TestFunction 2 (univariate)"""
         options = {'minimize_every_iter': False}
-        #run_test(test2_1, n=None, iters=7, options=options,
-        #         sampling_method='simplicial')
         run_test(test2_1, n=None, iters=9, options=options,
                  sampling_method='simplicial')
-        #run_test(test2_1, n=None, iters=12, options=options,
-        #         sampling_method='simplicial')
 
     def test_2_1_sobol_iter(self):
         """Iterative Sobol sampling on TestFunction 1 (multivariate)"""
