@@ -2,7 +2,6 @@ import logging
 import numpy as np
 import pytest
 from pytest import raises as assert_raises, warns
-from nose.tools import nottest
 from shgo import shgo
 from shgo._shgo import SHGO
 
@@ -293,7 +292,7 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        expected_x=None
                                        )
 
-@nottest
+@pytest.mark.skip
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol', workers=None):
@@ -554,7 +553,7 @@ class TestShgoArguments(object):
 
     #@pytest.mark.slow
     #@pytest.mark.skip(reason="no way of currently testing this")
-    @nottest
+    @pytest.mark.skip
     def test_4_3_known_f_min(self):
         """Test Global mode limiting local evaluations"""
         options = {  # Specify known function value
@@ -569,7 +568,7 @@ class TestShgoArguments(object):
                  test_atol=1e-5, options=options,
                  sampling_method='sobol')
 
-    #@nottest
+    #@pytest.mark.skip
     def test_4_4_known_f_min(self):
         """Test Global mode limiting local evaluations for 1D funcs"""
         options = {  # Specify known function value
@@ -680,7 +679,7 @@ class TestShgoArguments(object):
         np.testing.assert_equal(0, res.x[0])
         np.testing.assert_equal(0, res.x[1])
 
-    @nottest
+    @pytest.mark.skip
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
         #TODO: This test doesn't cover anything new, it is unknown what the
@@ -731,6 +730,7 @@ class TestShgoArguments(object):
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
 
+    @pytest.mark.skip
     def test_19_constrained_args(self):
         """Test that constraints can be passed to arguments"""
         def eggholder(x):
