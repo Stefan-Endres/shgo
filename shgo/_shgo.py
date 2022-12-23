@@ -15,7 +15,7 @@ import sys
 import numpy as np
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize#, MemoizeJac
-#from scipy.stats import qmc
+from scipy.stats import qmc
 # Library imports
 from shgo._shgo_lib._complex import Complex
 __all__ = ['shgo', 'SHGO']
@@ -460,7 +460,7 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
 
 class SHGO(object):
     def __init__(self, func, bounds, args=(), constraints=None, n=None,
-                 iters=None, callback=None, minimizer_kwargs=None,
+                 iters=1, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='simplicial', workers=1):
 
         # Input checks
@@ -625,19 +625,13 @@ class SHGO(object):
         self.hgr = 0  # Homology group rank
 
         # Default settings if no sampling criteria.
-        if (self.n is None) and (self.iters is None):
+        if (self.n is None) and (self.iters == 1):
             self.n = 128
             self.nc = 0  # self.n
-        if self.iters is None:
-            self.iters = 1
         if (self.n is None) and not (sampling_method == 'simplicial'):
             self.n = 128
             self.nc = 0  # self.n
 
-        if not ((self.maxiter is None) and (self.maxfev is None) and (
-                self.maxev is None)
-                and (self.minhgrd is None) and (self.f_min_true is None)):
-            self.iters = None
 
         # Set complex construction mode based on a provided stopping criteria:
         # Initialise sampling Complex and function cache
@@ -743,7 +737,7 @@ class SHGO(object):
         # Algorithm functionality
         # Only evaluate a few of the best candiates
         self.local_iter = options.get('local_iter', False)
-
+        self.ignore_globals = options.get('ignore_globals ', False)
         self.infty_cons_sampl = options.get('infty_constraints', True)
 
         # Feedback
@@ -775,9 +769,7 @@ class SHGO(object):
         # Final iteration only needed if pools weren't minimised every iteration
         if not self.minimize_every_iter:
             if not self.break_routine:
-                # TODO: Improve or document ignore_globals (otherwise only the
-                #       first entry in the pool is processed)
-                self.find_minima(ignore_globals=True)
+                self.find_minima(ignore_globals=self.ignore_globals)
 
         self.res.nit = self.iters_done  # + 1
         self.fn = self.HC.V.nfev
@@ -838,9 +830,8 @@ class SHGO(object):
         mi = min(x for x in [self.iters, self.maxiter] if x is not None)
         logging.info(f'Iterations done = {self.iters_done} / {mi}')
 
-        if self.iters is not None:
-            if self.iters_done >= (self.iters):
-                self.stop_global = True
+        if self.iters_done >= (self.iters):
+            self.stop_global = True
 
         if self.maxiter is not None:  # Stop for infeasible sampling
             if self.iters_done >= (self.maxiter):
@@ -923,9 +914,8 @@ class SHGO(object):
         -------
         stop : bool
         """
+        self.finite_iterations()
         if self.maxiter is not None:
-            self.finite_iterations()
-        if self.iters is not None:
             self.finite_iterations()
         if self.maxfev is not None:
             self.finite_fev()
@@ -1038,6 +1028,7 @@ class SHGO(object):
         self.n_sampled = self.nc#self.HC.V.size()  # nevs counted in triangulation.py
 
     # Hypercube minimizers
+
     def minimizers(self):
         """
         Returns the indexes of all minimizers
@@ -1276,9 +1267,7 @@ class SHGO(object):
             x_min_t = tuple(x_min)
             # Find the normalized tuple in the Vertex cache:
             x_min_t_norm = self.X_min_cache[tuple(x_min_t)]
-
             x_min_t_norm = tuple(x_min_t_norm)
-
             g_bounds = self.construct_lcb_simplicial(self.HC.V[x_min_t_norm])
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
@@ -1377,7 +1366,6 @@ class SHGO(object):
 
         # Find objective function references
         #self.fun_ref()
-
         self.n_sampled = self.nc
 
     def sampling_sobol(self, n, dim):
@@ -1405,7 +1393,10 @@ class SHGO(object):
         """
         # Generate sampling points.
         # Generate uniform sample points in [0, 1]^m \subset R^m
-        self.C = self.sampling_function(n, dim)
+        if self.n_sampled == 0:
+            self.C = self.sampling_function(n, dim)
+        else:
+            self.C = self.sampling_function(n, dim)
         # Distribute over bounds
         for i in range(len(self.bounds)):
             self.C[:, i] = (self.C[:, i] *

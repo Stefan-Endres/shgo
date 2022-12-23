@@ -291,7 +291,7 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        )
 
 @nottest
-def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
+def run_test(test, args=(), test_atol=1e-5, n=100, iters=1,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol', workers=None):
     res = shgo(test.f, test.bounds, args=args, constraints=test.cons,
@@ -558,7 +558,7 @@ class TestShgoArguments(object):
             'infty_constraints': False}
 
         res = shgo(test2_1.f, test2_1.bounds, constraints=test2_1.cons,
-                   n=None, iters=None, options=options,
+                   n=None, iters=1, options=options,
                    sampling_method='sobol')
         np.testing.assert_allclose(res.x, test2_1.expected_x, rtol=1e-5,
                                       atol=1e-5)
