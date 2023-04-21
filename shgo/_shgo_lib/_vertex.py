@@ -54,14 +54,6 @@ class VertexBase(ABC):
         raise NotImplementedError("This method is only implemented with an "
                                   "associated child of the base class.")
 
-    def print_out(self):
-        print("Vertex: {}".format(self.x))
-        constr = 'Connections: '
-        for vc in self.nn:
-            constr += '{} '.format(vc.x)
-
-        print(constr)
-
     def star(self):
         """Returns the star domain ``st(v)`` of the vertex.
 
@@ -78,6 +70,7 @@ class VertexBase(ABC):
         self.st = self.nn
         self.st.add(self)
         return self.st
+
 
 class VertexScalarField(VertexBase):
     """
@@ -149,7 +142,8 @@ class VertexScalarField(VertexBase):
             v.check_max = True
 
     def minimiser(self):
-        """Check whether this vertex is strictly less than all its neighbours"""
+        """Check whether this vertex is strictly less than all its
+           neighbours"""
         if self.check_min:
             self._min = all(self.f < v.f for v in self.nn)
             self.check_min = False
@@ -167,6 +161,7 @@ class VertexScalarField(VertexBase):
 
         return self._max
 
+
 class VertexVectorField(VertexBase):
     """
     Add homology properties of a scalar field f: R^n --> R^m associated with
@@ -176,7 +171,7 @@ class VertexVectorField(VertexBase):
     def __init__(self, x, sfield=None, vfield=None, field_args=(),
                  vfield_args=(), g_cons=None,
                  g_cons_args=(), nn=None, index=None):
-        super(VertexVectorField, self).__init__(x, nn=nn, index=index)
+        super().__init__(x, nn=nn, index=index)
 
         raise NotImplementedError("This class is still a work in progress")
 
@@ -206,6 +201,7 @@ class VertexCacheBase:
         for v in self.cache:
             self.cache[v].print_out()
 
+
 class VertexCube(VertexBase):
     """Vertex class to be used for a pure simplicial complex with no associated
     differential geometry (single level domain that exists in R^n)"""
@@ -221,6 +217,7 @@ class VertexCube(VertexBase):
         if v in self.nn:
             self.nn.remove(v)
             v.nn.remove(self)
+
 
 class VertexCacheIndex(VertexCacheBase):
     def __init__(self):
@@ -241,9 +238,11 @@ class VertexCacheIndex(VertexCacheBase):
             self.index += 1
             xval = self.Vertex(x, index=self.index)
             # logging.info("New generated vertex at x = {}".format(x))
-            # NOTE: Surprisingly high performance increase if logging is commented out
+            # NOTE: Surprisingly high performance increase if logging
+            # is commented out
             self.cache[x] = xval
             return self.cache[x]
+
 
 class VertexCacheField(VertexCacheBase):
     def __init__(self, field=None, field_args=(), g_cons=None, g_cons_args=(),
@@ -309,7 +308,8 @@ class VertexCacheField(VertexCacheBase):
             self.index += 1
             xval = self.Vertex(x, field=self.field, nn=nn, index=self.index,
                                field_args=self.field_args,
-                               g_cons=self.g_cons, g_cons_args=self.g_cons_args)
+                               g_cons=self.g_cons,
+                               g_cons_args=self.g_cons_args)
 
             self.cache[x] = xval  # Define in cache
             self.gpool.add(xval)  # Add to pool for processing feasibility
@@ -425,6 +425,7 @@ class VertexCacheField(VertexCacheBase):
             v.minimiser()
             v.maximiser()
 
+
 class ConstraintWraper:
     """Object to wrap constraints to pass to `multiprocessing.Pool`."""
     def __init__(self, g_cons, g_cons_args):
@@ -438,6 +439,7 @@ class ConstraintWraper:
                 vfeasible = False
                 break
         return vfeasible
+
 
 class FieldWraper:
     """Object to wrap field to pass to `multiprocessing.Pool`."""
