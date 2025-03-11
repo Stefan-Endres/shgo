@@ -7,6 +7,7 @@ from pytest import raises as assert_raises, warns
 from scipy.optimize import (Bounds, minimize_scalar, minimize, rosen,
                             rosen_der, rosen_hess)
 
+
 from .._shgo import shgo, SHGO
 
 
@@ -298,8 +299,8 @@ test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        expected_x=None
                                        )
 
-
 @pytest.mark.skip("Not a test")
+
 def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
              callback=None, minimizer_kwargs=None, options=None,
              sampling_method='sobol', workers=1):
@@ -702,7 +703,7 @@ class TestShgoArguments:
         numpy.testing.assert_equal(0, res.x[0])
         numpy.testing.assert_equal(0, res.x[1])
 
-    # @nottest
+
     @pytest.mark.skip(reason="no way of currently testing this")
     def test_12_sobol_inf_cons(self):
         """Test to cover the case where f_lowest == 0"""
@@ -778,6 +779,7 @@ class TestShgoArguments:
 
         run_test(test1_1, n=30, workers=1)  # Constrained
         run_test(test_s, n=30, workers=1)  # Unconstrained
+
 
     def test_20_constrained_args(self):
         """Test that constraints can be passed to arguments"""
