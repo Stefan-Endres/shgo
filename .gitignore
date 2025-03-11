@@ -6,6 +6,9 @@ min_map_dev.py
 node_modules
 shgo/patch
 
+# UV lockfile
+uv.lock
+
 # Editor temporary/working/backup files #
 #########################################
 .#*
