@@ -1,0 +1,195 @@
+# https://docs.scipy.org/doc/scipy/dev/contributor/quickstart_ubuntu.html
+
+## Building scipy with Anaconda, from the base directory:
+conda env create -f environment.yml
+#conda activate scipy-dev
+activate scipydev
+
+# This will allow us to import the development version of SciPy in Python regardless of Python’s working directory.
+conda develop .
+
+## Virtual environment:
+source venv/venv/bin/activate
+# pip install stuff you need
+# Also select on PyCharm to use
+# Once finished
+deactivate
+
+## Build instructions
+# https://github.com/scipy/scipy/blob/master/doc/source/building/linux.rst
+# https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html
+
+## Workflow
+###########
+# Start working on the dev branch in ~/projects/scipy
+git checkout -b dev
+
+########### SHGO
+## Start making changes in shgo master in ~/projects/shgo
+[work and changes in shgo]
+
+
+# Start a dev branch
+git checkout -b dev
+(git commit -m ...)
+
+git merge --squash dev
+
+# (Optional) make a new git version tag
+# (Optional) also optionally change the version in the setup.py file
+git tag "v#.#.#"
+
+## After pushing and commits
+
+# (Optional)dev version of your own module
+sudo pip install -e .
+sudo python setup.py test
+
+# (Optional) Upload to PyPi https://packaging.python.org/tutorials/distributing-packages/
+sudo python setup.py sdist
+sudo python setup.py bdist_wheel --universal
+twine upload dist/*
+
+# (CHECK COVERAGE)
+https://coveralls.io/github/Stefan-Endres/shgo?branch=master
+
+
+############ SCIPY
+## Start working on the dev branch in ~/projects/scipy
+proj scipy
+# Delete the old dev branch and then branch a new one
+git branch -d dev
+git checkout -b dev
+
+# cp files from shgo and change imports
+# Note that that function is in my .bashrc file so I just use:
+
+scipy_pull_shgo
+
+# Tests in the scipy directory ~/projects/scipy
+# Normal
+python runtests.py -s optimize
+
+# Only for a single test suite:
+python runtests.py -v -t scipy.<module>.tests.<test_file>
+python runtests.py -v -t scipy.optimize.tests.test__shgo
+python runtests.py -v -t scipy.optimize.tests.test__shgo::TestShgoReturns
+python runtests.py -v -t scipy.optimize.tests.test__shgo::Benchmarks
+
+# NEW:
+python dev.py test -t scipy.optimize.tests.test__shgo
+
+# Run a particular test
+python runtests.py -v -t scipy.<module>.tests.<test_file>::<test_name>
+
+# Verbose
+python runtests.py -v -s optimize
+
+# Doctest and sphinx documentation build
+python runtests.py -g --refguide-check -s optimize
+
+# Test pyflakes (should get some undefined name warnings in scipy/_lib
+
+PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
+
+## (Note) In general check out the .travis.yml file to see what tests are run on Github
+
+# commit changes
+
+git commit -m "
+...
+
+# Push
+git push origin dev
+
+# (IF OLD dev BRANCH WAS DELETED) you need to force a push to the remote repo
+git push -f origin dev
+
+# Ensure that dev tests are passing:
+https://travis-ci.org/Stefan-Endres/scipy/
+https://ci.appveyor.com/project/Stefan-Endres/scipy/
+
+
+####################################################
+# (ENSURE EVERYTHING ABOVE IS WORKING FIRST)
+
+# Squash commits after dev
+git checkout master
+# git merge --squash dev
+git merge dev
+git commit -m "
+
+
+# (TODO: ONLY DO THIS WHEN REBASING!?!?) git pull origin master
+# Numpy method. See https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#rebasing-on-mast
+git fetch upstream
+# Next, you need to update the feature branch:
+# go to the feature branch
+git checkout my-new-feature
+# make a backup in case you mess up
+git branch tmp my-new-feature
+# rebase on upstream master branch
+git rebase upstream/master
+# If you have made changes to files that have changed also upstream, this may generate merge conflicts that you need to resolve. See below for help in this case.
+# (Merge conflicts) Fix the conflicts (usually apply the lower patch) then
+git add scipy
+# ...or the specific files you are modifying. Then continue the mergy
+git rebase --continue
+# Finally, remove the backup branch upon a successful rebase:
+git branch -D tmp
+
+# (REDO TEST PROCEDURES)
+
+
+# Push to PR (note you can open a PR after push on Github if you haven't already)
+git push origin master
+
+# Ensure that scipy tests are passing:
+https://travis-ci.org/scipy/scipy/
+https://ci.appveyor.com/project/scipy/scipy/
+
+
+Standard acronyms to start the commit message with are:
+
+API: an (incompatible) API change
+BENCH: changes to the benchmark suite
+BLD: change related to building numpy
+BUG: bug fix
+DEP: deprecate something, or remove a deprecated object
+DEV: development tool or utility
+DOC: documentation
+ENH: enhancement
+MAINT: maintenance commit (refactoring, typos, etc.)
+REV: revert an earlier commit
+STY: style fix (whitespace, PEP8)
+TST: addition or modification of tests
+REL: related to releasing numpy
+
+ex "MAINT: Remove unneeded imports. Change IO to Value Error."
+   "BUG:  Fix custom sampling input for shgo, add unittest"
+
+
+
+
+############
+# (OPTIONAL) rebase on upstream master branch.
+# ONLY DO THIS WHEN PR IS NEAR FINISHED
+############
+git fetch upstream
+# go to the dev branch
+git checkout dev
+# make a backup in case you mess up
+git branch tmp dev
+# rebase on upstream master branch
+git rebase upstream/master
+# Delete temp branch
+git branch -D tmp
+############
+# (After a successful pull request:)
+https://stackoverflow.com/questions/7244321/how-do-i-update-a-github-forked-repository
+############
+# Rebuilding (cd to scipy base directory or clone new scipy)
+# Remove all compiled files in the base scipy directory
+find . -name "*.pyc" -exec rm -f {} \;
+# ALSO some .c files generated by .pyx need to be deleted!
+python setup.py build
