@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shgo"
+version = "1.0.0"
+description = "Simplicial homology global optimisation"
+keywords = ["optimization"]
+readme = "README.rst"
+authors = [
+    {name = "Stefan Endres, Carl Sandrock", email = "stefan.c.endres@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+]
+license = {text = "MIT"}
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/stefan-endres/shgo"
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov-report term-missing --cov=shgo --disable-pytest-warnings"
+filterwarnings = "error"
+markers = ["slow: mark test that take too much time."]
+testpaths = ["shgo/tests"]
