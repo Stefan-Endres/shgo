@@ -10,7 +10,7 @@ shgo's documentation
    :maxdepth: 2
    :caption: Contents:
 
-   docs/README.rst
+   README.rst
 
 
 Indices and tables
